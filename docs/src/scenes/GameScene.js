@@ -29,6 +29,7 @@ const CANOPIC_CLEAR_FLASH_MS = 420;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
+const BOARD_GRAVITY_FALL_MS = 190;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -63,6 +64,8 @@ export class GameScene extends Phaser.Scene {
     this.bombAreaFlashTween = null;
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
+    this.boardGravitySprites = [];
+    this.boardGravityTween = null;
     this.isResolvingClears = false;
 
     this.createBackground();
@@ -280,8 +283,7 @@ export class GameScene extends Phaser.Scene {
 
   async resolveBoardAfterLock() {
     this.isResolvingClears = true;
-    this.gravity.applyBoardGravity();
-    this.renderBoard();
+    await this.applyBoardGravityWithAnimation();
     await this.resolveBoardClears();
     this.isResolvingClears = false;
   }
@@ -310,8 +312,7 @@ export class GameScene extends Phaser.Scene {
       clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
-      this.gravity.applyBoardGravity();
-      this.renderBoard();
+      await this.applyBoardGravityWithAnimation();
       nextChain += 1;
     }
 
@@ -350,12 +351,131 @@ export class GameScene extends Phaser.Scene {
 
     const clearedCells = this.matchResolver.clearCells(result.affectedCells);
     this.score += clearedCells.length * 25;
-    this.gravity.applyBoardGravity();
+    await this.applyBoardGravityWithAnimation();
     this.hud.updateBombStock(this.bombSystem.getStock());
     this.hud.showBombUsed(result.bomb, clearedCells.length);
     this.showBombFeedback(result.bomb, clearedCells.length);
     await this.resolveBoardClears();
     this.isResolvingClears = false;
+  }
+
+  async applyBoardGravityWithAnimation() {
+    const beforeCells = this.captureBoardCells();
+    const movedPieces = this.gravity.applyBoardGravity();
+
+    if (movedPieces === 0) {
+      this.renderBoard();
+      return;
+    }
+
+    const gravityMoves = this.getBoardGravityMoves(beforeCells, this.captureBoardCells());
+    if (gravityMoves.length === 0) {
+      this.renderBoard();
+      return;
+    }
+
+    await this.animateBoardGravityMoves(gravityMoves);
+  }
+
+  captureBoardCells() {
+    return this.board.cells.map((row) => [...row]);
+  }
+
+  getBoardGravityMoves(beforeCells, afterCells) {
+    const moves = [];
+
+    for (let col = 0; col < this.board.columns; col += 1) {
+      const beforePieces = this.getColumnPieces(beforeCells, col);
+      const afterPieces = this.getColumnPieces(afterCells, col);
+
+      afterPieces.forEach((afterPiece, index) => {
+        const beforePiece = beforePieces[index];
+        if (!beforePiece || beforePiece.row === afterPiece.row) {
+          return;
+        }
+
+        moves.push({
+          col,
+          type: afterPiece.type,
+          fromRow: beforePiece.row,
+          toRow: afterPiece.row,
+        });
+      });
+    }
+
+    return moves;
+  }
+
+  getColumnPieces(cells, col) {
+    const pieces = [];
+
+    for (let row = this.board.rows - 1; row >= 0; row -= 1) {
+      const type = cells[row][col];
+      if (type) {
+        pieces.push({ row, type });
+      }
+    }
+
+    return pieces;
+  }
+
+  animateBoardGravityMoves(gravityMoves) {
+    this.clearBlockSprites();
+    this.clearBoardGravitySprites();
+    this.renderBoardForGravityAnimation(gravityMoves);
+
+    this.boardGravitySprites = gravityMoves.map((move) => {
+      const startPosition = this.getCellCenter(move.col, move.fromRow);
+      const sprite = this.createBlockSprite(startPosition.x, startPosition.y, move.type, 1);
+      sprite.setDepth(6);
+      return sprite;
+    });
+
+    return new Promise((resolve) => {
+      this.boardGravityTween = this.tweens.add({
+        targets: this.boardGravitySprites,
+        y: (target, targetIndex) => this.getCellCenter(gravityMoves[targetIndex].col, gravityMoves[targetIndex].toRow).y,
+        duration: BOARD_GRAVITY_FALL_MS,
+        ease: 'Cubic.easeIn',
+        onComplete: () => {
+          this.boardGravityTween = null;
+          this.clearBoardGravitySprites(false);
+          this.renderBoard();
+          resolve();
+        },
+      });
+    });
+  }
+
+  renderBoardForGravityAnimation(gravityMoves) {
+    const movingDestinations = new Set(gravityMoves.map((move) => `${move.col},${move.toRow}`));
+
+    for (let row = 0; row < this.board.rows; row += 1) {
+      for (let col = 0; col < this.board.columns; col += 1) {
+        const type = this.board.cells[row][col];
+        if (type && !movingDestinations.has(`${col},${row}`)) {
+          this.drawBlock(col, row, type, 1);
+        }
+      }
+    }
+
+    if (this.activePiece) {
+      this.activePiece.getCells().forEach((cell) => {
+        if (cell.row >= 0) {
+          this.drawBlock(cell.col, cell.row, cell.type, 0.95);
+        }
+      });
+    }
+  }
+
+  clearBoardGravitySprites(stopTween = true) {
+    if (stopTween && this.boardGravityTween) {
+      this.boardGravityTween.remove();
+      this.boardGravityTween = null;
+    }
+
+    this.boardGravitySprites.forEach((sprite) => sprite.destroy());
+    this.boardGravitySprites = [];
   }
 
 
@@ -634,37 +754,44 @@ export class GameScene extends Phaser.Scene {
   }
 
   drawBlock(col, row, type, alpha) {
-    const x = BOARD_ORIGIN_X + col * CELL_SIZE + CELL_SIZE / 2;
-    const y = BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2;
+    const { x, y } = this.getCellCenter(col, row);
+
+    this.blockSprites.push(this.createBlockSprite(x, y, type, alpha));
+  }
+
+  getCellCenter(col, row) {
+    return {
+      x: BOARD_ORIGIN_X + col * CELL_SIZE + CELL_SIZE / 2,
+      y: BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2,
+    };
+  }
+
+  createBlockSprite(x, y, type, alpha) {
+    const container = this.add.container(x, y);
     const asset = getPieceAsset(type);
 
-    this.drawPieceShadow(x, y, alpha);
-    this.drawFallbackBlock(x, y, type, alpha);
+    container.add(this.createPieceShadow(alpha));
+    container.add(this.createFallbackBlock(type, alpha));
 
-    if (!asset || !this.textures.exists(asset.key)) {
-      return;
+    if (asset && this.textures.exists(asset.key)) {
+      container.add(this.add.image(0, 0, asset.key)
+        .setDisplaySize(CELL_SIZE - 10, CELL_SIZE - 10)
+        .setAlpha(alpha));
     }
 
-    const sprite = this.add.image(x, y, asset.key)
-      .setDisplaySize(CELL_SIZE - 10, CELL_SIZE - 10)
-      .setAlpha(alpha);
-
-    this.blockSprites.push(sprite);
+    return container;
   }
 
-  drawPieceShadow(x, y, alpha) {
-    const shadow = this.add.ellipse(x + 2, y + 4, CELL_SIZE - 8, CELL_SIZE - 8, 0x000000, 0.28 * alpha);
-    const glow = this.add.rectangle(x, y, CELL_SIZE - 7, CELL_SIZE - 7, 0xf4d77a, 0.08 * alpha);
+  createPieceShadow(alpha) {
+    const shadow = this.add.ellipse(2, 4, CELL_SIZE - 8, CELL_SIZE - 8, 0x000000, 0.28 * alpha);
+    const glow = this.add.rectangle(0, 0, CELL_SIZE - 7, CELL_SIZE - 7, 0xf4d77a, 0.08 * alpha);
 
-    this.blockSprites.push(shadow, glow);
+    return [shadow, glow];
   }
 
-  drawFallbackBlock(x, y, type, alpha) {
-    const rect = this.add.rectangle(x, y, CELL_SIZE - 8, CELL_SIZE - 8, PIECE_COLORS[type], 0.32 * alpha)
+  createFallbackBlock(type, alpha) {
+    return this.add.rectangle(0, 0, CELL_SIZE - 8, CELL_SIZE - 8, PIECE_COLORS[type], 0.32 * alpha)
       .setStrokeStyle(1, 0xf6e3a1, 0.32);
-
-    this.blockSprites.push(rect);
-    return rect;
   }
 
   showGodUnlockFeedback(unlockEvent) {
