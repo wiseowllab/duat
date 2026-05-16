@@ -1,4 +1,4 @@
-import { CANOPIC_ORGAN_TYPES, HEART_TYPE } from '../data/pieces.js';
+import { BRAIN_TYPE, CANOPIC_ORGAN_TYPES, HEART_TYPE } from '../data/pieces.js';
 
 const ORTHOGONAL_DIRECTIONS = [
   { col: 0, row: -1 },
@@ -30,6 +30,66 @@ export class CanopusResolver {
     }
 
     return canopicSets;
+  }
+
+
+  findAdjacentBrainBonusCell(canopicSets) {
+    if (!canopicSets || canopicSets.length === 0) {
+      return null;
+    }
+
+    const canopicCellKeys = new Set();
+    canopicSets.forEach((group) => {
+      group.forEach((cell) => {
+        canopicCellKeys.add(this.createCellKey(cell.col, cell.row));
+      });
+    });
+
+    const candidates = new Map();
+
+    canopicCellKeys.forEach((key) => {
+      const [col, row] = this.parseCellKey(key);
+
+      ORTHOGONAL_DIRECTIONS.forEach((direction) => {
+        const nextCol = col + direction.col;
+        const nextRow = row + direction.row;
+
+        if (!this.isBrainCell(nextCol, nextRow)) {
+          return;
+        }
+
+        const candidateKey = this.createCellKey(nextCol, nextRow);
+        const candidate = candidates.get(candidateKey) ?? {
+          col: nextCol,
+          row: nextRow,
+          type: BRAIN_TYPE,
+          adjacentCanopicCount: 0,
+        };
+
+        candidate.adjacentCanopicCount += 1;
+        candidates.set(candidateKey, candidate);
+      });
+    });
+
+    return [...candidates.values()].sort((a, b) => (
+      b.adjacentCanopicCount - a.adjacentCanopicCount
+      || b.row - a.row
+      || a.col - b.col
+    ))[0] ?? null;
+  }
+
+  isBrainCell(col, row) {
+    return this.board.isInsideColumn(col)
+      && this.board.isVisibleRow(row)
+      && this.board.getCell(col, row) === BRAIN_TYPE;
+  }
+
+  createCellKey(col, row) {
+    return `${col},${row}`;
+  }
+
+  parseCellKey(key) {
+    return key.split(',').map(Number);
   }
 
   createVisitedGrid() {

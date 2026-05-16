@@ -97,3 +97,15 @@ test('coffin meter can reset debug progression without replacing god data', () =
   assert.equal(meter.getProgress().value, 0);
   assert.equal(meter.getState().totalGods, TEST_GODS.length);
 });
+
+test('adjacent brain canopic bonus adds 100 points to the clear cycle', () => {
+  const scoreSystem = new ScoreSystem();
+  const clearResult = {
+    clearTypes: new Set(['canopic', 'adjacentBrain']),
+    sameTypeGroups: [],
+    canopicSets: [Array.from({ length: 4 })],
+    adjacentBrainBonusCell: { col: 2, row: 9, type: 'brain' },
+  };
+
+  assert.equal(scoreSystem.calculateCycleScore(clearResult, 1), 600);
+});

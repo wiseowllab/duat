@@ -45,6 +45,7 @@ Implemented so far:
 - Canopic set cells briefly flash with a distinct sacred cyan/gold highlight before they clear
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
+- Canopic set bonus clearing that can remove up to one orthogonally adjacent brain piece per clear cycle
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
 - HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, visible tier-based coffin PNG icon, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
 - PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
@@ -133,13 +134,15 @@ A canopic set clears when one orthogonally connected component contains all four
 
 The canopic group can be any shape and can contain more than four pieces. Diagonal-only contact does not count. When a canopic set is detected, those cells briefly flash with a stronger sacred cyan/gold highlight before disappearing, making it visually distinct from ordinary same-type clears.
 
+When at least one canopic set clears in a clear cycle, the clear can also remove **up to one brain piece** orthogonally adjacent to any canopic-cleared cell. Only up/down/left/right adjacency counts; diagonal brain pieces are ignored. If multiple adjacent brain candidates exist, the selected brain is chosen by this priority: first the candidate touching the largest number of canopic-cleared cells, then the lower candidate on the board using the larger row index, then the leftmost candidate using the smaller column index. The selected brain uses a purple/gold bonus highlight before clearing.
+
 ### Heart Wild Card Note
 
 For Phase 2, heart has basic wild-card behavior for canopic sets only. A heart can substitute for **one** missing canopic organ type in a connected canopic group, such as liver + lung + stomach + heart. Full heart wild-card behavior for same-type clears is not implemented yet.
 
 ### Brain Obstacle Note
 
-Brain is currently an obstacle piece. It does not participate in canopic sets, cannot count as a required organ type, cannot substitute for an organ, and cannot connect two canopic groups. Brain also cannot be cleared by same-type 4-connected matching, so four or more connected brain pieces remain on the board. Brain still appears in falling pairs, locks into the board, and falls normally when gravity resolves.
+Brain is currently an obstacle piece. It does not participate in canopic set construction, cannot count as a required organ type, cannot substitute for an organ, and cannot connect two canopic groups. Brain also cannot be cleared by same-type 4-connected matching, so four or more connected brain pieces remain on the board. A canopic set clear may remove one adjacent brain only as a post-detection bonus; Tier 2 bombs remain the main brain-clearing tool because they can target or affect multiple brain pieces more directly. Brain still appears in falling pairs, locks into the board, and falls normally when gravity resolves.
 
 ## Basic Scoring
 
@@ -149,6 +152,7 @@ Current placeholder scoring can be tuned later:
 - Each additional piece in that same connected group adds **25 points**.
 - A canopic set is worth **500 points**.
 - Each extra piece in a canopic set adds **50 points**.
+- A canopic-adjacent brain bonus clear adds **100 points** for the selected brain piece.
 - If a same-type clear and a canopic set clear happen in the same clear cycle, that cycle receives a **x2 same-cycle bonus**.
 - The full cycle score is multiplied by the current chain number:
   - First clear after a lock: chain 1

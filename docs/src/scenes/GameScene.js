@@ -493,6 +493,14 @@ export class GameScene extends Phaser.Scene {
       });
     });
 
+    if (clearResult.adjacentBrainBonusCell) {
+      const cell = clearResult.adjacentBrainBonusCell;
+      cellMap.set(`${cell.col},${cell.row}`, {
+        ...cell,
+        highlightType: 'adjacentBrain',
+      });
+    }
+
     return [...cellMap.values()];
   }
 
@@ -521,15 +529,41 @@ export class GameScene extends Phaser.Scene {
   createClearHighlight(cell) {
     const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
     const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
-    const isCanopic = cell.highlightType === 'canopic';
-    const fillColor = isCanopic ? CANOPIC_CLEAR_FLASH_COLOR : SAME_TYPE_CLEAR_FLASH_COLOR;
-    const strokeColor = isCanopic ? CANOPIC_CLEAR_STROKE_COLOR : SAME_TYPE_CLEAR_FLASH_COLOR;
-    const fillAlpha = isCanopic ? 0.34 : 0.25;
-    const strokeAlpha = isCanopic ? 0.92 : 0.72;
+    const highlightStyle = this.getClearHighlightStyle(cell.highlightType);
 
-    return this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, fillColor, fillAlpha)
-      .setStrokeStyle(isCanopic ? 3 : 2, strokeColor, strokeAlpha)
+    return this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
+      .setStrokeStyle(highlightStyle.strokeWidth, highlightStyle.strokeColor, highlightStyle.strokeAlpha)
       .setDepth(9);
+  }
+
+  getClearHighlightStyle(highlightType) {
+    if (highlightType === 'canopic') {
+      return {
+        fillColor: CANOPIC_CLEAR_FLASH_COLOR,
+        strokeColor: CANOPIC_CLEAR_STROKE_COLOR,
+        fillAlpha: 0.34,
+        strokeAlpha: 0.92,
+        strokeWidth: 3,
+      };
+    }
+
+    if (highlightType === 'adjacentBrain') {
+      return {
+        fillColor: 0x9b62c9,
+        strokeColor: CANOPIC_CLEAR_STROKE_COLOR,
+        fillAlpha: 0.38,
+        strokeAlpha: 0.95,
+        strokeWidth: 3,
+      };
+    }
+
+    return {
+      fillColor: SAME_TYPE_CLEAR_FLASH_COLOR,
+      strokeColor: SAME_TYPE_CLEAR_FLASH_COLOR,
+      fillAlpha: 0.25,
+      strokeAlpha: 0.72,
+      strokeWidth: 2,
+    };
   }
 
   clearClearHighlights(stopTween = true) {
@@ -682,6 +716,7 @@ export class GameScene extends Phaser.Scene {
   findClearResult() {
     const sameTypeGroups = this.matchResolver.findMatches();
     const canopicSets = this.canopusResolver.findCanopicSets();
+    const adjacentBrainBonusCell = this.canopusResolver.findAdjacentBrainBonusCell(canopicSets);
     const clearTypes = new Set();
     const cellMap = new Map();
 
@@ -695,11 +730,17 @@ export class GameScene extends Phaser.Scene {
       this.addGroupsToCellMap(canopicSets, cellMap);
     }
 
+    if (adjacentBrainBonusCell) {
+      clearTypes.add('adjacentBrain');
+      cellMap.set(`${adjacentBrainBonusCell.col},${adjacentBrainBonusCell.row}`, adjacentBrainBonusCell);
+    }
+
     return {
       cellsToClear: [...cellMap.values()],
       clearTypes,
       sameTypeGroups,
       canopicSets,
+      adjacentBrainBonusCell,
     };
   }
 
