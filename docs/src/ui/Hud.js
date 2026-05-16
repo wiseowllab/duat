@@ -135,7 +135,7 @@ export class Hud {
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`Selected: ${selectedSlot + 1} ${selectedBomb.godName} / ${selectedBomb.name}\nEnter/Space: Use  Esc: Cancel`);
+      this.selectedBombText.setText(`Selected: ${selectedSlot + 1} ${selectedBomb.godName} / ${selectedBomb.name}\nPress same number again or Enter/Space to use. Esc to cancel.`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
