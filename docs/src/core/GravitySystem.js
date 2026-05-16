@@ -19,6 +19,23 @@ export class GravitySystem {
     return distance;
   }
 
+  applyBoardGravityStep() {
+    let movedPieces = 0;
+
+    for (let col = 0; col < this.board.columns; col += 1) {
+      for (let row = this.board.rows - 2; row >= 0; row -= 1) {
+        const type = this.board.getCell(col, row);
+        if (type && this.board.getCell(col, row + 1) === null) {
+          this.board.setCell(col, row + 1, type);
+          this.board.clearCell(col, row);
+          movedPieces += 1;
+        }
+      }
+    }
+
+    return movedPieces;
+  }
+
   applyBoardGravity() {
     let movedPieces = 0;
 
