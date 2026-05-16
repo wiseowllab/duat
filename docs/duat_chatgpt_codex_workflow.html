@@ -1,0 +1,246 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.label{font-size:10px;color:var(--color-text-tertiary);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px}
+.tab-btn{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:6px 12px;font-size:12px;color:var(--color-text-secondary);cursor:pointer}
+.tab-btn.active{background:var(--color-background-warning);border-color:var(--color-border-warning);color:var(--color-text-warning);font-weight:500}
+.code{background:rgba(0,0,0,0.35);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:12px 14px;font-family:monospace;font-size:11px;color:var(--color-text-secondary);line-height:1.8;white-space:pre;overflow-x:auto}
+.step-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.gpt{background:var(--color-background-success);border:0.5px solid var(--color-border-success);color:var(--color-text-success)}
+.codex{background:var(--color-background-info);border:0.5px solid var(--color-border-info);color:var(--color-text-info)}
+.gh{background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary)}
+.role-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:4px;border:0.5px solid;font-weight:500;margin-bottom:8px}
+</style>
+
+<div style="padding:1rem 0">
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+  <button class="tab-btn active" onclick="setTab('roles')" id="tab-roles">役割分担</button>
+  <button class="tab-btn" onclick="setTab('setup')" id="tab-setup">セットアップ</button>
+  <button class="tab-btn" onclick="setTab('cycle')" id="tab-cycle">開発サイクル</button>
+  <button class="tab-btn" onclick="setTab('prompts')" id="tab-prompts">Codex依頼テンプレート</button>
+</div>
+
+<!-- ROLES -->
+<div id="screen-roles">
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+
+  <div class="card" style="border-color:var(--color-border-success)">
+    <div class="role-tag gpt">ChatGPT</div>
+    <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px">設計・相談役</div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--color-text-secondary)">
+      <div>・仕様の整理・確認</div>
+      <div>・「次に何を作るか」の判断</div>
+      <div>・バグの原因特定の相談</div>
+      <div>・Codexへの指示文を作る</div>
+      <div>・設計書（DUAT）を参照</div>
+    </div>
+    <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:8px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">ChatGPT Plus以上</div>
+  </div>
+
+  <div class="card" style="border-color:var(--color-border-info)">
+    <div class="role-tag codex">Codex</div>
+    <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px">コード実装役</div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--color-text-secondary)">
+      <div>・GitHubリポジトリを直接読む</div>
+      <div>・複数ファイルを同時に編集</div>
+      <div>・PRを自動作成</div>
+      <div>・既存コードを壊さずに追加</div>
+      <div>・バグを調査して修正</div>
+    </div>
+    <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:8px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">ChatGPT Plus内に含まれる</div>
+  </div>
+
+  <div class="card">
+    <div class="role-tag gh">GitHub</div>
+    <div style="font-size:13px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px">資産の置き場</div>
+    <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--color-text-secondary)">
+      <div>・コードの唯一の正解を持つ</div>
+      <div>・Codexのターゲットリポジトリ</div>
+      <div>・変更履歴を全部記録</div>
+      <div>・GitHub Pagesで公開</div>
+      <div>・画像アセットも管理</div>
+    </div>
+    <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:8px;padding-top:6px;border-top:0.5px solid var(--color-border-tertiary)">無料</div>
+  </div>
+
+</div>
+
+<div class="card">
+  <div class="label" style="margin-bottom:10px">全体の情報フロー</div>
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:6px 10px;text-align:center">
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">DUAT設計書</div>
+      <div style="color:var(--color-text-primary);font-weight:500">この会話</div>
+    </div>
+    <div style="color:var(--color-text-tertiary)">→</div>
+    <div style="background:rgba(40,167,69,0.1);border:0.5px solid var(--color-border-success);border-radius:6px;padding:6px 10px;text-align:center">
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">仕様把握・指示文</div>
+      <div style="color:var(--color-text-success);font-weight:500">ChatGPT</div>
+    </div>
+    <div style="color:var(--color-text-tertiary)">→</div>
+    <div style="background:rgba(0,123,255,0.1);border:0.5px solid var(--color-border-info);border-radius:6px;padding:6px 10px;text-align:center">
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">ファイル編集・PR</div>
+      <div style="color:var(--color-text-info);font-weight:500">Codex</div>
+    </div>
+    <div style="color:var(--color-text-tertiary)">→</div>
+    <div style="background:rgba(0,0,0,0.2);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:6px 10px;text-align:center">
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">管理・公開</div>
+      <div style="color:var(--color-text-primary);font-weight:500">GitHub</div>
+    </div>
+    <div style="color:var(--color-text-tertiary)">→</div>
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:6px 10px;text-align:center">
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">公開URL</div>
+      <div style="color:var(--color-text-primary);font-weight:500">GitHub Pages</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- SETUP -->
+<div id="screen-setup" style="display:none">
+<div style="display:flex;flex-direction:column;gap:10px">
+
+  <div class="card">
+    <div class="label" style="margin-bottom:10px">初回セットアップ手順</div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+        <div class="step-num gh">1</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px">GitHubでリポジトリを作る</div>
+          <div style="font-size:11px;color:var(--color-text-tertiary)">github.com → New repository → 名前「duat」→ Public → Create repository</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+        <div class="step-num gh">2</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px">GitHub Pagesを設定する</div>
+          <div style="font-size:11px;color:var(--color-text-tertiary)">Settings → Pages → Source: Deploy from branch → main / docs → Save<br>公開URL：<code style="font-size:10px;background:rgba(0,0,0,0.2);padding:1px 4px;border-radius:3px">username.github.io/duat</code> が発行される</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+        <div class="step-num codex">3</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px">CodexをGitHubリポジトリに接続する</div>
+          <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">ChatGPT → サイドバーの「Codex」→「New Task」→ リポジトリ「duat」を選択</div>
+          <div style="background:rgba(0,123,255,0.08);border:0.5px solid var(--color-border-info);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--color-text-info)">初回のみGitHub連携の認証が必要。画面の指示に従うだけ。</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+        <div class="step-num gpt">4</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px">ChatGPTにDUATの設計書を渡す</div>
+          <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px">この会話の設計書（GDDのHTMLファイル）をChatGPTに貼り付ける。これでChatGPTがDUATの全仕様を理解した状態になる。</div>
+          <div style="background:rgba(40,167,69,0.08);border:0.5px solid var(--color-border-success);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--color-text-success)">以降はChatGPTが「次にCodexに何を依頼すべきか」を一緒に考えてくれる。</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+        <div class="step-num codex">5</div>
+        <div>
+          <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px">CodexにPhase 1を依頼する</div>
+          <div style="font-size:11px;color:var(--color-text-tertiary)">ChatGPTが作った指示文をそのままCodexに貼って実行。Codexが自動でファイルを作成・編集してPRを出す。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">必要なもの一覧</div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      <div style="display:grid;grid-template-columns:1fr auto;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px">
+        <span style="color:var(--color-text-primary)">GitHubアカウント</span>
+        <span style="color:var(--color-text-success)">無料</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px">
+        <span style="color:var(--color-text-primary)">ChatGPT Plus（ChatGPT＋Codex含む）</span>
+        <span style="color:var(--color-text-warning)">月額$20</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px">
+        <span style="color:var(--color-text-primary)">VS Code（コードの確認用）</span>
+        <span style="color:var(--color-text-success)">無料</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;padding:6px 0;font-size:11px">
+        <span style="color:var(--color-text-primary)">AI画像生成ツール</span>
+        <span style="color:var(--color-text-tertiary)">後から追加</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- CYCLE -->
+<div id="screen-cycle" style="display:none">
+<div class="card">
+  <div class="label" style="margin-bottom:10px">1機能あたりの開発サイクル</div>
+  <div class="code">【ChatGPTで考える】
+「カノポスセット消去を実装したい。
+ どんな指示をCodexに出せばいいか？」
+  ↓ ChatGPTが指示文を作ってくれる
+
+【Codexで実装する】
+Codex → New Task → 指示文を貼る
+  ↓ Codexがduat/を読んでファイルを編集
+  ↓ PRを自動作成（コードの変更一覧が見える）
+
+【GitHubでレビューする】
+PRの変更内容を確認する
+問題なければ「Merge」ボタンを押す
+  ↓ mainブランチに反映される
+  ↓ GitHub Pagesが自動更新される
+
+【ブラウザで確認する】
+username.github.io/duat を開く
+動作を確認する
+
+【問題があればChatGPTに相談する】
+「連鎖後の処理がおかしい、どう直す？」
+  ↓ ChatGPTが原因と修正方針を説明
+  ↓ Codexに修正指示を出す</div>
+</div>
+</div>
+
+<!-- PROMPTS -->
+<div id="screen-prompts" style="display:none">
+<div style="display:flex;flex-direction:column;gap:10px">
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">Phase 1 — Codexへの初回指示</div>
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.8">DUATという古代エジプト落ちゲーを作ります。<br>Phaser.jsを使い、以下の構造でファイルを作成してください。<br><br>src/main.js — Phaser設定・起動<br>src/scenes/GameScene.js — メインゲーム<br>src/core/Board.js — 6×12グリッド管理<br>src/core/Piece.js — 2個組ピース・4方向回転<br>src/core/GravitySystem.js — 落下・着地<br>src/data/constants.js — 定数定義<br>index.html — エントリーポイント<br>docs/ — GitHub Pages用にindex.htmlをコピー<br><br>ピースは6色の色付きブロックで仮実装。<br>左右移動・回転・着地・ゲームオーバーまで動く状態にしてください。</div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">Phase 2 — カノポスセット消去の追加</div>
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.8">src/core/CanopusResolver.jsを新規作成してください。<br><br>仕様：<br>- 肝臓・肺・胃・腸の4種が1つの隣接グループ内に全種含まれると消去<br>- 心臓ピースはワイルドとして不足している種を補える<br>- 脳ピースはセットに参加しない<br>- 既存のMatchResolver.jsと並走させる<br>- 消去時は同種消去より高いスコアを返す</div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">棺メーター・神復活システム追加</div>
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.8">src/data/gods.jsとsrc/ui/CoffinMeter.jsを作成してください。<br><br>gods.jsの仕様：<br>- Tier1〜4の神データを配列で定義<br>- 各神に名前・Tier・必要得点・ボム種別を持たせる<br><br>CoffinMeter.jsの仕様：<br>- 棺型の縦ゲージをPhaser上に描画<br>- 得点に応じてゲージが上昇<br>- 満タンで神復活イベントを発火する<br>- 次の棺に自動交代する</div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">画像差し替え時</div>
+    <div style="background:rgba(0,0,0,0.2);border-radius:6px;padding:10px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.8">assets/images/pieces/に以下の画像を追加しました。<br>liver.png / lung.png / stomach.png / intestine.png / heart.png / brain.png<br><br>src/scenes/BootScene.jsでこれらをプリロードして、<br>GameScene.jsの色ブロック仮実装を実際の画像に差し替えてください。<br>画像サイズは48×48pxを想定しています。</div>
+  </div>
+
+</div>
+</div>
+
+</div>
+<script>
+function setTab(name){
+  ['roles','setup','cycle','prompts'].forEach(t=>{
+    document.getElementById('screen-'+t).style.display=t===name?'block':'none';
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+  });
+}
+</script>
