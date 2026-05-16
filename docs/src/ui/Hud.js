@@ -27,6 +27,15 @@ export class Hud {
       fontStyle: 'bold',
     });
 
+    this.debugText = this.scene.add.text(this.x + 104, this.y + 24, 'DEBUG ON', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '12px',
+      color: '#ffdf6e',
+      fontStyle: 'bold',
+      backgroundColor: '#3a1f00',
+      padding: { x: 4, y: 2 },
+    }).setVisible(false);
+
     this.scoreText = this.createLabel(20, 68, 'Score: 0');
     this.chainText = this.createLabel(20, 96, 'Chain: 0');
     this.levelText = this.createLabel(20, 124, 'Level: 1', 15);
@@ -95,6 +104,10 @@ export class Hud {
 
   updateLevel(level) {
     this.levelText.setText(`Level: ${level}`);
+  }
+
+  setDebugMode(isEnabled) {
+    this.debugText.setVisible(isEnabled);
   }
 
   updateCoffin(state) {

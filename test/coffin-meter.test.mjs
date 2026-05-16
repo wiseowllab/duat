@@ -72,3 +72,28 @@ test('canopic clears convert more score into coffin meter than same-type clears'
   assert.equal(scoreSystem.calculateCycleMeterPoints(sameTypeClear, 1), 25);
   assert.equal(scoreSystem.calculateCycleMeterPoints(canopicClear, 1), 200);
 });
+
+test('coffin meter can fill current god for debug unlocks', () => {
+  const meter = new CoffinMeter(TEST_GODS);
+
+  meter.addPoints(40);
+  const unlockEvents = meter.fillCurrentGod();
+
+  assert.equal(unlockEvents.length, 1);
+  assert.equal(unlockEvents[0].god.name, 'Imsety');
+  assert.equal(meter.getUnlockedCount(), 1);
+  assert.equal(meter.getCurrentGod().name, 'Hapy');
+  assert.equal(meter.getProgress().value, 0);
+});
+
+test('coffin meter can reset debug progression without replacing god data', () => {
+  const meter = new CoffinMeter(TEST_GODS);
+
+  meter.addPoints(125);
+  meter.reset();
+
+  assert.equal(meter.getUnlockedCount(), 0);
+  assert.equal(meter.getCurrentGod().name, 'Imsety');
+  assert.equal(meter.getProgress().value, 0);
+  assert.equal(meter.getState().totalGods, TEST_GODS.length);
+});

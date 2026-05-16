@@ -47,6 +47,7 @@ export class GameScene extends Phaser.Scene {
     this.fallTimer = 0;
     this.lockTimer = 0;
     this.isGameOver = false;
+    this.isDebugMode = false;
     this.feedbackTimer = null;
 
     this.createBackground();
@@ -55,6 +56,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateLevel(this.level);
+    this.hud.setDebugMode(this.isDebugMode);
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.drawNext(this.nextPairTypes);
 
@@ -150,12 +152,20 @@ export class GameScene extends Phaser.Scene {
   createInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+    this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
+    this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+    this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
 
     this.cursors.left.on('down', () => this.tryMove(-1, 0));
     this.cursors.right.on('down', () => this.tryMove(1, 0));
     this.cursors.up.on('down', () => this.tryRotate());
     this.keyZ.on('down', () => this.tryRotate());
     this.cursors.space.on('down', () => this.hardDrop());
+    this.keyD.on('down', () => this.toggleDebugMode());
+    this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
+    this.keyT.on('down', () => this.advanceDebugGod());
+    this.keyR.on('down', () => this.resetDebugProgression());
   }
 
   spawnPiece() {
@@ -278,12 +288,75 @@ export class GameScene extends Phaser.Scene {
       this.hud.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
     }
 
-    if (unlockEvents.length > 0) {
-      this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
-      this.hud.showGodUnlocked(unlockEvents);
-    }
+    this.showUnlockEvents(unlockEvents);
 
     this.renderBoard();
+  }
+
+
+  toggleDebugMode() {
+    this.isDebugMode = !this.isDebugMode;
+    this.hud.setDebugMode(this.isDebugMode);
+  }
+
+  handleDebugMeterKey(event) {
+    if (!this.isDebugMode) {
+      return;
+    }
+
+    if (event?.shiftKey) {
+      this.fillDebugGod();
+      return;
+    }
+
+    this.addDebugMeterPoints(500);
+  }
+
+  addDebugMeterPoints(points) {
+    const unlockEvents = this.coffinMeter.addPoints(points);
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.showUnlockEvents(unlockEvents);
+  }
+
+  fillDebugGod() {
+    const unlockEvents = this.coffinMeter.fillCurrentGod();
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.showUnlockEvents(unlockEvents);
+  }
+
+  advanceDebugGod() {
+    if (!this.isDebugMode) {
+      return;
+    }
+
+    this.fillDebugGod();
+  }
+
+  resetDebugProgression() {
+    if (!this.isDebugMode) {
+      return;
+    }
+
+    this.coffinMeter.reset();
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.boardFeedbackText.setText('DEBUG PROGRESSION RESET');
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.time.delayedCall(1200, () => {
+      this.boardFeedbackText.setText('');
+    });
+  }
+
+  showUnlockEvents(unlockEvents) {
+    if (unlockEvents.length === 0) {
+      return;
+    }
+
+    this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
+    this.hud.showGodUnlocked(unlockEvents);
   }
 
   findClearResult() {
