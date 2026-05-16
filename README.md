@@ -102,6 +102,16 @@ Cells that qualify for both same-type and canopic clearing in the same cycle are
 - **Up Arrow** or **Z**: rotate
 - **Space**: hard drop
 
+## How to Test Post-Lock Gravity in the Browser
+
+This verifies that each locked cell falls independently by column before clear detection:
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. Build or wait for a stack where one column has support one row higher than an adjacent empty column. For example, place any block at the bottom of column 3 while column 4 remains empty.
+3. Drop a horizontal pair across those two columns so the left block lands on the supported column and the right block is still floating over the empty column.
+4. After the pair locks, the unsupported right block should immediately fall to the bottom of its own column, or onto the nearest stack, before any same-type or canopic clear is checked.
+5. If the new settled board creates a same-type clear, canopic set clear, or chain, those clears and their follow-up gravity should resolve normally afterward.
+
 ## How to Test Canopic Set Clearing in the Browser
 
 Because pieces are random in this prototype, the simplest manual browser test is to stack pieces slowly and use **Space** for hard drops once a target column is aligned:
