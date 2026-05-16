@@ -47,6 +47,21 @@ export class CoffinMeter {
     }
   }
 
+  fillCurrentGod() {
+    if (this.isComplete()) {
+      return [];
+    }
+
+    const pointsNeeded = this.getRequiredMeter() - this.currentMeter;
+    return this.addPoints(pointsNeeded);
+  }
+
+  reset() {
+    this.currentGodIndex = 0;
+    this.currentMeter = 0;
+    this.unlockedGods = [];
+  }
+
   getCurrentGod() {
     return this.gods[this.currentGodIndex] ?? null;
   }
