@@ -30,6 +30,7 @@ const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 const BOARD_GRAVITY_FALL_MS = 190;
+const BOARD_GRAVITY_FAILSAFE_MS = BOARD_GRAVITY_FALL_MS + 300;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -261,7 +262,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   async lockActivePiece() {
-    if (!this.activePiece) {
+    if (!this.activePiece || this.isResolvingClears) {
       return;
     }
 
@@ -274,7 +275,12 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    await this.resolveBoardAfterLock();
+    try {
+      await this.resolveBoardAfterLock();
+    } catch (error) {
+      console.error('Board resolution failed after lock:', error);
+      this.renderBoard();
+    }
 
     if (!this.isGameOver) {
       this.spawnPiece();
@@ -283,9 +289,13 @@ export class GameScene extends Phaser.Scene {
 
   async resolveBoardAfterLock() {
     this.isResolvingClears = true;
-    await this.applyBoardGravityWithAnimation();
-    await this.resolveBoardClears();
-    this.isResolvingClears = false;
+
+    try {
+      await this.applyBoardGravityWithAnimation();
+      await this.resolveBoardClears();
+    } finally {
+      this.isResolvingClears = false;
+    }
   }
 
   async resolveBoardClears() {
@@ -347,16 +357,20 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.isResolvingClears = true;
-    this.showBombAreaFlash(result.bomb.type, target);
 
-    const clearedCells = this.matchResolver.clearCells(result.affectedCells);
-    this.score += clearedCells.length * 25;
-    await this.applyBoardGravityWithAnimation();
-    this.hud.updateBombStock(this.bombSystem.getStock());
-    this.hud.showBombUsed(result.bomb, clearedCells.length);
-    this.showBombFeedback(result.bomb, clearedCells.length);
-    await this.resolveBoardClears();
-    this.isResolvingClears = false;
+    try {
+      this.showBombAreaFlash(result.bomb.type, target);
+
+      const clearedCells = this.matchResolver.clearCells(result.affectedCells);
+      this.score += clearedCells.length * 25;
+      await this.applyBoardGravityWithAnimation();
+      this.hud.updateBombStock(this.bombSystem.getStock());
+      this.hud.showBombUsed(result.bomb, clearedCells.length);
+      this.showBombFeedback(result.bomb, clearedCells.length);
+      await this.resolveBoardClears();
+    } finally {
+      this.isResolvingClears = false;
+    }
   }
 
   async applyBoardGravityWithAnimation() {
@@ -420,6 +434,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   animateBoardGravityMoves(gravityMoves) {
+    if (gravityMoves.length === 0) {
+      this.renderBoard();
+      return Promise.resolve();
+    }
+
     this.clearBlockSprites();
     this.clearBoardGravitySprites();
     this.renderBoardForGravityAnimation(gravityMoves);
@@ -431,19 +450,45 @@ export class GameScene extends Phaser.Scene {
       return sprite;
     });
 
+    if (this.boardGravitySprites.length === 0) {
+      this.renderBoard();
+      return Promise.resolve();
+    }
+
     return new Promise((resolve) => {
+      let hasResolved = false;
+      let failsafeTimer = null;
+
+      const finishAnimation = () => {
+        if (hasResolved) {
+          return;
+        }
+
+        hasResolved = true;
+
+        if (failsafeTimer) {
+          failsafeTimer.remove(false);
+          failsafeTimer = null;
+        }
+
+        this.boardGravityTween = null;
+        this.clearBoardGravitySprites(false);
+        this.renderBoard();
+        resolve();
+      };
+
+      failsafeTimer = this.time.delayedCall(BOARD_GRAVITY_FAILSAFE_MS, finishAnimation);
       this.boardGravityTween = this.tweens.add({
         targets: this.boardGravitySprites,
         y: (target, targetIndex) => this.getCellCenter(gravityMoves[targetIndex].col, gravityMoves[targetIndex].toRow).y,
         duration: BOARD_GRAVITY_FALL_MS,
         ease: 'Cubic.easeIn',
-        onComplete: () => {
-          this.boardGravityTween = null;
-          this.clearBoardGravitySprites(false);
-          this.renderBoard();
-          resolve();
-        },
+        onComplete: finishAnimation,
       });
+
+      if (!this.boardGravityTween) {
+        finishAnimation();
+      }
     });
   }
 
