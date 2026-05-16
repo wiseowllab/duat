@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 4-A**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder-tuned coffin meter, god progression, PNG image sprites for each piece type, tier-based coffin PNGs with fallback rendering, and Tier 1 bomb stock/use.
+The current build is **Phase 4-B**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder-tuned coffin meter, god progression, PNG image sprites for each piece type, tier-based coffin PNGs with fallback rendering, and Tier 1 plus Tier 2 bomb stock/use.
 
 ## How to Run Locally
 
@@ -21,7 +21,7 @@ Then open one of these URLs in a browser:
 
 A local server is recommended because the game uses JavaScript modules.
 
-## Phase 4-A Features
+## Phase 4-B Features
 
 Implemented so far:
 
@@ -57,10 +57,11 @@ Implemented so far:
 - Coffin meter progression after clears
 - Tiered god unlock progression from Imsety through Amun-Ra
 - `docs/index.html` entry point for GitHub Pages from the `docs/` folder
-- Temporary debug mode for quickly testing coffin meter progression, god unlocks, tier-based coffin image switching, and Tier 1 bomb stock
-- Tier 1 bomb stock for the first four gods, capped at four bombs
-- Basic Tier 1 bomb controls using number keys 1-4
-- Vertical, horizontal, cross, and 3x3 surround bomb effects that clear locked non-brain cells
+- Temporary debug mode for quickly testing coffin meter progression, god unlocks, tier-based coffin image switching, and Tier 1/Tier 2 bomb stock
+- Bomb stock for supported Tier 1 and Tier 2 gods, capped at four bombs
+- Basic bomb controls using number keys 1-4
+- Vertical, horizontal, cross, and 3x3 surround Tier 1 bomb effects that clear locked non-brain cells
+- Brain Clear, Convert, Protect, and Burst Tier 2 bomb effects that can affect brain pieces
 
 
 ## Piece Image Assets
@@ -181,18 +182,25 @@ Current god progression:
 3. **Tier 3 — Large Coffin**: Horus, Isis, Osiris, Set at 2200 meter each.
 4. **Tier 4 — Maximum Coffin**: Ra, Amun-Ra at 3000 meter each.
 
-## Tier 1 Bomb Stock
+## Bomb Stock
 
-When a supported Tier 1 god unlocks, that god adds one bomb to the HUD's `BOMB STOCK` list. The stock can hold up to **4 bombs**. If the stock is full, additional supported bombs are ignored safely. Higher-tier `futureBombType` values remain data-only in this phase and are ignored safely until later bomb tiers are implemented.
+When a supported Tier 1 or Tier 2 god unlocks, that god adds one bomb to the HUD's `BOMB STOCK` list. The stock can hold up to **4 bombs**. If the stock is full, additional supported bombs are ignored safely. Tier 3 and Tier 4 `futureBombType` values remain data-only for now and are ignored safely until later bomb tiers are implemented.
 
-Current supported bombs:
+Current supported Tier 1 bombs:
 
 - **Imsety**: `vertical_clear` / Vertical — clears the target column.
 - **Hapy**: `horizontal_clear` / Horizontal — clears the target row.
 - **Duamutef**: `cross_clear` / Cross — clears the target row and column.
 - **Qebehsenuef**: `surround_clear` / Surround — clears a 3x3 area centered on the target cell.
 
-Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. When a bomb is used, its affected row, column, cross, or 3x3 area briefly flashes with semi-transparent gold cell highlights before disappearing automatically. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Direct bomb clears currently award a simple placeholder **25 points per non-brain cell cleared**, then board gravity and the normal same-type/canopic chain resolution loop run as usual.
+Current supported Tier 2 bombs:
+
+- **Anubis**: `brain_clear` / Brain Clear — clears only brain pieces in the target row and target column for **50 points per brain cleared**.
+- **Thoth**: `knowledge_convert` / Convert — converts up to four brain pieces in a target-centered 3x3 area into hearts for **25 points per converted piece**. If there are no brains in that area, it converts one random non-brain piece in the area into a heart.
+- **Bastet**: `protective_clear` / Protect — clears a target-centered 3x3 area, including brain pieces, for **35 points per cleared piece**.
+- **Sekhmet**: `war_burst` / Burst — clears the target cell plus its up/down/left/right neighbors, including brain pieces, for **40 points per cleared piece**.
+
+Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. When a bomb is used, its affected row, column, cross, 3x3 area, or diamond briefly flashes before disappearing automatically. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Tier 2 bombs are stronger and **can affect brain pieces** as listed above. After a bomb effect, placeholder score and coffin meter gain are applied, gravity runs for cleared cells, and the normal same-type/canopic chain resolution loop continues.
 
 
 ## Controls
@@ -239,18 +247,20 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. To test post-lock gravity, place a horizontal pair so one side lands on support and the other side is floating over an empty column. After the pair locks, the unsupported locked cell should visibly fall straight down one row at a time instead of teleporting, then the next piece should spawn.
 3. To test same-type and canopic clear gravity, create a same-type clear or canopic set clear with cells above the cleared area. After the clear highlight finishes, unsupported locked cells should settle through short one-row board updates before the next chain check.
-4. To test bomb clear gravity, enable debug mode with **D**, unlock Tier 1 bombs with **T**, use keys **1**-**4** to clear cells below existing locked cells, and confirm the remaining locked cells visibly fall before normal clear resolution continues.
+4. To test bomb clear gravity, enable debug mode with **D**, unlock Tier 1 or Tier 2 bombs with **T**, use keys **1**-**4** to clear cells below existing locked cells, and confirm the remaining locked cells visibly fall before normal clear resolution continues.
 5. During each test, confirm pieces do not duplicate or disappear incorrectly and player movement is ignored while gravity/clear resolution is running.
 
-## How to Test Tier 1 Bomb Stock in the Browser
+## How to Test Tier 1 and Tier 2 Bomb Stock in the Browser
 
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. Press **D** to enable debug mode and confirm the HUD shows `DEBUG ON`.
 3. Press **T** once to unlock Imsety. The HUD should add `1: Imsety / Vertical` under `BOMB STOCK`.
 4. Press **T** three more times to unlock Hapy, Duamutef, and Qebehsenuef. The HUD should fill the four bomb slots with Vertical, Horizontal, Cross, and Surround.
 5. Move the falling piece so its pivot is over a row or column that contains locked pieces, then press **1**, **2**, **3**, or **4** to use the corresponding slot. The used bomb should disappear from stock, the target area should briefly flash gold, score should gain 25 points for each non-brain cell directly cleared, gravity should run, and any resulting same-type or canopic chains should resolve normally.
-6. To verify brain safety, use a Tier 1 bomb on a row, column, cross, or 3x3 area containing a brain. The non-brain pieces in the affected area may clear, but brain pieces should remain.
-7. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
+6. To test Tier 2 bombs, spend or reset the Tier 1 stock so the four-slot cap has room, then press **T** until Anubis, Thoth, Bastet, and Sekhmet unlock. The HUD should display `Anubis / Brain Clear`, `Thoth / Convert`, `Bastet / Protect`, and `Sekhmet / Burst` as stock is added.
+7. Use Anubis on a row/column containing brains to confirm only those brains clear; use Thoth on a 3x3 area containing brains to confirm they convert to hearts; use Bastet on a 3x3 area with brains and normal pieces to confirm all locked pieces clear; use Sekhmet on the pivot and four orthogonal neighbors to confirm the diamond clears including brains.
+8. To verify brain safety, use a Tier 1 bomb on a row, column, cross, or 3x3 area containing a brain. The non-brain pieces in the affected area may clear, but brain pieces should remain.
+9. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
 
 ## How to Test Post-Lock Gravity in the Browser
 
@@ -298,8 +308,7 @@ Because pieces are random in this prototype, the simplest manual browser test is
 
 These features are intentionally left for later phases:
 
-- Tier 2, Tier 3, and Tier 4 bomb effects
-- Bomb effects that clear brain pieces
+- Tier 3 and Tier 4 bomb effects
 - Full heart same-type wild-card behavior
 - Adjacent brain clearing from canopic clears
 - Endless mode
@@ -313,7 +322,7 @@ Current prototype limitations:
 - Clear highlights are simple flashes, and board gravity uses simple stepwise one-row updates rather than polished falling sprite animations.
 - The level display is still a placeholder; coffin tier and god progression are shown separately.
 - Coffin meter values and god requirements are placeholder tuning values.
-- Only Tier 1 gods grant active bomb effects; higher-tier god bomb data is ignored safely until later phases.
+- Tier 1 and Tier 2 gods grant active bomb effects; Tier 3 and Tier 4 god bomb data is ignored safely until later phases.
 - Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
 - Debug mode accelerates coffin/god progression and bomb stock testing only; there is no debug board editor, so specific canopic and bomb layouts still require manual play with random pieces.
 

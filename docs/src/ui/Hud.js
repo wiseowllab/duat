@@ -332,8 +332,8 @@ export class Hud {
     this.showFeedback(messages.join('\n'), 1400);
   }
 
-  showBombUsed(bomb, clearedCount) {
-    this.showFeedback(`BOMB! ${bomb.name}\n${clearedCount} cleared`, 1200);
+  showBombUsed(bomb, affectedCount) {
+    this.showFeedback(`BOMB! ${bomb.name}\n${affectedCount} affected`, 1200);
   }
 
   showGodUnlocked(unlockEvents) {
