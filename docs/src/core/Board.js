@@ -23,6 +23,24 @@ export class Board {
     return row >= 0 && row < this.rows;
   }
 
+  getCell(col, row) {
+    if (!this.isInsideColumn(col) || !this.isVisibleRow(row)) {
+      return null;
+    }
+
+    return this.cells[row][col];
+  }
+
+  setCell(col, row, type) {
+    if (this.isInsideColumn(col) && this.isVisibleRow(row)) {
+      this.cells[row][col] = type;
+    }
+  }
+
+  clearCell(col, row) {
+    this.setCell(col, row, null);
+  }
+
   isEmpty(col, row) {
     if (!this.isInsideColumn(col) || row >= this.rows) {
       return false;

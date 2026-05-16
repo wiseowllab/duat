@@ -20,7 +20,8 @@ export class Hud {
     });
 
     this.scoreText = this.createLabel(0, 58, 'Score: 0');
-    this.levelText = this.createLabel(0, 86, 'Level: 1');
+    this.chainText = this.createLabel(0, 86, 'Chain: 0');
+    this.levelText = this.createLabel(0, 114, 'Level: 1');
     this.statusText = this.createLabel(0, 420, '← → Move\n↓ Soft drop\n↑ / Z Rotate\nSpace Hard drop', 16);
 
     this.scene.add.text(this.x, this.y + 136, 'NEXT', {
@@ -42,6 +43,10 @@ export class Hud {
 
   updateScore(score) {
     this.scoreText.setText(`Score: ${score}`);
+  }
+
+  updateChain(chainCount) {
+    this.chainText.setText(`Chain: ${chainCount}`);
   }
 
   updateLevel(level) {
