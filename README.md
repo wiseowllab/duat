@@ -44,7 +44,7 @@ Implemented so far:
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
-- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
+- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, visible placeholder coffin icon, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
 - PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
   - liver
   - lung
@@ -133,8 +133,10 @@ The coffin meter is a placeholder progression bar that increases only when piece
 - Canopic set clear meter gain is based on **40%** of that clear's score contribution.
 - Chain multipliers and same-cycle bonuses are included before meter conversion, so stronger chains fill the coffin faster.
 - When the current coffin meter reaches its requirement, the current god unlocks, excess meter carries into the next god, and play continues immediately.
-- The HUD shows the current tier/coffin size, current god, meter value, and unlocked count.
-- Unlocking a god briefly shows `GOD UNLOCKED!`; after the final god, the prototype shows `DUAT COMPLETE` as placeholder completion feedback.
+- The HUD shows the current tier/coffin size, current god, meter value, unlocked count, and a simple Phaser-drawn coffin placeholder beside the meter.
+- The placeholder coffin uses a dark sandstone body, gold outline, simple lid shape, and a small tier label. It grows and gains extra bands, jewels, and maximum-tier ornaments as the active tier advances from Small Coffin through Maximum Coffin.
+- Unlocking a god briefly shows `GOD UNLOCKED!` and flashes/glows the coffin placeholder; after the final god, the prototype shows `DUAT COMPLETE` as placeholder completion feedback.
+- Final coffin images are intentionally not included yet; the Phaser primitive placeholder is expected to be replaced by final coffin art assets in a later phase.
 
 Current placeholder god progression:
 
