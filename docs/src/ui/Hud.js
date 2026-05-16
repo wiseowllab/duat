@@ -1,5 +1,5 @@
 import { CELL_SIZE } from '../data/constants.js';
-import { PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
+import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 
 export class Hud {
   constructor(scene, x, y) {
@@ -81,8 +81,7 @@ export class Hud {
 
     types.forEach((type, index) => {
       const y = startY + index * (CELL_SIZE + 8);
-      const block = this.scene.add.rectangle(startX, y, CELL_SIZE, CELL_SIZE, PIECE_COLORS[type])
-        .setStrokeStyle(2, 0x2a1b10);
+      const block = this.drawNextBlock(startX, y, type);
       const label = this.scene.add.text(startX + 34, y - 10, PIECE_LABELS[type], {
         fontFamily: 'Arial, sans-serif',
         fontSize: '14px',
@@ -91,6 +90,24 @@ export class Hud {
 
       this.nextBlocks.push(block, label);
     });
+  }
+
+  drawNextBlock(x, y, type) {
+    const asset = getPieceAsset(type);
+
+    if (!asset || !this.scene.textures.exists(asset.key)) {
+      return this.scene.add.rectangle(x, y, CELL_SIZE, CELL_SIZE, PIECE_COLORS[type])
+        .setStrokeStyle(2, 0x2a1b10);
+    }
+
+    const container = this.scene.add.container(x, y);
+    const backplate = this.scene.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, 0x1f160d, 0.75)
+      .setStrokeStyle(2, 0xd4af37);
+    const image = this.scene.add.image(0, 0, asset.key)
+      .setDisplaySize(CELL_SIZE - 6, CELL_SIZE - 6);
+
+    container.add([backplate, image]);
+    return container;
   }
 
   clearNext() {

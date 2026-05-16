@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DUAT stomach piece placeholder">
+  <defs>
+    <linearGradient id="stomachFill" x1="72" y1="46" x2="188" y2="216" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffb44f"/>
+      <stop offset="1" stop-color="#b85b16"/>
+    </linearGradient>
+  </defs>
+  <path d="M121 47c39 0 62 19 62 50 0 19-11 33-30 42-24 12-29 34-11 52 9 9 7 23-5 28-36 15-83-11-83-55 0-27 17-43 40-56 18-10 22-21 16-38-4-12 0-23 11-23Z" fill="url(#stomachFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M144 56c11-17 29-21 48-14" fill="none" stroke="#d4af37" stroke-width="12" stroke-linecap="round"/>
+  <path d="M89 147c29-3 55 7 76 30" fill="none" stroke="#6f330f" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+  <path d="M81 122l23 12-23 12-23-12Z" fill="#d4af37" stroke="#3b250d" stroke-width="5"/>
+  <circle cx="133" cy="87" r="11" fill="#fff4c2" opacity="0.45"/>
+</svg>

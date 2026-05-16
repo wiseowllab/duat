@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DUAT heart piece placeholder">
+  <defs>
+    <linearGradient id="heartFill" x1="70" y1="51" x2="189" y2="207" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6f8f"/>
+      <stop offset="1" stop-color="#9e1e3c"/>
+    </linearGradient>
+  </defs>
+  <path d="M128 209C73 164 48 133 48 98c0-29 20-51 47-51 16 0 27 7 33 19 6-12 17-19 33-19 27 0 47 22 47 51 0 35-25 66-80 111Z" fill="url(#heartFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M128 67v120" stroke="#d4af37" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+  <path d="M93 113c22 7 47 7 70 0" fill="none" stroke="#5c1126" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+  <path d="M92 75c11-9 25-7 35 6" fill="none" stroke="#fff4c2" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <path d="M64 50h24M76 38v24" stroke="#d4af37" stroke-width="7" stroke-linecap="round"/>
+</svg>
