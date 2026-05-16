@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DUAT — Phase 1-A Prototype</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Arial, sans-serif;
+        background: #0b1020;
+        color: #eadfca;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at top, rgba(212, 175, 55, 0.18), transparent 32rem),
+          linear-gradient(135deg, #050814 0%, #111827 55%, #2a1b10 100%);
+      }
+
+      main {
+        text-align: center;
+      }
+
+      h1 {
+        margin: 0 0 0.25rem;
+        color: #d4af37;
+        font-family: Georgia, serif;
+        letter-spacing: 0.12em;
+      }
+
+      p {
+        margin: 0 0 1rem;
+        color: #cdbf9d;
+      }
+
+      #game canvas {
+        border: 2px solid #d4af37;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>DUAT</h1>
+      <p>Phase 1-A falling puzzle prototype</p>
+      <div id="game"></div>
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
