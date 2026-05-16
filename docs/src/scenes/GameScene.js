@@ -29,6 +29,10 @@ const BOMB_AREA_FLASH_STYLES = {
   knowledge_convert: { fill: 0x62f4ff, stroke: 0xf4d77a, alpha: 0.3 },
   protective_clear: { fill: 0xf4d77a, stroke: 0xffe6a0, alpha: 0.27 },
   war_burst: { fill: 0xc0392b, stroke: 0xf4d77a, alpha: 0.3 },
+  triple_column_clear: { fill: 0xf4d77a, stroke: 0xfff0a8, alpha: 0.31 },
+  piece_transform: { fill: 0x62f4ff, stroke: 0xfff0a8, alpha: 0.32 },
+  half_board_reset: { fill: 0xb8860b, stroke: 0xf4d77a, alpha: 0.28 },
+  chaos_clear: { fill: 0x7b2d8b, stroke: 0xf4d77a, alpha: 0.34 },
 };
 const SAME_TYPE_CLEAR_FLASH_MS = 320;
 const CANOPIC_CLEAR_FLASH_MS = 420;
