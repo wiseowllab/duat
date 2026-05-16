@@ -14,6 +14,8 @@ import { createRandomPairTypes, PIECE_COLORS } from '../data/pieces.js';
 import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
+import { MatchResolver } from '../core/MatchResolver.js';
+import { ScoreSystem } from '../core/ScoreSystem.js';
 import { Hud } from '../ui/Hud.js';
 
 export class GameScene extends Phaser.Scene {
@@ -24,7 +26,10 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.board = new Board();
     this.gravity = new GravitySystem(this.board);
+    this.matchResolver = new MatchResolver(this.board);
+    this.scoreSystem = new ScoreSystem();
     this.score = INITIAL_SCORE;
+    this.chainCount = 0;
     this.level = INITIAL_LEVEL;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
@@ -37,6 +42,7 @@ export class GameScene extends Phaser.Scene {
     this.createInput();
     this.hud = new Hud(this, 370, 54);
     this.hud.updateScore(this.score);
+    this.hud.updateChain(this.chainCount);
     this.hud.updateLevel(this.level);
     this.hud.drawNext(this.nextPairTypes);
 
@@ -180,7 +186,33 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.resolveBoardAfterLock();
     this.spawnPiece();
+  }
+
+  resolveBoardAfterLock() {
+    let nextChain = 1;
+    let resolvedChains = 0;
+
+    while (true) {
+      const matches = this.matchResolver.findMatches();
+      if (matches.length === 0) {
+        break;
+      }
+
+      const earnedScore = this.scoreSystem.calculateClearScore(matches, nextChain);
+      this.score += earnedScore;
+      resolvedChains = nextChain;
+
+      this.matchResolver.clearMatches(matches);
+      this.gravity.applyBoardGravity();
+      nextChain += 1;
+    }
+
+    this.chainCount = resolvedChains;
+    this.hud.updateScore(this.score);
+    this.hud.updateChain(this.chainCount);
+    this.renderBoard();
   }
 
   endGame() {
