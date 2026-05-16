@@ -27,6 +27,22 @@ export class ScoreSystem {
     return baseScore * chainNumber;
   }
 
+  calculateCycleMeterPoints(clearResult, chainNumber) {
+    const hasSameType = clearResult.clearTypes.has('sameType');
+    const hasCanopic = clearResult.clearTypes.has('canopic');
+    const sameCycleMultiplier = hasSameType && hasCanopic ? SAME_CYCLE_BONUS_MULTIPLIER : 1;
+    const sameTypeScore = clearResult.sameTypeGroups.reduce(
+      (total, group) => total + this.calculateSameTypeGroupScore(group.length),
+      0,
+    ) * sameCycleMultiplier * chainNumber;
+    const canopicScore = clearResult.canopicSets.reduce(
+      (total, group) => total + this.calculateCanopicSetScore(group.length),
+      0,
+    ) * sameCycleMultiplier * chainNumber;
+
+    return Math.floor(sameTypeScore * 0.25 + canopicScore * 0.4);
+  }
+
   calculateSameTypeGroupScore(pieceCount) {
     if (pieceCount < 4) {
       return 0;
