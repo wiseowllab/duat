@@ -36,11 +36,13 @@ Implemented so far:
 - Piece landing and locking into the board
 - Game over detection
 - Same-type 4-connected clearing using orthogonal adjacency for liver, lung, stomach, intestine, and heart
+- Matched same-type cells briefly flash with a pale gold highlight before they clear
 - Brain obstacle pieces that do not clear through same-type matching
 - Gravity after clears, with pieces falling vertically within their columns
-- Chain resolution after gravity creates additional matches
+- Chain resolution after gravity creates additional matches, with each chain step highlighted one by one before clearing
 - Basic score calculation
 - Canopic set clear detection for connected liver, lung, stomach, and intestine groups
+- Canopic set cells briefly flash with a distinct sacred cyan/gold highlight before they clear
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
@@ -117,7 +119,7 @@ The current prototype uses **4 tier-based coffin images**. It does **not** use 1
 
 ### Same-Type Clear
 
-A same-type group clears when **4 or more clearable pieces of the same type** are orthogonally connected. This is the Phase 1-B clear rule and still works alongside Phase 2 canopic clears. Liver, lung, stomach, intestine, and heart are currently clearable by same-type matching; brain is not.
+A same-type group clears when **4 or more clearable pieces of the same type** are orthogonally connected. This is the Phase 1-B clear rule and still works alongside Phase 2 canopic clears. Liver, lung, stomach, intestine, and heart are currently clearable by same-type matching; brain is not. When a same-type match is detected, those cells briefly flash with a semi-transparent pale gold highlight before disappearing.
 
 ### Canopic Set Clear
 
@@ -128,7 +130,7 @@ A canopic set clears when one orthogonally connected component contains all four
 - stomach
 - intestine
 
-The canopic group can be any shape and can contain more than four pieces. Diagonal-only contact does not count.
+The canopic group can be any shape and can contain more than four pieces. Diagonal-only contact does not count. When a canopic set is detected, those cells briefly flash with a stronger sacred cyan/gold highlight before disappearing, making it visually distinct from ordinary same-type clears.
 
 ### Heart Wild Card Note
 
@@ -152,7 +154,7 @@ Current placeholder scoring can be tuned later:
   - Clear caused by gravity after the first clear: chain 2
   - Next gravity-created clear: chain 3
 
-Cells that qualify for both same-type and canopic clearing in the same cycle are only removed once.
+Cells that qualify for both same-type and canopic clearing in the same cycle are only removed once. If gravity creates a chain, each chain step shows its own clear highlight before those cells disappear and the next gravity step resolves.
 
 ## Coffin Meter and God Progression
 
@@ -222,6 +224,14 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 6. Continue pressing **T** through the Tier 3 gods; Ra should switch to Tier 4 / Maximum Coffin with `coffin_maximum.png`.
 7. Press **R** to reset coffin/god progression back to Imsety and verify the small coffin returns without resetting the board.
 
+
+## How to Test Clear Highlighting in the Browser
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. To test same-type highlighting, build a 4+ orthogonally connected group of the same non-brain type, then lock the final pair that completes the group. Before the pieces vanish, the matched cells should flash pale gold for a brief moment; then they clear, gravity runs, and normal score/chain/coffin updates continue.
+3. To test canopic set highlighting, build an orthogonally connected group containing liver, lung, stomach, and intestine, or three of those organs plus one heart. When the set resolves, the canopic cells should flash with the stronger cyan/gold highlight before clearing.
+4. To test overlapping same-cycle clears, create a board state where a same-type group and a canopic set both resolve after the same lock. All affected cells should highlight at once without duplicate overlays, then clear once.
+5. To test chain highlighting, arrange pieces so the first clear causes gravity to create a second clear. The first clear should highlight and disappear, gravity should settle the board, and then the next chain step should show its own highlight before clearing.
 
 ## How to Test Tier 1 Bomb Stock in the Browser
 
