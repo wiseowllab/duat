@@ -24,6 +24,7 @@ import { Hud } from '../ui/Hud.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
+const BOMB_PREVIEW_ALPHA_SCALE = 0.42;
 const BOMB_AREA_FLASH_STYLES = {
   brain_clear: { fill: 0x4b5dff, stroke: 0x9b62c9, alpha: 0.28 },
   knowledge_convert: { fill: 0x62f4ff, stroke: 0xf4d77a, alpha: 0.3 },
@@ -74,6 +75,8 @@ export class GameScene extends Phaser.Scene {
     this.feedbackTimer = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
+    this.bombPreviewSprites = [];
+    this.selectedBombSlot = null;
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
     this.isResolvingClears = false;
@@ -86,7 +89,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
     this.hud.updateCoffin(this.coffinMeter.getState());
-    this.hud.updateBombStock(this.bombSystem.getStock());
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
 
     this.spawnPiece();
@@ -185,6 +188,8 @@ export class GameScene extends Phaser.Scene {
     this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    this.keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.bombKeys = [
       this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
       this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
@@ -196,13 +201,15 @@ export class GameScene extends Phaser.Scene {
     this.cursors.right.on('down', () => this.tryMove(1, 0));
     this.cursors.up.on('down', () => this.tryRotate());
     this.keyZ.on('down', () => this.tryRotate());
-    this.cursors.space.on('down', () => this.hardDrop());
+    this.cursors.space.on('down', () => this.handleSpaceKey());
     this.keyD.on('down', () => this.toggleDebugMode());
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
     this.keyT.on('down', () => this.advanceDebugGod());
     this.keyR.on('down', () => this.resetDebugProgression());
+    this.keyEnter.on('down', () => this.confirmSelectedBomb());
+    this.keyEsc.on('down', () => this.cancelBombSelection());
     this.bombKeys.forEach((key, index) => {
-      key.on('down', () => this.useBombSlot(index));
+      key.on('down', () => this.selectBombSlot(index));
     });
   }
 
@@ -237,6 +244,7 @@ export class GameScene extends Phaser.Scene {
     this.activePiece = movedPiece;
     this.lockTimer = 0;
     this.renderBoard();
+    this.updateBombPreview();
     return true;
   }
 
@@ -250,6 +258,7 @@ export class GameScene extends Phaser.Scene {
       this.activePiece = rotatedPiece;
       this.lockTimer = 0;
       this.renderBoard();
+      this.updateBombPreview();
     }
   }
 
@@ -257,6 +266,15 @@ export class GameScene extends Phaser.Scene {
     if (!this.tryMove(0, 1)) {
       this.lockTimer += delta;
     }
+  }
+
+  handleSpaceKey() {
+    if (this.selectedBombSlot !== null) {
+      this.confirmSelectedBomb();
+      return;
+    }
+
+    this.hardDrop();
   }
 
   hardDrop() {
@@ -275,6 +293,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.cancelBombSelection();
     const lockedSuccessfully = this.board.lockPiece(this.activePiece);
     this.activePiece = null;
 
@@ -350,15 +369,77 @@ export class GameScene extends Phaser.Scene {
     this.renderBoard();
   }
 
+  selectBombSlot(slotIndex) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+      return;
+    }
+
+    if (!this.bombSystem.hasBombAt(slotIndex)) {
+      this.cancelBombSelection();
+      return;
+    }
+
+    this.selectedBombSlot = slotIndex;
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.updateBombPreview();
+  }
+
+  cancelBombSelection() {
+    if (this.selectedBombSlot === null && this.bombPreviewSprites.length === 0) {
+      return;
+    }
+
+    this.selectedBombSlot = null;
+    this.clearBombPreview();
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+  }
+
+  confirmSelectedBomb() {
+    if (this.selectedBombSlot === null) {
+      return;
+    }
+
+    if (!this.validateBombSelection()) {
+      return;
+    }
+
+    const slotIndex = this.selectedBombSlot;
+    this.selectedBombSlot = null;
+    this.clearBombPreview();
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.useBombSlot(slotIndex);
+  }
+
+  validateBombSelection() {
+    if (this.selectedBombSlot === null) {
+      return false;
+    }
+
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece || !this.bombSystem.hasBombAt(this.selectedBombSlot)) {
+      this.cancelBombSelection();
+      return false;
+    }
+
+    return true;
+  }
+
+  getActiveBombTarget() {
+    if (!this.activePiece) {
+      return null;
+    }
+
+    return {
+      col: this.activePiece.col,
+      row: Math.max(0, this.activePiece.row),
+    };
+  }
+
   async useBombSlot(slotIndex) {
     if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
-    const target = {
-      col: this.activePiece.col,
-      row: Math.max(0, this.activePiece.row),
-    };
+    const target = this.getActiveBombTarget();
     const result = this.bombSystem.useBomb(slotIndex, target, this.board);
 
     if (!result) {
@@ -387,7 +468,7 @@ export class GameScene extends Phaser.Scene {
         this.renderBoard();
       }
 
-      this.hud.updateBombStock(this.bombSystem.getStock());
+      this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
       this.hud.showBombUsed(result.bomb, changedCount);
       this.showBombFeedback(result.bomb, changedCount);
       this.showUnlockEvents(unlockEvents);
@@ -583,6 +664,45 @@ export class GameScene extends Phaser.Scene {
     this.clearHighlightSprites = [];
   }
 
+  updateBombPreview() {
+    this.clearBombPreview();
+
+    if (!this.validateBombSelection()) {
+      return;
+    }
+
+    const bomb = this.bombSystem.getBombAt(this.selectedBombSlot);
+    const target = this.getActiveBombTarget();
+    if (!bomb || !target) {
+      this.cancelBombSelection();
+      return;
+    }
+
+    const style = this.getBombPreviewStyle(bomb.type);
+    this.bombPreviewSprites = this.bombSystem.getPreviewCells(bomb.type, target, this.board).map((cell) => {
+      const { x, y } = this.getCellCenter(cell.col, cell.row);
+      return this.add.rectangle(x, y, CELL_SIZE - 5, CELL_SIZE - 5, style.fill, style.alpha)
+        .setStrokeStyle(style.strokeWidth, style.stroke, style.strokeAlpha)
+        .setDepth(6);
+    });
+  }
+
+  getBombPreviewStyle(bombType) {
+    const flashStyle = this.getBombAreaFlashStyle(bombType);
+    return {
+      fill: flashStyle.fill,
+      stroke: flashStyle.stroke,
+      alpha: Math.min(flashStyle.alpha * BOMB_PREVIEW_ALPHA_SCALE, 0.16),
+      strokeAlpha: 0.42,
+      strokeWidth: 1,
+    };
+  }
+
+  clearBombPreview() {
+    this.bombPreviewSprites.forEach((sprite) => sprite.destroy());
+    this.bombPreviewSprites = [];
+  }
+
   showBombAreaFlash(bombType, target) {
     this.clearBombAreaFlash();
 
@@ -621,18 +741,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   getBombAreaFlashCells(bombType, target) {
-    const clampedTarget = this.bombSystem.clampTarget(target, this.board);
-    const cellMap = new Map();
-
-    this.bombSystem.getPatternCells(bombType, clampedTarget, this.board).forEach((cell) => {
-      if (!this.board.isInsideColumn(cell.col) || !this.board.isVisibleRow(cell.row)) {
-        return;
-      }
-
-      cellMap.set(`${cell.col},${cell.row}`, { col: cell.col, row: cell.row });
-    });
-
-    return [...cellMap.values()];
+    return this.bombSystem.getPreviewCells(bombType, target, this.board);
   }
 
   clearBombAreaFlash(stopTween = true) {
@@ -689,9 +798,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.coffinMeter.reset();
+    this.cancelBombSelection();
     this.bombSystem.reset();
     this.hud.updateCoffin(this.coffinMeter.getState());
-    this.hud.updateBombStock(this.bombSystem.getStock());
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.boardFeedbackText.setText('DEBUG PROGRESSION RESET');
 
     if (this.feedbackTimer) {
@@ -717,7 +827,8 @@ export class GameScene extends Phaser.Scene {
     unlockEvents.forEach((unlockEvent) => {
       this.bombSystem.addBombForGod(unlockEvent.god);
     });
-    this.hud.updateBombStock(this.bombSystem.getStock());
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.validateBombSelection();
   }
 
   findClearResult() {
@@ -762,6 +873,7 @@ export class GameScene extends Phaser.Scene {
   endGame() {
     this.isGameOver = true;
     this.activePiece = null;
+    this.cancelBombSelection();
     this.hud.showGameOver();
     this.add.text(BOARD_ORIGIN_X + 22, BOARD_ORIGIN_Y + 215, 'GAME OVER', {
       fontFamily: 'Georgia, serif',

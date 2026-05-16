@@ -64,6 +64,8 @@ export class Hud {
       fontStyle: 'bold',
     });
     this.bombStockText = this.createLabel(20, 450, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 12);
+    this.selectedBombText = this.createLabel(20, 500, 'Selected: None', 11);
+    this.selectedBombText.setColor('#9fdfe8');
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinBarBack = this.scene.add.rectangle(this.x + 20, this.y + 410, 120, 14, 0x0b0906, 0.92)
       .setOrigin(0, 0.5)
@@ -71,10 +73,10 @@ export class Hud {
     this.coffinBarFill = this.scene.add.rectangle(this.x + 21, this.y + 410, 0, 10, 0xd4af37, 0.82)
       .setOrigin(0, 0.5);
 
-    this.feedbackText = this.createLabel(20, 510, '', 16);
+    this.feedbackText = this.createLabel(20, 522, '', 15);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
-    this.statusText = this.createLabel(20, 540, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\n1-4 Bombs', 13);
+    this.statusText = this.createLabel(20, 552, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\n1-4 Select Bomb', 12);
   }
 
   createPanels() {
@@ -118,17 +120,28 @@ export class Hud {
   }
 
 
-  updateBombStock(stock) {
+  updateBombStock(stock, selectedSlot = null) {
+    const selectedBomb = Number.isInteger(selectedSlot) ? stock[selectedSlot] : null;
     const lines = [0, 1, 2, 3].map((index) => {
       const bomb = stock[index];
+      const marker = index === selectedSlot ? '▶ ' : '  ';
       if (!bomb) {
-        return `${index + 1}: Empty`;
+        return `${marker}${index + 1}: Empty`;
       }
 
-      return `${index + 1}: ${bomb.godName} / ${bomb.name}`;
+      return `${marker}${index + 1}: ${bomb.godName} / ${bomb.name}`;
     });
 
     this.bombStockText.setText(lines.join('\n'));
+
+    if (selectedBomb) {
+      this.selectedBombText.setText(`Selected: ${selectedSlot + 1} ${selectedBomb.godName} / ${selectedBomb.name}\nEnter/Space: Use  Esc: Cancel`);
+      this.selectedBombText.setColor('#9ff8ff');
+      return;
+    }
+
+    this.selectedBombText.setText('Selected: None\n1-4: Preview bomb');
+    this.selectedBombText.setColor('#9fdfe8');
   }
 
   updateCoffin(state) {

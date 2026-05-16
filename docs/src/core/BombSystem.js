@@ -220,6 +220,25 @@ export class BombSystem {
     return shuffledCells;
   }
 
+  getPreviewCells(type, target, board) {
+    if (!this.isSupportedBombType(type) || !target || !board) {
+      return [];
+    }
+
+    const clampedTarget = this.clampTarget(target, board);
+    const cellMap = new Map();
+
+    this.getPatternCells(type, clampedTarget, board).forEach((cell) => {
+      if (!board.isInsideColumn(cell.col) || !board.isVisibleRow(cell.row)) {
+        return;
+      }
+
+      cellMap.set(`${cell.col},${cell.row}`, { col: cell.col, row: cell.row });
+    });
+
+    return [...cellMap.values()];
+  }
+
   getPatternCells(type, target, board) {
     if (type === 'vertical_clear') {
       return Array.from({ length: board.rows }, (_, row) => ({ col: target.col, row }));
@@ -395,6 +414,14 @@ export class BombSystem {
       col: Math.min(Math.max(target.col, 0), board.columns - 1),
       row: Math.min(Math.max(target.row, 0), board.rows - 1),
     };
+  }
+
+  getBombAt(slotIndex) {
+    if (!this.hasBombAt(slotIndex)) {
+      return null;
+    }
+
+    return { ...this.stock[slotIndex] };
   }
 
   hasBombAt(slotIndex) {
