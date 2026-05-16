@@ -22,6 +22,9 @@ import { CoffinMeter } from '../core/CoffinMeter.js';
 import { BombSystem } from '../core/BombSystem.js';
 import { Hud } from '../ui/Hud.js';
 
+const BOMB_AREA_FLASH_MS = 400;
+const BOMB_AREA_FLASH_COLOR = 0xd4af37;
+
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -51,6 +54,8 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.isDebugMode = false;
     this.feedbackTimer = null;
+    this.bombAreaFlashSprites = [];
+    this.bombAreaFlashTween = null;
 
     this.createBackground();
     this.createInput();
@@ -323,6 +328,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.showBombAreaFlash(result.bomb.type, target);
+
     const clearedCells = this.matchResolver.clearCells(result.affectedCells);
     this.score += clearedCells.length * 25;
     this.gravity.applyBoardGravity();
@@ -332,6 +339,58 @@ export class GameScene extends Phaser.Scene {
     this.resolveBoardClears();
   }
 
+  showBombAreaFlash(bombType, target) {
+    this.clearBombAreaFlash();
+
+    const cells = this.getBombAreaFlashCells(bombType, target);
+    this.bombAreaFlashSprites = cells.map((cell) => {
+      const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
+      const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
+      return this.add.rectangle(x, y, CELL_SIZE - 3, CELL_SIZE - 3, BOMB_AREA_FLASH_COLOR, 0.26)
+        .setStrokeStyle(2, BOMB_AREA_FLASH_COLOR, 0.82)
+        .setDepth(8);
+    });
+
+    if (this.bombAreaFlashSprites.length === 0) {
+      return;
+    }
+
+    this.bombAreaFlashTween = this.tweens.add({
+      targets: this.bombAreaFlashSprites,
+      alpha: 0.05,
+      duration: BOMB_AREA_FLASH_MS,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        this.bombAreaFlashTween = null;
+        this.clearBombAreaFlash(false);
+      },
+    });
+  }
+
+  getBombAreaFlashCells(bombType, target) {
+    const clampedTarget = this.bombSystem.clampTarget(target, this.board);
+    const cellMap = new Map();
+
+    this.bombSystem.getPatternCells(bombType, clampedTarget, this.board).forEach((cell) => {
+      if (!this.board.isInsideColumn(cell.col) || !this.board.isVisibleRow(cell.row)) {
+        return;
+      }
+
+      cellMap.set(`${cell.col},${cell.row}`, { col: cell.col, row: cell.row });
+    });
+
+    return [...cellMap.values()];
+  }
+
+  clearBombAreaFlash(stopTween = true) {
+    if (stopTween && this.bombAreaFlashTween) {
+      this.bombAreaFlashTween.remove();
+      this.bombAreaFlashTween = null;
+    }
+
+    this.bombAreaFlashSprites.forEach((sprite) => sprite.destroy());
+    this.bombAreaFlashSprites = [];
+  }
 
   toggleDebugMode() {
     this.isDebugMode = !this.isDebugMode;

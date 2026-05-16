@@ -190,7 +190,7 @@ Current supported bombs:
 - **Duamutef**: `cross_clear` / Cross — clears the target row and column.
 - **Qebehsenuef**: `surround_clear` / Surround — clears a 3x3 area centered on the target cell.
 
-Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Direct bomb clears currently award a simple placeholder **25 points per non-brain cell cleared**, then board gravity and the normal same-type/canopic chain resolution loop run as usual.
+Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. When a bomb is used, its affected row, column, cross, or 3x3 area briefly flashes with semi-transparent gold cell highlights before disappearing automatically. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Direct bomb clears currently award a simple placeholder **25 points per non-brain cell cleared**, then board gravity and the normal same-type/canopic chain resolution loop run as usual.
 
 
 ## Controls
@@ -229,7 +229,7 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 2. Press **D** to enable debug mode and confirm the HUD shows `DEBUG ON`.
 3. Press **T** once to unlock Imsety. The HUD should add `1: Imsety / Vertical` under `BOMB STOCK`.
 4. Press **T** three more times to unlock Hapy, Duamutef, and Qebehsenuef. The HUD should fill the four bomb slots with Vertical, Horizontal, Cross, and Surround.
-5. Move the falling piece so its pivot is over a row or column that contains locked pieces, then press **1**, **2**, **3**, or **4** to use the corresponding slot. The used bomb should disappear from stock, score should gain 25 points for each non-brain cell directly cleared, gravity should run, and any resulting same-type or canopic chains should resolve normally.
+5. Move the falling piece so its pivot is over a row or column that contains locked pieces, then press **1**, **2**, **3**, or **4** to use the corresponding slot. The used bomb should disappear from stock, the target area should briefly flash gold, score should gain 25 points for each non-brain cell directly cleared, gravity should run, and any resulting same-type or canopic chains should resolve normally.
 6. To verify brain safety, use a Tier 1 bomb on a row, column, cross, or 3x3 area containing a brain. The non-brain pieces in the affected area may clear, but brain pieces should remain.
 7. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
 
