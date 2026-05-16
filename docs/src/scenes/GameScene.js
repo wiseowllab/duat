@@ -30,7 +30,7 @@ const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 const BOARD_GRAVITY_FALL_MS = 190;
-const BOARD_GRAVITY_FAILSAFE_MS = BOARD_GRAVITY_FALL_MS + 300;
+const BOARD_GRAVITY_FAILSAFE_MS = 250;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -375,20 +375,15 @@ export class GameScene extends Phaser.Scene {
 
   async applyBoardGravityWithAnimation() {
     const beforeCells = this.captureBoardCells();
-    const movedPieces = this.gravity.applyBoardGravity();
+    this.gravity.applyBoardGravity();
 
-    if (movedPieces === 0) {
+    const movedCells = this.getBoardGravityMoves(beforeCells, this.captureBoardCells());
+    if (movedCells.length === 0) {
       this.renderBoard();
       return;
     }
 
-    const gravityMoves = this.getBoardGravityMoves(beforeCells, this.captureBoardCells());
-    if (gravityMoves.length === 0) {
-      this.renderBoard();
-      return;
-    }
-
-    await this.animateBoardGravityMoves(gravityMoves);
+    await this.animateBoardGravityMoves(movedCells);
   }
 
   captureBoardCells() {
