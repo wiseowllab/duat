@@ -38,7 +38,7 @@ Implemented so far:
 - Same-type 4-connected clearing using orthogonal adjacency for liver, lung, stomach, intestine, and heart
 - Matched same-type cells briefly flash with a pale gold highlight before they clear
 - Brain obstacle pieces that do not clear through same-type matching
-- Gravity after clears, with pieces falling vertically within their columns
+- Gravity after locks and clears, with floating locked cells visibly falling vertically within their columns during resolution
 - Chain resolution after gravity creates additional matches, with each chain step highlighted one by one before clearing
 - Basic score calculation
 - Canopic set clear detection for connected liver, lung, stomach, and intestine groups
@@ -232,6 +232,15 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 3. To test canopic set highlighting, build an orthogonally connected group containing liver, lung, stomach, and intestine, or three of those organs plus one heart. When the set resolves, the canopic cells should flash with the stronger cyan/gold highlight before clearing.
 4. To test overlapping same-cycle clears, create a board state where a same-type group and a canopic set both resolve after the same lock. All affected cells should highlight at once without duplicate overlays, then clear once.
 5. To test chain highlighting, arrange pieces so the first clear causes gravity to create a second clear. The first clear should highlight and disappear, gravity should settle the board, and then the next chain step should show its own highlight before clearing.
+
+
+## How to Test Board Gravity Animation in the Browser
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. To test post-lock gravity, place a horizontal pair so one side lands on support and the other side is floating over an empty column. After the pair locks, the unsupported locked cell should visibly fall straight down instead of teleporting.
+3. To test same-type and canopic clear gravity, create a same-type clear or canopic set clear with cells above the cleared area. After the clear highlight finishes, all unsupported locked cells should animate downward together before the next chain check.
+4. To test bomb clear gravity, enable debug mode with **D**, unlock Tier 1 bombs with **T**, use keys **1**-**4** to clear cells below existing locked cells, and confirm the remaining locked cells visibly fall before normal clear resolution continues.
+5. During each test, confirm pieces do not duplicate or disappear incorrectly and player movement is ignored while gravity/clear resolution is running.
 
 ## How to Test Tier 1 Bomb Stock in the Browser
 
