@@ -493,3 +493,65 @@ test('tier 4 bombs are added to stock when tier 4 gods unlock', () => {
     { type: 'maximum_coffin_burst', name: 'Max Burst', godId: 'amun_ra', godName: 'Amun-Ra' },
   ]);
 });
+
+test('peeking at a bomb for selection does not remove it from stock', () => {
+  const bombs = new BombSystem();
+
+  bombs.addBombForGod(IMSETY);
+  bombs.addBombForGod(HAPY);
+
+  assert.deepEqual(bombs.getBombAt(1), {
+    type: 'horizontal_clear',
+    name: 'Horizontal',
+    godId: 'hapy',
+    godName: 'Hapy',
+  });
+  assert.deepEqual(bombs.getStock().map((bomb) => bomb.type), ['vertical_clear', 'horizontal_clear']);
+});
+
+test('confirming a selected bomb removes it from stock and returns the effect cells', () => {
+  const board = new Board(6, 12);
+  const bombs = new BombSystem();
+
+  board.setCell(0, 4, 'liver');
+  board.setCell(2, 4, 'brain');
+  board.setCell(5, 4, 'heart');
+  bombs.addBombForGod(HAPY);
+
+  const selectedBomb = bombs.getBombAt(0);
+  const result = bombs.useBomb(0, { col: 3, row: 4 }, board);
+
+  assert.equal(selectedBomb.type, 'horizontal_clear');
+  assert.deepEqual(sortCells(result.affectedCells), [
+    { col: 0, row: 4, type: 'liver' },
+    { col: 5, row: 4, type: 'heart' },
+  ]);
+  assert.deepEqual(bombs.getStock(), []);
+});
+
+test('cancelling a selected bomb keeps it in stock', () => {
+  const bombs = new BombSystem();
+
+  bombs.addBombForGod(IMSETY);
+  const selectedBomb = bombs.getBombAt(0);
+  const cancelledSelection = null;
+
+  assert.equal(cancelledSelection, null);
+  assert.equal(selectedBomb.type, 'vertical_clear');
+  assert.deepEqual(bombs.getStock().map((bomb) => bomb.type), ['vertical_clear']);
+});
+
+test('bomb preview cells clamp a target above the board and include the full pattern area', () => {
+  const board = new Board(6, 12);
+  const bombs = new BombSystem();
+
+  assert.deepEqual(bombs.getPreviewCells('surround_clear', { col: 2, row: -3 }, board), [
+    { col: 1, row: 0 },
+    { col: 2, row: 0 },
+    { col: 3, row: 0 },
+    { col: 1, row: 1 },
+    { col: 2, row: 1 },
+    { col: 3, row: 1 },
+  ]);
+});
+
