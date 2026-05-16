@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 3**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder coffin meter, god progression, and PNG image sprites for each piece type with colored rectangle fallbacks.
+The current build is **Phase 3**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder-tuned coffin meter, god progression, PNG image sprites for each piece type, and tier-based coffin PNGs with fallback rendering.
 
 ## How to Run Locally
 
@@ -44,7 +44,7 @@ Implemented so far:
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
-- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, visible placeholder coffin icon, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
+- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, visible tier-based coffin PNG icon, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
 - PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
   - liver
   - lung
@@ -52,7 +52,7 @@ Implemented so far:
   - intestine
   - heart
   - brain
-- Placeholder coffin meter progression after clears
+- Coffin meter progression after clears
 - Tiered god unlock progression from Imsety through Amun-Ra
 - `docs/index.html` entry point for GitHub Pages from the `docs/` folder
 
@@ -83,6 +83,31 @@ Recommended replacement image guidelines:
 - Use a **transparent background**.
 - Keep silhouettes and colors distinct because pieces are displayed small in the 40px grid cells and NEXT preview.
 - Keep the file names exactly `liver.png`, `lung.png`, `stomach.png`, `intestine.png`, `heart.png`, and `brain.png` so `docs/src/data/pieces.js` continues to preload the expected textures.
+
+## Coffin Image Assets
+
+Coffin tier art lives in:
+
+```text
+docs/assets/images/coffins/
+  coffin_small.png
+  coffin_medium.png
+  coffin_large.png
+  coffin_maximum.png
+```
+
+`docs/src/data/coffins.js` maps each coffin tier to a Phaser texture key, source path, HUD label, fallback primitive size, and maximum HUD display size. `GameScene` preloads all four coffin images, and `Hud` chooses the image from the current god tier's `coffinSize`.
+
+### Replacing Coffin Art Later
+
+To replace coffin art, overwrite the PNG at the same path and keep the required file name unchanged:
+
+- `small` -> `coffin_small.png`
+- `medium` -> `coffin_medium.png`
+- `large` -> `coffin_large.png`
+- `maximum` -> `coffin_maximum.png`
+
+The current prototype uses **4 tier-based coffin images**. It does **not** use 14 per-god coffin images yet, so replacing a tier image updates every god in that tier. Use transparent PNGs with a square or portrait-friendly composition; the HUD scales each image down to fit inside the existing COFFIN panel and falls back to a simple Phaser primitive coffin if the texture is unavailable.
 
 ## Clear Rules
 
@@ -133,12 +158,17 @@ The coffin meter is a placeholder progression bar that increases only when piece
 - Canopic set clear meter gain is based on **40%** of that clear's score contribution.
 - Chain multipliers and same-cycle bonuses are included before meter conversion, so stronger chains fill the coffin faster.
 - When the current coffin meter reaches its requirement, the current god unlocks, excess meter carries into the next god, and play continues immediately.
-- The HUD shows the current tier/coffin size, current god, meter value, unlocked count, and a simple Phaser-drawn coffin placeholder beside the meter.
-- The placeholder coffin uses a dark sandstone body, gold outline, simple lid shape, and a small tier label. It grows and gains extra bands, jewels, and maximum-tier ornaments as the active tier advances from Small Coffin through Maximum Coffin.
-- Unlocking a god briefly shows `GOD UNLOCKED!` and flashes/glows the coffin placeholder; after the final god, the prototype shows `DUAT COMPLETE` as placeholder completion feedback.
-- Final coffin images are intentionally not included yet; the Phaser primitive placeholder is expected to be replaced by final coffin art assets in a later phase.
+- The HUD shows the current tier/coffin size, current god, meter value, unlocked count, and a tier-based coffin image beside the meter.
+- Coffin PNG assets live in `docs/assets/images/coffins/` and are mapped in `docs/src/data/coffins.js`:
+  - `coffin_small.png` for Small Coffin
+  - `coffin_medium.png` for Medium Coffin
+  - `coffin_large.png` for Large Coffin
+  - `coffin_maximum.png` for Maximum Coffin
+- The current implementation uses these **4 tier-based coffin images**, not 14 individual per-god coffin images yet.
+- Unlocking a god briefly shows `GOD UNLOCKED!` and flashes/glows the coffin image; after the final god, the prototype shows `DUAT COMPLETE` as placeholder completion feedback.
+- If a coffin texture is missing or fails to load, the HUD preserves a simple Phaser-drawn primitive coffin fallback so gameplay can continue.
 
-Current placeholder god progression:
+Current god progression:
 
 1. **Tier 1 — Small Coffin**: Imsety, Hapy, Duamutef, Qebehsenuef at 1000 meter each.
 2. **Tier 2 — Medium Coffin**: Anubis, Thoth, Bastet, Sekhmet at 1500 meter each.
@@ -166,13 +196,22 @@ This verifies that each locked cell falls independently by column before clear d
 4. After the pair locks, the unsupported right block should immediately fall to the bottom of its own column, or onto the nearest stack, before any same-type or canopic clear is checked.
 5. If the new settled board creates a same-type clear, canopic set clear, or chain, those clears and their follow-up gravity should resolve normally afterward.
 
+## How to Test Coffin Image Rendering in the Browser
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. Confirm the COFFIN panel shows the `small` tier coffin image from `docs/assets/images/coffins/coffin_small.png` while the current god is Imsety.
+3. To verify other tiers quickly during development, temporarily lower `requiredMeter` values in `docs/src/data/gods.js`, reload the page, and trigger enough clears to advance into Medium, Large, and Maximum Coffin tiers.
+4. Confirm the tier label, current god name, meter text, unlocked count, and progress bar remain visible while the coffin image changes tier.
+5. Confirm a god unlock still flashes/glows the coffin image and shows `GOD UNLOCKED!` feedback.
+6. Revert any temporary `requiredMeter` changes before committing.
+
 ## How to Test God Unlocks in the Browser
 
 Because pieces are random and the placeholder meter requirements are intentionally larger than a single clear, the normal manual test is cumulative:
 
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. Repeatedly make same-type clears and canopic set clears.
-3. Confirm the `Coffin: current / required` HUD value increases after each clear.
+3. Confirm the `Meter: current / required` HUD value increases after each clear.
 4. Confirm canopic set clears increase the meter faster than similarly sized same-type clears because they use the higher 40% meter conversion.
 5. Continue clearing until the meter fills. The game should show `GOD UNLOCKED!`, the unlocked count should increase, the current god should advance, and the falling puzzle should keep running without a pause or restart.
 6. To speed up browser verification during development, temporarily lower one `requiredMeter` value in `docs/src/data/gods.js`, reload the page, trigger a clear, and then revert the value before committing.
@@ -208,7 +247,7 @@ Current prototype limitations:
 - Clears and gravity resolve instantly without animations.
 - The level display is still a placeholder; coffin tier and god progression are shown separately.
 - Coffin meter values and god requirements are placeholder tuning values.
-- God unlocks do not yet grant active bomb effects or show final coffin/god art.
+- God unlocks do not yet grant active bomb effects or show per-god coffin/god art.
 - Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
 - There is no debug board editor, so specific canopic layouts require manual play with random pieces.
 
@@ -225,6 +264,11 @@ docs/
       intestine.png
       heart.png
       brain.png
+    images/coffins/
+      coffin_small.png
+      coffin_medium.png
+      coffin_large.png
+      coffin_maximum.png
   src/
     main.js
     scenes/GameScene.js
@@ -236,6 +280,7 @@ docs/
     core/ScoreSystem.js
     core/CoffinMeter.js
     data/constants.js
+    data/coffins.js
     data/gods.js
     data/pieces.js
     ui/Hud.js
