@@ -19,6 +19,7 @@ import { MatchResolver } from '../core/MatchResolver.js';
 import { CanopusResolver } from '../core/CanopusResolver.js';
 import { ScoreSystem } from '../core/ScoreSystem.js';
 import { CoffinMeter } from '../core/CoffinMeter.js';
+import { BombSystem } from '../core/BombSystem.js';
 import { Hud } from '../ui/Hud.js';
 
 export class GameScene extends Phaser.Scene {
@@ -38,6 +39,7 @@ export class GameScene extends Phaser.Scene {
     this.canopusResolver = new CanopusResolver(this.board);
     this.scoreSystem = new ScoreSystem();
     this.coffinMeter = new CoffinMeter();
+    this.bombSystem = new BombSystem();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
     this.level = INITIAL_LEVEL;
@@ -58,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
     this.hud.updateCoffin(this.coffinMeter.getState());
+    this.hud.updateBombStock(this.bombSystem.getStock());
     this.hud.drawNext(this.nextPairTypes);
 
     this.spawnPiece();
@@ -156,6 +159,12 @@ export class GameScene extends Phaser.Scene {
     this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.bombKeys = [
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ONE),
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TWO),
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.THREE),
+      this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR),
+    ];
 
     this.cursors.left.on('down', () => this.tryMove(-1, 0));
     this.cursors.right.on('down', () => this.tryMove(1, 0));
@@ -166,6 +175,9 @@ export class GameScene extends Phaser.Scene {
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
     this.keyT.on('down', () => this.advanceDebugGod());
     this.keyR.on('down', () => this.resetDebugProgression());
+    this.bombKeys.forEach((key, index) => {
+      key.on('down', () => this.useBombSlot(index));
+    });
   }
 
   spawnPiece() {
@@ -252,7 +264,10 @@ export class GameScene extends Phaser.Scene {
 
   resolveBoardAfterLock() {
     this.gravity.applyBoardGravity();
+    this.resolveBoardClears();
+  }
 
+  resolveBoardClears() {
     let nextChain = 1;
     let resolvedChains = 0;
     let clearedCanopicSet = false;
@@ -291,6 +306,30 @@ export class GameScene extends Phaser.Scene {
     this.showUnlockEvents(unlockEvents);
 
     this.renderBoard();
+  }
+
+  useBombSlot(slotIndex) {
+    if (this.isGameOver || !this.activePiece) {
+      return;
+    }
+
+    const target = {
+      col: this.activePiece.col,
+      row: Math.max(0, this.activePiece.row),
+    };
+    const result = this.bombSystem.useBomb(slotIndex, target, this.board);
+
+    if (!result) {
+      return;
+    }
+
+    const clearedCells = this.matchResolver.clearCells(result.affectedCells);
+    this.score += clearedCells.length * 25;
+    this.gravity.applyBoardGravity();
+    this.hud.updateBombStock(this.bombSystem.getStock());
+    this.hud.showBombUsed(result.bomb, clearedCells.length);
+    this.showBombFeedback(result.bomb, clearedCells.length);
+    this.resolveBoardClears();
   }
 
 
@@ -338,7 +377,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.coffinMeter.reset();
+    this.bombSystem.reset();
     this.hud.updateCoffin(this.coffinMeter.getState());
+    this.hud.updateBombStock(this.bombSystem.getStock());
     this.boardFeedbackText.setText('DEBUG PROGRESSION RESET');
 
     if (this.feedbackTimer) {
@@ -355,8 +396,16 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.addBombsForUnlockEvents(unlockEvents);
     this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
     this.hud.showGodUnlocked(unlockEvents);
+  }
+
+  addBombsForUnlockEvents(unlockEvents) {
+    unlockEvents.forEach((unlockEvent) => {
+      this.bombSystem.addBombForGod(unlockEvent.god);
+    });
+    this.hud.updateBombStock(this.bombSystem.getStock());
   }
 
   findClearResult() {
@@ -471,6 +520,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.feedbackTimer = this.time.delayedCall(1800, () => {
+      this.boardFeedbackText.setText('');
+    });
+  }
+
+  showBombFeedback(bomb, clearedCount) {
+    this.boardFeedbackText.setText(`BOMB!\n${bomb.godName} ${bomb.name}\n${clearedCount} cleared`);
+    this.boardFeedbackText.setAlpha(1);
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.time.delayedCall(1000, () => {
       this.boardFeedbackText.setText('');
     });
   }

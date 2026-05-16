@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 3**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder-tuned coffin meter, god progression, PNG image sprites for each piece type, and tier-based coffin PNGs with fallback rendering.
+The current build is **Phase 4-A**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder-tuned coffin meter, god progression, PNG image sprites for each piece type, tier-based coffin PNGs with fallback rendering, and Tier 1 bomb stock/use.
 
 ## How to Run Locally
 
@@ -21,7 +21,7 @@ Then open one of these URLs in a browser:
 
 A local server is recommended because the game uses JavaScript modules.
 
-## Phase 3 Features
+## Phase 4-A Features
 
 Implemented so far:
 
@@ -55,7 +55,10 @@ Implemented so far:
 - Coffin meter progression after clears
 - Tiered god unlock progression from Imsety through Amun-Ra
 - `docs/index.html` entry point for GitHub Pages from the `docs/` folder
-- Temporary debug mode for quickly testing coffin meter progression, god unlocks, and tier-based coffin image switching
+- Temporary debug mode for quickly testing coffin meter progression, god unlocks, tier-based coffin image switching, and Tier 1 bomb stock
+- Tier 1 bomb stock for the first four gods, capped at four bombs
+- Basic Tier 1 bomb controls using number keys 1-4
+- Vertical, horizontal, cross, and 3x3 surround bomb effects that clear locked non-brain cells
 
 
 ## Piece Image Assets
@@ -176,7 +179,18 @@ Current god progression:
 3. **Tier 3 — Large Coffin**: Horus, Isis, Osiris, Set at 2200 meter each.
 4. **Tier 4 — Maximum Coffin**: Ra, Amun-Ra at 3000 meter each.
 
-Bomb types are stored as future-facing data only; no bomb effects are active in this phase.
+## Tier 1 Bomb Stock
+
+When a supported Tier 1 god unlocks, that god adds one bomb to the HUD's `BOMB STOCK` list. The stock can hold up to **4 bombs**. If the stock is full, additional supported bombs are ignored safely. Higher-tier `futureBombType` values remain data-only in this phase and are ignored safely until later bomb tiers are implemented.
+
+Current supported bombs:
+
+- **Imsety**: `vertical_clear` / Vertical — clears the target column.
+- **Hapy**: `horizontal_clear` / Horizontal — clears the target row.
+- **Duamutef**: `cross_clear` / Cross — clears the target row and column.
+- **Qebehsenuef**: `surround_clear` / Surround — clears a 3x3 area centered on the target cell.
+
+Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Direct bomb clears currently award a simple placeholder **25 points per non-brain cell cleared**, then board gravity and the normal same-type/canopic chain resolution loop run as usual.
 
 
 ## Controls
@@ -186,6 +200,7 @@ Bomb types are stored as future-facing data only; no bomb effects are active in 
 - **Down Arrow**: soft drop
 - **Up Arrow** or **Z**: rotate
 - **Space**: hard drop
+- **1**, **2**, **3**, **4**: use bomb stock slot 1-4 at the active pair's pivot cell
 
 ## Temporary Debug Mode
 
@@ -195,7 +210,7 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 - **G** while debug mode is on: add `+500` points to the coffin meter using the existing coffin meter progression path. If the meter fills, god unlock feedback and coffin flash/glow still occur.
 - **Shift + G** while debug mode is on: fill the current coffin meter enough to unlock the current god.
 - **T** while debug mode is on: advance one god for visual testing by filling/unlocking the current god, updating the tier label, god name, coffin image, and unlocked count safely.
-- **R** while debug mode is on: reset only coffin meter/god progression back to the beginning. The board, active piece, score, and chain state are not reset.
+- **R** while debug mode is on: reset coffin meter/god progression and bomb stock back to the beginning. The board, active piece, score, and chain state are not reset.
 
 ### How to Test Tier 1 through Tier 4 Coffin Image Switching
 
@@ -206,6 +221,17 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 5. Continue pressing **T** through the Tier 2 gods; Horus should switch to Tier 3 / Large Coffin with `coffin_large.png`.
 6. Continue pressing **T** through the Tier 3 gods; Ra should switch to Tier 4 / Maximum Coffin with `coffin_maximum.png`.
 7. Press **R** to reset coffin/god progression back to Imsety and verify the small coffin returns without resetting the board.
+
+
+## How to Test Tier 1 Bomb Stock in the Browser
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. Press **D** to enable debug mode and confirm the HUD shows `DEBUG ON`.
+3. Press **T** once to unlock Imsety. The HUD should add `1: Imsety / Vertical` under `BOMB STOCK`.
+4. Press **T** three more times to unlock Hapy, Duamutef, and Qebehsenuef. The HUD should fill the four bomb slots with Vertical, Horizontal, Cross, and Surround.
+5. Move the falling piece so its pivot is over a row or column that contains locked pieces, then press **1**, **2**, **3**, or **4** to use the corresponding slot. The used bomb should disappear from stock, score should gain 25 points for each non-brain cell directly cleared, gravity should run, and any resulting same-type or canopic chains should resolve normally.
+6. To verify brain safety, use a Tier 1 bomb on a row, column, cross, or 3x3 area containing a brain. The non-brain pieces in the affected area may clear, but brain pieces should remain.
+7. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
 
 ## How to Test Post-Lock Gravity in the Browser
 
@@ -253,8 +279,8 @@ Because pieces are random in this prototype, the simplest manual browser test is
 
 These features are intentionally left for later phases:
 
-- Bomb system
-- Actual bomb effects from unlocked gods
+- Tier 2, Tier 3, and Tier 4 bomb effects
+- Bomb effects that clear brain pieces
 - Full heart same-type wild-card behavior
 - Adjacent brain clearing from canopic clears
 - Endless mode
@@ -268,9 +294,9 @@ Current prototype limitations:
 - Clears and gravity resolve instantly without animations.
 - The level display is still a placeholder; coffin tier and god progression are shown separately.
 - Coffin meter values and god requirements are placeholder tuning values.
-- God unlocks do not yet grant active bomb effects or show per-god coffin/god art.
+- Only Tier 1 gods grant active bomb effects; higher-tier god bomb data is ignored safely until later phases.
 - Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
-- Debug mode accelerates coffin/god progression only; there is no debug board editor, so specific canopic layouts still require manual play with random pieces.
+- Debug mode accelerates coffin/god progression and bomb stock testing only; there is no debug board editor, so specific canopic and bomb layouts still require manual play with random pieces.
 
 ## Project Structure
 
