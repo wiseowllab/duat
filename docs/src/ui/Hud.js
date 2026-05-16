@@ -22,6 +22,9 @@ export class Hud {
     this.scoreText = this.createLabel(0, 58, 'Score: 0');
     this.chainText = this.createLabel(0, 86, 'Chain: 0');
     this.levelText = this.createLabel(0, 114, 'Level: 1');
+    this.feedbackText = this.createLabel(0, 330, '', 20);
+    this.feedbackText.setColor('#d4af37');
+    this.feedbackText.setFontStyle('bold');
     this.statusText = this.createLabel(0, 420, '← → Move\n↓ Soft drop\n↑ / Z Rotate\nSpace Hard drop', 16);
 
     this.scene.add.text(this.x, this.y + 136, 'NEXT', {
@@ -51,6 +54,18 @@ export class Hud {
 
   updateLevel(level) {
     this.levelText.setText(`Level: ${level}`);
+  }
+
+  showCanopicSet() {
+    this.feedbackText.setText('CANOPIC SET!');
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.scene.time.delayedCall(1400, () => {
+      this.feedbackText.setText('');
+    });
   }
 
   showGameOver() {
