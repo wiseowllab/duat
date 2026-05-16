@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 2**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, and PNG image sprites for each piece type with colored rectangle fallbacks.
+The current build is **Phase 3**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, a placeholder coffin meter, god progression, and PNG image sprites for each piece type with colored rectangle fallbacks.
 
 ## How to Run Locally
 
@@ -21,7 +21,7 @@ Then open one of these URLs in a browser:
 
 A local server is recommended because the game uses JavaScript modules.
 
-## Phase 2 Features
+## Phase 3 Features
 
 Implemented so far:
 
@@ -44,7 +44,7 @@ Implemented so far:
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
-- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, and short `CLEAR!`, `CANOPIC SET!`, and `CHAIN xN` feedback flashes
+- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, current coffin tier, current god name, coffin meter progress, unlocked god count, and short `CLEAR!`, `CANOPIC SET!`, `CHAIN xN`, and `GOD UNLOCKED!` feedback flashes
 - PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
   - liver
   - lung
@@ -52,6 +52,8 @@ Implemented so far:
   - intestine
   - heart
   - brain
+- Placeholder coffin meter progression after clears
+- Tiered god unlock progression from Imsety through Amun-Ra
 - `docs/index.html` entry point for GitHub Pages from the `docs/` folder
 
 
@@ -123,6 +125,27 @@ Current placeholder scoring can be tuned later:
 
 Cells that qualify for both same-type and canopic clearing in the same cycle are only removed once.
 
+## Coffin Meter and God Progression
+
+The coffin meter is a placeholder progression bar that increases only when pieces clear.
+
+- Same-type clear meter gain is based on **25%** of that clear's score contribution.
+- Canopic set clear meter gain is based on **40%** of that clear's score contribution.
+- Chain multipliers and same-cycle bonuses are included before meter conversion, so stronger chains fill the coffin faster.
+- When the current coffin meter reaches its requirement, the current god unlocks, excess meter carries into the next god, and play continues immediately.
+- The HUD shows the current tier/coffin size, current god, meter value, and unlocked count.
+- Unlocking a god briefly shows `GOD UNLOCKED!`; after the final god, the prototype shows `DUAT COMPLETE` as placeholder completion feedback.
+
+Current placeholder god progression:
+
+1. **Tier 1 — Small Coffin**: Imsety, Hapy, Duamutef, Qebehsenuef at 1000 meter each.
+2. **Tier 2 — Medium Coffin**: Anubis, Thoth, Bastet, Sekhmet at 1500 meter each.
+3. **Tier 3 — Large Coffin**: Horus, Isis, Osiris, Set at 2200 meter each.
+4. **Tier 4 — Maximum Coffin**: Ra, Amun-Ra at 3000 meter each.
+
+Bomb types are stored as future-facing data only; no bomb effects are active in this phase.
+
+
 ## Controls
 
 - **Left Arrow**: move left
@@ -141,6 +164,17 @@ This verifies that each locked cell falls independently by column before clear d
 4. After the pair locks, the unsupported right block should immediately fall to the bottom of its own column, or onto the nearest stack, before any same-type or canopic clear is checked.
 5. If the new settled board creates a same-type clear, canopic set clear, or chain, those clears and their follow-up gravity should resolve normally afterward.
 
+## How to Test God Unlocks in the Browser
+
+Because pieces are random and the placeholder meter requirements are intentionally larger than a single clear, the normal manual test is cumulative:
+
+1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
+2. Repeatedly make same-type clears and canopic set clears.
+3. Confirm the `Coffin: current / required` HUD value increases after each clear.
+4. Confirm canopic set clears increase the meter faster than similarly sized same-type clears because they use the higher 40% meter conversion.
+5. Continue clearing until the meter fills. The game should show `GOD UNLOCKED!`, the unlocked count should increase, the current god should advance, and the falling puzzle should keep running without a pause or restart.
+6. To speed up browser verification during development, temporarily lower one `requiredMeter` value in `docs/src/data/gods.js`, reload the page, trigger a clear, and then revert the value before committing.
+
 ## How to Test Canopic Set Clearing in the Browser
 
 Because pieces are random in this prototype, the simplest manual browser test is to stack pieces slowly and use **Space** for hard drops once a target column is aligned:
@@ -157,9 +191,8 @@ Because pieces are random in this prototype, the simplest manual browser test is
 
 These features are intentionally left for later phases:
 
-- Coffin meter
-- God unlock system
 - Bomb system
+- Actual bomb effects from unlocked gods
 - Full heart same-type wild-card behavior
 - Adjacent brain clearing from canopic clears
 - Endless mode
@@ -171,7 +204,9 @@ These features are intentionally left for later phases:
 Current prototype limitations:
 
 - Clears and gravity resolve instantly without animations.
-- The level display is still a placeholder.
+- The level display is still a placeholder; coffin tier and god progression are shown separately.
+- Coffin meter values and god requirements are placeholder tuning values.
+- God unlocks do not yet grant active bomb effects or show final coffin/god art.
 - Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
 - There is no debug board editor, so specific canopic layouts require manual play with random pieces.
 
@@ -197,7 +232,9 @@ docs/
     core/MatchResolver.js
     core/CanopusResolver.js
     core/ScoreSystem.js
+    core/CoffinMeter.js
     data/constants.js
+    data/gods.js
     data/pieces.js
     ui/Hud.js
 ```

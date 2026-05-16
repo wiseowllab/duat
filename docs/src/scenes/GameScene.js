@@ -17,6 +17,7 @@ import { GravitySystem } from '../core/GravitySystem.js';
 import { MatchResolver } from '../core/MatchResolver.js';
 import { CanopusResolver } from '../core/CanopusResolver.js';
 import { ScoreSystem } from '../core/ScoreSystem.js';
+import { CoffinMeter } from '../core/CoffinMeter.js';
 import { Hud } from '../ui/Hud.js';
 
 export class GameScene extends Phaser.Scene {
@@ -34,6 +35,7 @@ export class GameScene extends Phaser.Scene {
     this.matchResolver = new MatchResolver(this.board);
     this.canopusResolver = new CanopusResolver(this.board);
     this.scoreSystem = new ScoreSystem();
+    this.coffinMeter = new CoffinMeter();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
     this.level = INITIAL_LEVEL;
@@ -51,6 +53,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateLevel(this.level);
+    this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.drawNext(this.nextPairTypes);
 
     this.spawnPiece();
@@ -242,6 +245,7 @@ export class GameScene extends Phaser.Scene {
     let resolvedChains = 0;
     let clearedCanopicSet = false;
     let clearedSameType = false;
+    const unlockEvents = [];
 
     while (true) {
       const clearResult = this.findClearResult();
@@ -250,7 +254,9 @@ export class GameScene extends Phaser.Scene {
       }
 
       const earnedScore = this.scoreSystem.calculateCycleScore(clearResult, nextChain);
+      const meterGain = this.scoreSystem.calculateCycleMeterPoints(clearResult, nextChain);
       this.score += earnedScore;
+      unlockEvents.push(...this.coffinMeter.addPoints(meterGain));
       resolvedChains = nextChain;
       clearedCanopicSet = clearedCanopicSet || clearResult.clearTypes.has('canopic');
       clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
@@ -263,10 +269,16 @@ export class GameScene extends Phaser.Scene {
     this.chainCount = resolvedChains;
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
+    this.hud.updateCoffin(this.coffinMeter.getState());
 
     if (clearedSameType || clearedCanopicSet || this.chainCount >= 2) {
       this.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
       this.hud.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
+    }
+
+    if (unlockEvents.length > 0) {
+      this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
+      this.hud.showGodUnlocked(unlockEvents);
     }
 
     this.renderBoard();
@@ -369,6 +381,23 @@ export class GameScene extends Phaser.Scene {
 
     this.blockSprites.push(rect);
     return rect;
+  }
+
+  showGodUnlockFeedback(unlockEvent) {
+    const message = unlockEvent.isComplete
+      ? `GOD UNLOCKED!\n${unlockEvent.god.name}\nDUAT COMPLETE`
+      : `GOD UNLOCKED!\n${unlockEvent.god.name}`;
+
+    this.boardFeedbackText.setText(message);
+    this.boardFeedbackText.setAlpha(1);
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.time.delayedCall(1800, () => {
+      this.boardFeedbackText.setText('');
+    });
   }
 
   showClearFeedback(clearedSameType, clearedCanopicSet, chainCount) {

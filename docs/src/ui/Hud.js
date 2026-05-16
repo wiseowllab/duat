@@ -22,32 +22,51 @@ export class Hud {
       fontStyle: 'bold',
     });
 
-    this.scoreText = this.createLabel(20, 70, 'Score: 0');
-    this.chainText = this.createLabel(20, 100, 'Chain: 0');
-    this.levelText = this.createLabel(20, 130, 'Level: 1');
-    this.feedbackText = this.createLabel(20, 330, '', 20);
-    this.feedbackText.setColor('#f4d77a');
-    this.feedbackText.setFontStyle('bold');
-    this.statusText = this.createLabel(20, 414, '← → Move\n↓ Soft drop\n↑ / Z Rotate\nSpace Hard drop', 15);
+    this.scoreText = this.createLabel(20, 68, 'Score: 0');
+    this.chainText = this.createLabel(20, 96, 'Chain: 0');
+    this.levelText = this.createLabel(20, 124, 'Level: 1', 15);
 
-    this.scene.add.text(this.x + 20, this.y + 178, 'NEXT', {
+    this.scene.add.text(this.x + 20, this.y + 158, 'NEXT', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#f3e2a0',
       fontStyle: 'bold',
     });
+
+    this.scene.add.text(this.x + 20, this.y + 288, 'COFFIN', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#f3e2a0',
+      fontStyle: 'bold',
+    });
+    this.tierText = this.createLabel(20, 314, 'Tier 1 — Small Coffin', 14);
+    this.godText = this.createLabel(20, 336, 'God: Imsety', 14);
+    this.coffinText = this.createLabel(20, 358, 'Coffin: 0 / 1000', 14);
+    this.unlockedText = this.createLabel(20, 380, 'Unlocked: 0 / 14', 14);
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 20, this.y + 410, 120, 14, 0x0b0906, 0.92)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(1, 0xd4af37, 0.46);
+    this.coffinBarFill = this.scene.add.rectangle(this.x + 21, this.y + 410, 0, 10, 0xd4af37, 0.82)
+      .setOrigin(0, 0.5);
+
+    this.feedbackText = this.createLabel(20, 432, '', 18);
+    this.feedbackText.setColor('#f4d77a');
+    this.feedbackText.setFontStyle('bold');
+    this.statusText = this.createLabel(20, 500, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop', 14);
   }
 
   createPanels() {
-    this.scene.add.rectangle(this.x + 82, this.y + 226, 174, 430, 0x21160d, 0.86)
+    this.scene.add.rectangle(this.x + 82, this.y + 270, 174, 514, 0x21160d, 0.86)
       .setStrokeStyle(1, 0xd4af37, 0.42);
-    this.scene.add.rectangle(this.x + 82, this.y + 108, 146, 124, 0x0d0b08, 0.72)
+    this.scene.add.rectangle(this.x + 82, this.y + 104, 146, 118, 0x0d0b08, 0.72)
       .setStrokeStyle(1, 0x8b7446, 0.28);
-    this.scene.add.rectangle(this.x + 82, this.y + 248, 146, 132, 0x0d0b08, 0.72)
+    this.scene.add.rectangle(this.x + 82, this.y + 218, 146, 120, 0x0d0b08, 0.72)
       .setStrokeStyle(1, 0x8b7446, 0.28);
-    this.scene.add.rectangle(this.x + 82, this.y + 354, 146, 72, 0x0d0b08, 0.62)
+    this.scene.add.rectangle(this.x + 82, this.y + 358, 146, 146, 0x0d0b08, 0.72)
+      .setStrokeStyle(1, 0xd4af37, 0.28);
+    this.scene.add.rectangle(this.x + 82, this.y + 458, 146, 54, 0x0d0b08, 0.62)
       .setStrokeStyle(1, 0xd4af37, 0.22);
-    this.scene.add.rectangle(this.x + 82, this.y + 450, 146, 86, 0x0d0b08, 0.54)
+    this.scene.add.rectangle(this.x + 82, this.y + 530, 146, 70, 0x0d0b08, 0.54)
       .setStrokeStyle(1, 0x8b7446, 0.2);
   }
 
@@ -72,6 +91,29 @@ export class Hud {
     this.levelText.setText(`Level: ${level}`);
   }
 
+  updateCoffin(state) {
+    const { currentGod, currentTier, progress, unlockedCount, totalGods, isComplete } = state;
+
+    if (isComplete) {
+      this.tierText.setText('Tier 4 — Duat Complete');
+      this.godText.setText('God: All Awakened');
+      this.coffinText.setText('Coffin: Complete');
+    } else {
+      this.tierText.setText(`Tier ${currentTier.tier} — ${currentTier.tierName}`);
+      this.godText.setText(`God: ${currentGod.name}`);
+      this.coffinText.setText(`Coffin: ${progress.value} / ${progress.required}`);
+    }
+
+    this.unlockedText.setText(`Unlocked: ${unlockedCount} / ${totalGods}`);
+    this.updateCoffinBar(progress.ratio);
+  }
+
+  updateCoffinBar(ratio) {
+    const clampedRatio = Phaser.Math.Clamp(ratio, 0, 1);
+    this.coffinBarFill.setDisplaySize(118 * clampedRatio, 10);
+    this.coffinBarFill.setVisible(clampedRatio > 0);
+  }
+
   showCanopicSet() {
     this.showClearFeedback(false, true, 0);
   }
@@ -91,13 +133,23 @@ export class Hud {
       messages.push(`CHAIN x${chainCount}`);
     }
 
-    this.feedbackText.setText(messages.join('\n'));
+    this.showFeedback(messages.join('\n'), 1400);
+  }
+
+  showGodUnlocked(unlockEvents) {
+    const latestUnlock = unlockEvents[unlockEvents.length - 1];
+    const suffix = latestUnlock.isComplete ? '\nDUAT COMPLETE' : '';
+    this.showFeedback(`GOD UNLOCKED!\n${latestUnlock.god.name}${suffix}`, 2200);
+  }
+
+  showFeedback(message, durationMs) {
+    this.feedbackText.setText(message);
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
     }
 
-    this.feedbackTimer = this.scene.time.delayedCall(1400, () => {
+    this.feedbackTimer = this.scene.time.delayedCall(durationMs, () => {
       this.feedbackText.setText('');
     });
   }
@@ -111,7 +163,7 @@ export class Hud {
     this.clearNext();
 
     const startX = this.x + 44;
-    const startY = this.y + 224;
+    const startY = this.y + 204;
 
     types.forEach((type, index) => {
       const y = startY + index * (CELL_SIZE + 10);
