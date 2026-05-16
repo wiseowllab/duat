@@ -1,0 +1,88 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { Board } from '../docs/src/core/Board.js';
+import { CanopusResolver } from '../docs/src/core/CanopusResolver.js';
+import { GravitySystem } from '../docs/src/core/GravitySystem.js';
+import { MatchResolver } from '../docs/src/core/MatchResolver.js';
+
+function setCells(board, cells) {
+  cells.forEach(({ col, row, type }) => {
+    board.setCell(col, row, type);
+  });
+}
+
+test('four connected brain pieces do not clear as a same-type match', () => {
+  const board = new Board(6, 12);
+  const matchResolver = new MatchResolver(board);
+
+  setCells(board, [
+    { col: 0, row: 10, type: 'brain' },
+    { col: 1, row: 10, type: 'brain' },
+    { col: 0, row: 11, type: 'brain' },
+    { col: 1, row: 11, type: 'brain' },
+  ]);
+
+  const matches = matchResolver.findMatches();
+  assert.deepEqual(matches, []);
+
+  const clearedCells = matchResolver.clearMatches(matches);
+  assert.deepEqual(clearedCells, []);
+
+  assert.equal(board.getCell(0, 10), 'brain');
+  assert.equal(board.getCell(1, 10), 'brain');
+  assert.equal(board.getCell(0, 11), 'brain');
+  assert.equal(board.getCell(1, 11), 'brain');
+});
+
+test('four connected liver pieces still clear as a same-type match', () => {
+  const board = new Board(6, 12);
+  const matchResolver = new MatchResolver(board);
+
+  setCells(board, [
+    { col: 0, row: 10, type: 'liver' },
+    { col: 1, row: 10, type: 'liver' },
+    { col: 0, row: 11, type: 'liver' },
+    { col: 1, row: 11, type: 'liver' },
+  ]);
+
+  const matches = matchResolver.findMatches();
+  assert.equal(matches.length, 1);
+  assert.equal(matches[0].length, 4);
+
+  const clearedCells = matchResolver.clearMatches(matches);
+  assert.equal(clearedCells.length, 4);
+
+  assert.equal(board.getCell(0, 10), null);
+  assert.equal(board.getCell(1, 10), null);
+  assert.equal(board.getCell(0, 11), null);
+  assert.equal(board.getCell(1, 11), null);
+});
+
+test('brain does not connect otherwise separate canopic groups', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 0, row: 11, type: 'liver' },
+    { col: 1, row: 11, type: 'lung' },
+    { col: 2, row: 11, type: 'brain' },
+    { col: 3, row: 11, type: 'stomach' },
+    { col: 4, row: 11, type: 'intestine' },
+  ]);
+
+  assert.deepEqual(canopusResolver.findCanopicSets(), []);
+});
+
+test('brain pieces still fall normally during board gravity', () => {
+  const board = new Board(6, 12);
+  const gravity = new GravitySystem(board);
+
+  board.setCell(2, 4, 'brain');
+
+  const movedPieces = gravity.applyBoardGravity();
+
+  assert.equal(movedPieces, 1);
+  assert.equal(board.getCell(2, 4), null);
+  assert.equal(board.getCell(2, 11), 'brain');
+});
