@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 2**, a playable falling-puzzle prototype with same-type clearing, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, and PNG image sprites for each piece type with colored rectangle fallbacks.
+The current build is **Phase 2**, a playable falling-puzzle prototype with same-type clearing, brain obstacle behavior, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, and PNG image sprites for each piece type with colored rectangle fallbacks.
 
 ## How to Run Locally
 
@@ -35,7 +35,8 @@ Implemented so far:
 - 4-direction rotation
 - Piece landing and locking into the board
 - Game over detection
-- Same-type 4-connected clearing using orthogonal adjacency
+- Same-type 4-connected clearing using orthogonal adjacency for liver, lung, stomach, intestine, and heart
+- Brain obstacle pieces that do not clear through same-type matching
 - Gravity after clears, with pieces falling vertically within their columns
 - Chain resolution after gravity creates additional matches
 - Basic score calculation
@@ -85,7 +86,7 @@ Recommended replacement image guidelines:
 
 ### Same-Type Clear
 
-A same-type group clears when **4 or more pieces of the same type** are orthogonally connected. This is the Phase 1-B clear rule and still works alongside Phase 2 canopic clears.
+A same-type group clears when **4 or more clearable pieces of the same type** are orthogonally connected. This is the Phase 1-B clear rule and still works alongside Phase 2 canopic clears. Liver, lung, stomach, intestine, and heart are currently clearable by same-type matching; brain is not.
 
 ### Canopic Set Clear
 
@@ -102,9 +103,9 @@ The canopic group can be any shape and can contain more than four pieces. Diagon
 
 For Phase 2, heart has basic wild-card behavior for canopic sets only. A heart can substitute for **one** missing canopic organ type in a connected canopic group, such as liver + lung + stomach + heart. Full heart wild-card behavior for same-type clears is not implemented yet.
 
-### Brain Limitation Note
+### Brain Obstacle Note
 
-Brain does not participate in canopic sets. It cannot count as a required organ type, cannot substitute for an organ, and cannot connect two canopic groups. Brain can still be cleared by the existing same-type 4-connected rule in this prototype; full brain obstacle behavior is reserved for a later phase.
+Brain is currently an obstacle piece. It does not participate in canopic sets, cannot count as a required organ type, cannot substitute for an organ, and cannot connect two canopic groups. Brain also cannot be cleared by same-type 4-connected matching, so four or more connected brain pieces remain on the board. Brain still appears in falling pairs, locks into the board, and falls normally when gravity resolves.
 
 ## Basic Scoring
 
@@ -149,7 +150,8 @@ Because pieces are random in this prototype, the simplest manual browser test is
 3. When the final required organ locks, the group should clear, the score should increase by at least 500 points, gravity should run, and the game should briefly show `CANOPIC SET!` feedback near the board and in the HUD.
 4. To test heart substitution, build a connected group with any three of liver/lung/stomach/intestine plus one heart. The heart should stand in for the one missing organ and clear with that group.
 5. To test brain exclusion, try separating required organs with a brain between them. The brain should not connect the canopic set, and the canopic clear should not trigger unless the organs are otherwise orthogonally connected.
-6. To confirm compatibility, make a same-type group of 4 or more pieces. It should still clear, briefly show `CLEAR!`, apply gravity, and support chains as before; chains of 2 or higher should also show `CHAIN xN`.
+6. To test brain obstacle behavior, build four or more connected brain pieces. They should remain on the board after locking, while gravity and later clears continue to resolve around them.
+7. To confirm compatibility, make a same-type group of 4 or more non-brain pieces, such as liver. It should still clear, briefly show `CLEAR!`, apply gravity, and support chains as before; chains of 2 or higher should also show `CHAIN xN`.
 
 ## Known Limitations / Not Implemented Yet
 
@@ -159,7 +161,6 @@ These features are intentionally left for later phases:
 - God unlock system
 - Bomb system
 - Full heart same-type wild-card behavior
-- Full brain obstacle behavior
 - Adjacent brain clearing from canopic clears
 - Endless mode
 - Final art assets

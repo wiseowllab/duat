@@ -1,3 +1,5 @@
+import { BRAIN_TYPE } from '../data/pieces.js';
+
 const MATCH_SIZE = 4;
 const ORTHOGONAL_DIRECTIONS = [
   { col: 0, row: -1 },
@@ -17,7 +19,7 @@ export class MatchResolver {
 
     for (let row = 0; row < this.board.rows; row += 1) {
       for (let col = 0; col < this.board.columns; col += 1) {
-        if (visited[row][col] || !this.board.cells[row][col]) {
+        if (visited[row][col] || !this.canStartMatch(this.board.cells[row][col])) {
           continue;
         }
 
@@ -85,6 +87,10 @@ export class MatchResolver {
     }
 
     return group;
+  }
+
+  canStartMatch(type) {
+    return Boolean(type) && type !== BRAIN_TYPE;
   }
 
   canVisit(col, row, type, visited) {
