@@ -83,10 +83,28 @@ export const TIER_3_BOMBS = {
   },
 };
 
+export const TIER_4_BOMBS = {
+  full_board_clear: {
+    type: 'full_board_clear',
+    name: 'Full Clear',
+    description: 'Clear the entire board, including brain pieces.',
+    scorePerPiece: 40,
+    bonusScore: 0,
+  },
+  maximum_coffin_burst: {
+    type: 'maximum_coffin_burst',
+    name: 'Max Burst',
+    description: 'Clear the entire board, including brain pieces, and award a final-stage bonus.',
+    scorePerPiece: 60,
+    bonusScore: 1000,
+  },
+};
+
 export const SUPPORTED_BOMBS = {
   ...TIER_1_BOMBS,
   ...TIER_2_BOMBS,
   ...TIER_3_BOMBS,
+  ...TIER_4_BOMBS,
 };
 
 export class BombSystem {
@@ -207,6 +225,10 @@ export class BombSystem {
       return Array.from({ length: board.rows }, (_, row) => ({ col: target.col, row }));
     }
 
+    if (type === 'full_board_clear' || type === 'maximum_coffin_burst') {
+      return this.getFullBoardCells(board);
+    }
+
     if (type === 'triple_column_clear') {
       return this.getTripleColumnCells(target, board);
     }
@@ -283,6 +305,18 @@ export class BombSystem {
     return cells;
   }
 
+  getFullBoardCells(board) {
+    const cells = [];
+
+    for (let row = 0; row < board.rows; row += 1) {
+      for (let col = 0; col < board.columns; col += 1) {
+        cells.push({ col, row });
+      }
+    }
+
+    return cells;
+  }
+
   getHalfBoardCells(target, board) {
     const midpoint = Math.floor(board.columns / 2);
     const startCol = target.col < midpoint ? 0 : midpoint;
@@ -339,11 +373,21 @@ export class BombSystem {
       'triple_column_clear',
       'half_board_reset',
       'chaos_clear',
+      'full_board_clear',
+      'maximum_coffin_burst',
     ].includes(type);
   }
 
   getScorePerPiece(type) {
     return SUPPORTED_BOMBS[type]?.scorePerPiece ?? 0;
+  }
+
+  getBonusScore(type) {
+    return SUPPORTED_BOMBS[type]?.bonusScore ?? 0;
+  }
+
+  isFinalStageBomb(type) {
+    return type === 'maximum_coffin_burst';
   }
 
   clampTarget(target, board) {
