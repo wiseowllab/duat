@@ -1,12 +1,6 @@
 import { CELL_SIZE } from '../data/constants.js';
+import { getCoffinAsset } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
-
-const COFFIN_VISUALS = {
-  small: { tier: 1, width: 32, height: 42, label: 'T1 Small' },
-  medium: { tier: 2, width: 40, height: 50, label: 'T2 Medium' },
-  large: { tier: 3, width: 48, height: 58, label: 'T3 Large' },
-  maximum: { tier: 4, width: 56, height: 66, label: 'T4 Max' },
-};
 
 export class Hud {
   constructor(scene, x, y) {
@@ -53,7 +47,7 @@ export class Hud {
     this.godText = this.createLabel(20, 336, 'God: Imsety', 13);
     this.coffinText = this.createLabel(20, 376, 'Meter: 0 / 1000', 13);
     this.unlockedText = this.createLabel(20, 394, 'Unlocked: 0 / 14', 13);
-    this.drawCoffinPlaceholder({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
+    this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinBarBack = this.scene.add.rectangle(this.x + 20, this.y + 410, 120, 14, 0x0b0906, 0.92)
       .setOrigin(0, 0.5)
       .setStrokeStyle(1, 0xd4af37, 0.46);
@@ -109,41 +103,54 @@ export class Hud {
       this.tierText.setText('Tier 4 — Duat Complete');
       this.godText.setText('God: All Awakened');
       this.coffinText.setText('Meter: Complete');
-      this.drawCoffinPlaceholder(currentTier);
+      this.drawCoffinVisual(currentTier);
     } else {
       this.tierText.setText(`Tier ${currentTier.tier} — ${currentTier.tierName}`);
       this.godText.setText(`God: ${currentGod.name}`);
       this.coffinText.setText(`Meter: ${progress.value} / ${progress.required}`);
-      this.drawCoffinPlaceholder(currentTier);
+      this.drawCoffinVisual(currentTier);
     }
 
     this.unlockedText.setText(`Unlocked: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
   }
 
-  drawCoffinPlaceholder(currentTier) {
+  drawCoffinVisual(currentTier) {
     if (this.coffinContainer) {
       this.coffinContainer.destroy(true);
     }
 
-    const visual = COFFIN_VISUALS[currentTier.coffinSize] ?? COFFIN_VISUALS.small;
+    const asset = getCoffinAsset(currentTier.coffinSize);
     const centerX = this.x + 108;
     const centerY = this.y + 350;
     const container = this.scene.add.container(centerX, centerY);
-    const glowSize = Math.max(visual.width, visual.height) + 20;
+    const glowSize = Math.max(asset.maxDisplayWidth, asset.maxDisplayHeight) + 18;
 
     this.coffinGlow = this.scene.add.ellipse(0, 0, glowSize, glowSize, 0xd4af37, 0.08)
       .setStrokeStyle(2, 0xf4d77a, 0.16);
-    const coffin = this.createCoffinGraphic(visual);
-    const label = this.scene.add.text(0, visual.height / 2 + 7, visual.label, {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '10px',
-      color: '#f4d77a',
-      fontStyle: 'bold',
-    }).setOrigin(0.5, 0);
+    const coffin = this.createCoffinDisplay(asset, currentTier.tier);
 
-    container.add([this.coffinGlow, coffin, label]);
+    container.add([this.coffinGlow, coffin]);
     this.coffinContainer = container;
+  }
+
+  createCoffinDisplay(asset, tier) {
+    if (!asset || !this.scene.textures.exists(asset.key)) {
+      return this.createCoffinGraphic({
+        width: asset?.fallbackWidth ?? 32,
+        height: asset?.fallbackHeight ?? 42,
+        tier,
+      });
+    }
+
+    const source = this.scene.textures.get(asset.key).getSourceImage();
+    const scale = Math.min(
+      asset.maxDisplayWidth / source.width,
+      asset.maxDisplayHeight / source.height,
+    );
+
+    return this.scene.add.image(0, 0, asset.key)
+      .setDisplaySize(source.width * scale, source.height * scale);
   }
 
   createCoffinGraphic(visual) {

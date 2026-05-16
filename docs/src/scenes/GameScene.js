@@ -11,6 +11,7 @@ import {
   SOFT_DROP_FALL_MS,
 } from '../data/constants.js';
 import { createRandomPairTypes, getPieceAsset, PIECE_COLORS, preloadPieceAssets } from '../data/pieces.js';
+import { preloadCoffinAssets } from '../data/coffins.js';
 import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
@@ -27,6 +28,7 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     preloadPieceAssets(this);
+    preloadCoffinAssets(this);
   }
 
   create() {
