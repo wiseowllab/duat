@@ -86,3 +86,120 @@ test('brain pieces still fall normally during board gravity', () => {
   assert.equal(board.getCell(2, 4), null);
   assert.equal(board.getCell(2, 11), 'brain');
 });
+
+test('canopic set with one adjacent brain clears that brain as a bonus', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+  const matchResolver = new MatchResolver(board);
+
+  setCells(board, [
+    { col: 1, row: 10, type: 'liver' },
+    { col: 2, row: 10, type: 'lung' },
+    { col: 3, row: 10, type: 'stomach' },
+    { col: 4, row: 10, type: 'intestine' },
+    { col: 2, row: 9, type: 'brain' },
+  ]);
+
+  const canopicSets = canopusResolver.findCanopicSets();
+  const brainBonusCell = canopusResolver.findAdjacentBrainBonusCell(canopicSets);
+
+  assert.deepEqual(brainBonusCell, {
+    col: 2,
+    row: 9,
+    type: 'brain',
+    adjacentCanopicCount: 1,
+  });
+
+  matchResolver.clearCells([...canopicSets.flat(), brainBonusCell]);
+  assert.equal(board.getCell(2, 9), null);
+});
+
+test('canopic set with multiple adjacent brain candidates selects only the highest-priority brain', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 1, row: 5, type: 'liver' },
+    { col: 2, row: 5, type: 'lung' },
+    { col: 3, row: 5, type: 'stomach' },
+    { col: 1, row: 6, type: 'intestine' },
+    { col: 2, row: 6, type: 'brain' },
+    { col: 0, row: 5, type: 'brain' },
+    { col: 4, row: 5, type: 'brain' },
+  ]);
+
+  const canopicSets = canopusResolver.findCanopicSets();
+  const brainBonusCell = canopusResolver.findAdjacentBrainBonusCell(canopicSets);
+
+  assert.deepEqual(brainBonusCell, {
+    col: 2,
+    row: 6,
+    type: 'brain',
+    adjacentCanopicCount: 2,
+  });
+});
+
+test('adjacent brain priority chooses the lower row when adjacency counts tie', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 1, row: 5, type: 'liver' },
+    { col: 2, row: 5, type: 'lung' },
+    { col: 3, row: 5, type: 'stomach' },
+    { col: 4, row: 5, type: 'intestine' },
+    { col: 0, row: 5, type: 'brain' },
+    { col: 3, row: 6, type: 'brain' },
+  ]);
+
+  const canopicSets = canopusResolver.findCanopicSets();
+  const brainBonusCell = canopusResolver.findAdjacentBrainBonusCell(canopicSets);
+
+  assert.deepEqual(brainBonusCell, {
+    col: 3,
+    row: 6,
+    type: 'brain',
+    adjacentCanopicCount: 1,
+  });
+});
+
+test('adjacent brain priority chooses the leftmost column when count and row tie', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 1, row: 5, type: 'liver' },
+    { col: 2, row: 5, type: 'lung' },
+    { col: 3, row: 5, type: 'stomach' },
+    { col: 4, row: 5, type: 'intestine' },
+    { col: 0, row: 5, type: 'brain' },
+    { col: 5, row: 5, type: 'brain' },
+  ]);
+
+  const canopicSets = canopusResolver.findCanopicSets();
+  const brainBonusCell = canopusResolver.findAdjacentBrainBonusCell(canopicSets);
+
+  assert.deepEqual(brainBonusCell, {
+    col: 0,
+    row: 5,
+    type: 'brain',
+    adjacentCanopicCount: 1,
+  });
+});
+
+test('diagonal brain adjacency does not qualify for a canopic bonus clear', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 1, row: 5, type: 'liver' },
+    { col: 2, row: 5, type: 'lung' },
+    { col: 3, row: 5, type: 'stomach' },
+    { col: 4, row: 5, type: 'intestine' },
+    { col: 0, row: 4, type: 'brain' },
+  ]);
+
+  const canopicSets = canopusResolver.findCanopicSets();
+
+  assert.equal(canopusResolver.findAdjacentBrainBonusCell(canopicSets), null);
+});

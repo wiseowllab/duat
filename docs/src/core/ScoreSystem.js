@@ -1,5 +1,6 @@
 const CANOPIC_SET_SCORE = 500;
 const CANOPIC_EXTRA_PIECE_SCORE = 50;
+const ADJACENT_BRAIN_BONUS_SCORE = 100;
 const SAME_CYCLE_BONUS_MULTIPLIER = 2;
 
 export class ScoreSystem {
@@ -23,6 +24,8 @@ export class ScoreSystem {
     if (clearResult.clearTypes.has('sameType') && clearResult.clearTypes.has('canopic')) {
       baseScore *= SAME_CYCLE_BONUS_MULTIPLIER;
     }
+
+    baseScore += this.calculateAdjacentBrainBonusScore(clearResult);
 
     return baseScore * chainNumber;
   }
@@ -57,5 +60,9 @@ export class ScoreSystem {
 
   calculateCanopicSetScore(pieceCount) {
     return CANOPIC_SET_SCORE + Math.max(0, pieceCount - 4) * CANOPIC_EXTRA_PIECE_SCORE;
+  }
+
+  calculateAdjacentBrainBonusScore(clearResult) {
+    return clearResult.adjacentBrainBonusCell ? ADJACENT_BRAIN_BONUS_SCORE : 0;
   }
 }
