@@ -43,6 +43,7 @@ export class GameScene extends Phaser.Scene {
     this.fallTimer = 0;
     this.lockTimer = 0;
     this.isGameOver = false;
+    this.feedbackTimer = null;
 
     this.createBackground();
     this.createInput();
@@ -79,28 +80,66 @@ export class GameScene extends Phaser.Scene {
   }
 
   createBackground() {
-    this.cameras.main.setBackgroundColor('#111827');
+    this.cameras.main.setBackgroundColor('#080704');
 
-    this.add.rectangle(
-      BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2,
-      BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2,
-      BOARD_COLUMNS * CELL_SIZE + 18,
-      BOARD_ROWS * CELL_SIZE + 18,
-      0x2a1b10,
-    ).setStrokeStyle(3, 0xd4af37);
+    this.add.rectangle(280, 300, 560, 600, 0x090705);
+    this.add.rectangle(280, 300, 520, 560, 0x17100a, 0.72)
+      .setStrokeStyle(1, 0x6e5525, 0.32);
+
+    const boardCenterX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
+    const boardCenterY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
+    const boardWidth = BOARD_COLUMNS * CELL_SIZE;
+    const boardHeight = BOARD_ROWS * CELL_SIZE;
+
+    this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 28, boardHeight + 28, 0x332313, 0.95)
+      .setStrokeStyle(2, 0xd4af37, 0.82);
+    this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x0c0a08, 0.98)
+      .setStrokeStyle(1, 0xf0d27a, 0.35);
+    this.add.rectangle(boardCenterX, boardCenterY, boardWidth, boardHeight, 0x12100d, 1);
+
+    this.drawBoardCornerAccents(boardCenterX, boardCenterY, boardWidth, boardHeight);
 
     this.gridGraphics = this.add.graphics();
-    this.gridGraphics.lineStyle(1, 0x675235, 0.8);
+    this.gridGraphics.lineStyle(1, 0x8b7446, 0.2);
 
     for (let col = 0; col <= BOARD_COLUMNS; col += 1) {
       const x = BOARD_ORIGIN_X + col * CELL_SIZE;
-      this.gridGraphics.lineBetween(x, BOARD_ORIGIN_Y, x, BOARD_ORIGIN_Y + BOARD_ROWS * CELL_SIZE);
+      this.gridGraphics.lineBetween(x, BOARD_ORIGIN_Y, x, BOARD_ORIGIN_Y + boardHeight);
     }
 
     for (let row = 0; row <= BOARD_ROWS; row += 1) {
       const y = BOARD_ORIGIN_Y + row * CELL_SIZE;
-      this.gridGraphics.lineBetween(BOARD_ORIGIN_X, y, BOARD_ORIGIN_X + BOARD_COLUMNS * CELL_SIZE, y);
+      this.gridGraphics.lineBetween(BOARD_ORIGIN_X, y, BOARD_ORIGIN_X + boardWidth, y);
     }
+
+    this.boardFeedbackText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + 18, '', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '24px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      align: 'center',
+      stroke: '#1a1006',
+      strokeThickness: 4,
+    }).setOrigin(0.5, 0).setDepth(10);
+  }
+
+  drawBoardCornerAccents(centerX, centerY, width, height) {
+    const left = centerX - width / 2 - 18;
+    const right = centerX + width / 2 + 18;
+    const top = centerY - height / 2 - 18;
+    const bottom = centerY + height / 2 + 18;
+    const accentGraphics = this.add.graphics();
+
+    accentGraphics.lineStyle(2, 0xf0d27a, 0.62);
+    [
+      [left, top, 28, 0, 0, 28],
+      [right, top, -28, 0, 0, 28],
+      [left, bottom, 28, 0, 0, -28],
+      [right, bottom, -28, 0, 0, -28],
+    ].forEach(([x, y, xLine, yLine, xDrop, yDrop]) => {
+      accentGraphics.lineBetween(x, y, x + xLine, y + yLine);
+      accentGraphics.lineBetween(x, y, x + xDrop, y + yDrop);
+    });
   }
 
   createInput() {
@@ -202,6 +241,7 @@ export class GameScene extends Phaser.Scene {
     let nextChain = 1;
     let resolvedChains = 0;
     let clearedCanopicSet = false;
+    let clearedSameType = false;
 
     while (true) {
       const clearResult = this.findClearResult();
@@ -213,6 +253,7 @@ export class GameScene extends Phaser.Scene {
       this.score += earnedScore;
       resolvedChains = nextChain;
       clearedCanopicSet = clearedCanopicSet || clearResult.clearTypes.has('canopic');
+      clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
       this.gravity.applyBoardGravity();
@@ -223,8 +264,9 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
 
-    if (clearedCanopicSet) {
-      this.hud.showCanopicSet();
+    if (clearedSameType || clearedCanopicSet || this.chainCount >= 2) {
+      this.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
+      this.hud.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
     }
 
     this.renderBoard();
@@ -300,6 +342,7 @@ export class GameScene extends Phaser.Scene {
     const y = BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2;
     const asset = getPieceAsset(type);
 
+    this.drawPieceShadow(x, y, alpha);
     this.drawFallbackBlock(x, y, type, alpha);
 
     if (!asset || !this.textures.exists(asset.key)) {
@@ -307,19 +350,52 @@ export class GameScene extends Phaser.Scene {
     }
 
     const sprite = this.add.image(x, y, asset.key)
-      .setDisplaySize(CELL_SIZE - 8, CELL_SIZE - 8)
+      .setDisplaySize(CELL_SIZE - 10, CELL_SIZE - 10)
       .setAlpha(alpha);
 
     this.blockSprites.push(sprite);
   }
 
-  drawFallbackBlock(x, y, type, alpha) {
-    const rect = this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, PIECE_COLORS[type], alpha)
-      .setStrokeStyle(2, 0xf6e3a1);
-    const shine = this.add.rectangle(x - 8, y - 9, 10, 6, 0xffffff, 0.18);
+  drawPieceShadow(x, y, alpha) {
+    const shadow = this.add.ellipse(x + 2, y + 4, CELL_SIZE - 8, CELL_SIZE - 8, 0x000000, 0.28 * alpha);
+    const glow = this.add.rectangle(x, y, CELL_SIZE - 7, CELL_SIZE - 7, 0xf4d77a, 0.08 * alpha);
 
-    this.blockSprites.push(rect, shine);
+    this.blockSprites.push(shadow, glow);
+  }
+
+  drawFallbackBlock(x, y, type, alpha) {
+    const rect = this.add.rectangle(x, y, CELL_SIZE - 8, CELL_SIZE - 8, PIECE_COLORS[type], 0.32 * alpha)
+      .setStrokeStyle(1, 0xf6e3a1, 0.32);
+
+    this.blockSprites.push(rect);
     return rect;
+  }
+
+  showClearFeedback(clearedSameType, clearedCanopicSet, chainCount) {
+    const messages = [];
+
+    if (clearedSameType) {
+      messages.push('CLEAR!');
+    }
+
+    if (clearedCanopicSet) {
+      messages.push('CANOPIC SET!');
+    }
+
+    if (chainCount >= 2) {
+      messages.push(`CHAIN x${chainCount}`);
+    }
+
+    this.boardFeedbackText.setText(messages.join('\n'));
+    this.boardFeedbackText.setAlpha(1);
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.time.delayedCall(1200, () => {
+      this.boardFeedbackText.setText('');
+    });
   }
 
   clearBlockSprites() {

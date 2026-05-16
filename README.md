@@ -43,7 +43,7 @@ Implemented so far:
 - Heart substitution for one missing canopic organ type in canopic sets only
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
-- HUD display for score, latest chain count, level placeholder, controls, NEXT display, and a `CANOPIC SET!` feedback flash
+- HUD display for score, latest chain count, level placeholder, controls, grouped NEXT display, and short `CLEAR!`, `CANOPIC SET!`, and `CHAIN xN` feedback flashes
 - PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
   - liver
   - lung
@@ -146,10 +146,10 @@ Because pieces are random in this prototype, the simplest manual browser test is
 
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. Build a connected group containing liver, lung, stomach, and intestine. A compact 2x2 arrangement works well, but any orthogonally connected shape is valid.
-3. When the final required organ locks, the group should clear, the score should increase by at least 500 points, gravity should run, and the HUD should briefly show `CANOPIC SET!`.
+3. When the final required organ locks, the group should clear, the score should increase by at least 500 points, gravity should run, and the game should briefly show `CANOPIC SET!` feedback near the board and in the HUD.
 4. To test heart substitution, build a connected group with any three of liver/lung/stomach/intestine plus one heart. The heart should stand in for the one missing organ and clear with that group.
 5. To test brain exclusion, try separating required organs with a brain between them. The brain should not connect the canopic set, and the canopic clear should not trigger unless the organs are otherwise orthogonally connected.
-6. To confirm compatibility, make a same-type group of 4 or more pieces. It should still clear, apply gravity, and support chains as before.
+6. To confirm compatibility, make a same-type group of 4 or more pieces. It should still clear, briefly show `CLEAR!`, apply gravity, and support chains as before; chains of 2 or higher should also show `CHAIN xN`.
 
 ## Known Limitations / Not Implemented Yet
 
