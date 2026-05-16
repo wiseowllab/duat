@@ -57,6 +57,13 @@ export class Hud {
     this.godText = this.createLabel(20, 336, 'God: Imsety', 13);
     this.coffinText = this.createLabel(20, 376, 'Meter: 0 / 1000', 13);
     this.unlockedText = this.createLabel(20, 394, 'Unlocked: 0 / 14', 13);
+    this.scene.add.text(this.x + 20, this.y + 430, 'BOMB STOCK', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '15px',
+      color: '#f3e2a0',
+      fontStyle: 'bold',
+    });
+    this.bombStockText = this.createLabel(20, 450, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 12);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinBarBack = this.scene.add.rectangle(this.x + 20, this.y + 410, 120, 14, 0x0b0906, 0.92)
       .setOrigin(0, 0.5)
@@ -64,14 +71,14 @@ export class Hud {
     this.coffinBarFill = this.scene.add.rectangle(this.x + 21, this.y + 410, 0, 10, 0xd4af37, 0.82)
       .setOrigin(0, 0.5);
 
-    this.feedbackText = this.createLabel(20, 432, '', 18);
+    this.feedbackText = this.createLabel(20, 510, '', 16);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
-    this.statusText = this.createLabel(20, 500, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop', 14);
+    this.statusText = this.createLabel(20, 540, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\n1-4 Bombs', 13);
   }
 
   createPanels() {
-    this.scene.add.rectangle(this.x + 82, this.y + 270, 174, 514, 0x21160d, 0.86)
+    this.scene.add.rectangle(this.x + 82, this.y + 270, 174, 540, 0x21160d, 0.86)
       .setStrokeStyle(1, 0xd4af37, 0.42);
     this.scene.add.rectangle(this.x + 82, this.y + 104, 146, 118, 0x0d0b08, 0.72)
       .setStrokeStyle(1, 0x8b7446, 0.28);
@@ -79,9 +86,9 @@ export class Hud {
       .setStrokeStyle(1, 0x8b7446, 0.28);
     this.scene.add.rectangle(this.x + 82, this.y + 358, 146, 146, 0x0d0b08, 0.72)
       .setStrokeStyle(1, 0xd4af37, 0.28);
-    this.scene.add.rectangle(this.x + 82, this.y + 458, 146, 54, 0x0d0b08, 0.62)
+    this.scene.add.rectangle(this.x + 82, this.y + 468, 146, 78, 0x0d0b08, 0.62)
       .setStrokeStyle(1, 0xd4af37, 0.22);
-    this.scene.add.rectangle(this.x + 82, this.y + 530, 146, 70, 0x0d0b08, 0.54)
+    this.scene.add.rectangle(this.x + 82, this.y + 546, 146, 82, 0x0d0b08, 0.54)
       .setStrokeStyle(1, 0x8b7446, 0.2);
   }
 
@@ -108,6 +115,20 @@ export class Hud {
 
   setDebugMode(isEnabled) {
     this.debugText.setVisible(isEnabled);
+  }
+
+
+  updateBombStock(stock) {
+    const lines = [0, 1, 2, 3].map((index) => {
+      const bomb = stock[index];
+      if (!bomb) {
+        return `${index + 1}: Empty`;
+      }
+
+      return `${index + 1}: ${bomb.godName} / ${bomb.name}`;
+    });
+
+    this.bombStockText.setText(lines.join('\n'));
   }
 
   updateCoffin(state) {
@@ -309,6 +330,10 @@ export class Hud {
     }
 
     this.showFeedback(messages.join('\n'), 1400);
+  }
+
+  showBombUsed(bomb, clearedCount) {
+    this.showFeedback(`BOMB! ${bomb.name}\n${clearedCount} cleared`, 1200);
   }
 
   showGodUnlocked(unlockEvents) {
