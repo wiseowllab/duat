@@ -37,7 +37,8 @@ function createGravityTestScene() {
     },
   });
   scene.time = {
-    delayedCall(_delay, callback) {
+    delayedCall(delay, callback) {
+      scene.lastDelayMs = delay;
       const id = setTimeout(callback, 0);
       return {
         remove() {
@@ -78,4 +79,5 @@ test('board gravity animation resolves via failsafe when tween completion does n
   assert.equal(scene.boardGravitySprites.length, 0);
   assert.equal(scene.boardGravityTween, null);
   assert.ok(scene.lastTweenConfig);
+  assert.ok(scene.lastDelayMs <= 250);
 });
