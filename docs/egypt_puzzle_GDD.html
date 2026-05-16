@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ゲーム設計書 — 古代エジプト落ちゲー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0e0b07;
+    --bg2: #1a1208;
+    --bg3: #2d1f0a;
+    --gold: #d4af37;
+    --gold-dim: rgba(212,175,55,0.15);
+    --gold-border: rgba(212,175,55,0.35);
+    --text: #e8dcc8;
+    --text2: #b8a88a;
+    --text3: #7a6a52;
+    --border: rgba(212,175,55,0.12);
+    --red: #c0392b; --blue: #2471a3; --orange: #ca6f1e;
+    --purple: #7b2d8b; --gray: #566573;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 40px 24px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    border-bottom: 1px solid var(--gold-border);
+    padding-bottom: 28px;
+    margin-bottom: 36px;
+  }
+  .header .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--text3);
+    margin-bottom: 10px;
+  }
+  .header h1 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .header .meta {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .header .meta span {
+    font-size: 11px;
+    color: var(--text3);
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 10px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    margin-bottom: 32px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--gold-border);
+  }
+  .section-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--gold);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── GRID LAYOUTS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .card p { font-size: 12px; color: var(--text2); }
+
+  /* ── PIECE CHIPS ── */
+  .pieces { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .piece {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 76px;
+  }
+  .piece-icon {
+    width: 48px; height: 48px;
+    border-radius: 9px;
+    border-width: 2px;
+    border-style: solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .piece-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .piece-role { font-size: 10px; color: var(--text3); text-align: center; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .badge-gold { background: rgba(212,175,55,0.2); color: var(--gold); border: 0.5px solid rgba(212,175,55,0.4); }
+  .badge-green { background: rgba(26,107,74,0.2); color: #5dbb8a; border: 0.5px solid rgba(26,107,74,0.4); }
+  .badge-blue { background: rgba(26,58,107,0.2); color: #5b8dd9; border: 0.5px solid rgba(26,58,107,0.4); }
+  .badge-red { background: rgba(107,26,26,0.2); color: #e06060; border: 0.5px solid rgba(107,26,26,0.4); }
+  .badge-gray { background: rgba(86,101,115,0.2); color: #aab; border: 0.5px solid rgba(86,101,115,0.3); }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    text-align: left;
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    border-bottom: 0.5px solid var(--border);
+  }
+  td {
+    padding: 7px 10px;
+    color: var(--text2);
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── CODE BLOCK ── */
+  .code {
+    background: rgba(0,0,0,0.3);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+    white-space: pre;
+  }
+
+  /* ── SCORE TABLE ── */
+  .score-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+    font-size: 12px;
+  }
+  .score-row:last-child { border-bottom: none; }
+  .stars { color: var(--gold); letter-spacing: -2px; }
+
+  /* ── FLOW ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .flow-step {
+    background: var(--bg3);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .flow-arrow { color: var(--gold); font-size: 14px; }
+
+  /* ── COLOR SWATCHES ── */
+  .swatch-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .swatch-block { width: 40px; height: 28px; border-radius: 5px; }
+  .swatch-label { font-size: 9px; color: var(--text3); text-align: center; }
+
+  /* ── TIER ROWS ── */
+  .tier-row {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 0.5px solid;
+  }
+  .tier-label {
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .tier-gods { font-size: 12px; color: var(--text); margin-bottom: 3px; }
+  .tier-desc { font-size: 11px; color: var(--text2); }
+  .tier-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .tier-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    border: 0.5px solid;
+  }
+
+  /* ── ROADMAP ── */
+  .phase {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+  }
+  .phase:last-child { border-bottom: none; }
+  .phase-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .phase-weeks {
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .phase-items { font-size: 11px; color: var(--text2); }
+  .phase-items li { list-style: none; padding-left: 0; margin-bottom: 2px; }
+  .phase-items li::before { content: '□ '; color: var(--text3); }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 28px 0; }
+
+  /* ── HIGHLIGHT BOX ── */
+  .highlight {
+    background: var(--gold-dim);
+    border: 0.5px solid var(--gold-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .highlight strong { color: var(--gold); }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; color: #111; padding: 20px; }
+    .card { background: #f8f8f6; border-color: #ddd; }
+    :root { --text: #111; --text2: #444; --text3: #888; --gold: #8a6d00; --border: #ddd; --bg2: #f8f8f6; --bg3: #f0ede6; --gold-dim: #fdf8e8; --gold-border: #c8a800; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ━━━ HEADER ━━━ -->
+<div class="header">
+  <div class="eyebrow">GAME DESIGN DOCUMENT · v1.0</div>
+  <h1>古代エジプト落ちゲー</h1>
+  <div class="subtitle">死者の書をモチーフにした落ち物パズルゲーム</div>
+  <div class="meta">
+    <span>ジャンル：落ちゲー（パズル）</span>
+    <span>プラットフォーム：Web → モバイル</span>
+    <span>開発：AI支援・低コスト</span>
+    <span>作成日：2025</span>
+  </div>
+</div>
+
+
+<!-- ━━━ 01 コンセプト ━━━ -->
+<div class="section">
+  <div class="section-title">01 &nbsp;コンセプト</div>
+
+  <div class="highlight">
+    <strong>「臓器を集めてミイラを完成させ、神々を甦らせる」</strong><br>
+    古代エジプトのミイラ化儀式をモチーフに、6種類の臓器ピースを消してスコアを稼ぐ落ちゲー。棺のゲージが満タンになるたびに神が復活し、強力なボムを獲得できる。最終目標はラー神の解放。
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🎮 ゲームジャンル</div>
+      <p>落ちゲー（2個組・4方向回転）<br>ぷよぷよ × 独自セット消去の複合方式</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏛️ 世界観</div>
+      <p>古代エジプト・死者の書・ミイラ化儀式・カノポス壺・神々の復活</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 ターゲット</div>
+      <p>パズルゲーム好き全般。エジプト文化ファン。スコアアタック層。</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 02 ピース設計 ━━━ -->
+<div class="section">
+  <div class="section-title">02 &nbsp;ピース設計（6種）</div>
+
+  <div class="pieces">
+    <div class="piece">
+      <div class="piece-icon" style="background:#c0392b;border-color:#7b241c">🫀</div>
+      <div class="piece-name">肝臓</div>
+      <div class="piece-role">イムセティ（人面）<br>標準ピース</div>
+    </div>
+    <div class="piece">
+      <div class="piece-icon" style="background:#2471a3;border-color:#1a5276">🫁</div>
+      <div class="piece-name">肺</div>
+      <div class="piece-role">ハピ（ヒヒ面）<br>標準ピース</div>
+    </div>
+    <div class="piece">
+      <div class="piece-icon" style="background:#ca6f1e;border-color:#873600">🟠</div>
+      <div class="piece-name">胃</div>
+      <div class="piece-role">ドゥアムテフ（ジャッカル）<br>標準ピース</div>
+    </div>
+    <div class="piece">
+      <div class="piece-icon" style="background:#7b2d8b;border-color:#4a1a5c">🟣</div>
+      <div class="piece-name">腸</div>
+      <div class="piece-role">ケベフセヌエフ（ハヤブサ）<br>標準ピース</div>
+    </div>
+    <div class="piece">
+      <div class="piece-icon" style="background:#9a7d0a;border-color:#d4af37">❤️</div>
+      <div class="piece-name">心臓</div>
+      <div class="piece-role">マアトの天秤<br>ワイルドカード</div>
+    </div>
+    <div class="piece">
+      <div class="piece-icon" style="background:#3d4f55;border-color:#2c3e50">🧠</div>
+      <div class="piece-name">脳</div>
+      <div class="piece-role">掻き出しフック<br>障害ピース</div>
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <th>ピース</th>
+      <th>史実的根拠</th>
+      <th>ゲーム特性</th>
+    </tr>
+    <tr>
+      <td><strong>肝・肺・胃・腸</strong></td>
+      <td>カノポス壺に保管される4臓器</td>
+      <td>4つ以上つながりで消去。全4種揃いで高得点</td>
+    </tr>
+    <tr>
+      <td><strong>心臓</strong></td>
+      <td>体内に残す。アヌビスの天秤で量られる最重要臓器</td>
+      <td>どの種とも合体してマッチ成立。消去時にボーナス倍率UP</td>
+    </tr>
+    <tr>
+      <td><strong>脳</strong></td>
+      <td>鼻から掻き出して捨てる。不要と判断</td>
+      <td>単独では消去不可。ボムか隣接消去に巻き込まれると消える</td>
+    </tr>
+  </table>
+</div>
+
+
+<!-- ━━━ 03 消去システム ━━━ -->
+<div class="section">
+  <div class="section-title">03 &nbsp;消去システム（2系統）</div>
+
+  <div class="grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-title">系統① &nbsp;同種消去（ぷよぷよ方式）</div>
+      <div class="card-sub">同じ臓器が4つ以上つながる → 消去</div>
+      <p>多いほど得点倍率UP。連鎖可能。心臓はどの種とも合体。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">系統② &nbsp;カノポスセット消去（独自方式）</div>
+      <div class="card-sub">肝・肺・胃・腸の4種が1グループ内に全種 → 高得点消去</div>
+      <p>心臓は不足種を補う。脳はセット不参加。同時発生で最高点。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">脳の消去条件（3段階）</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+      <div class="flow">
+        <span class="badge badge-green">条件①</span>
+        <span class="flow-step">カノポスセット消去の隣接に巻き込まれる</span>
+        <span style="font-size:11px;color:var(--text3)">基本。スキルで対処</span>
+      </div>
+      <div class="flow">
+        <span class="badge badge-blue">条件②</span>
+        <span class="flow-step">Tier 2以上のボムで消去</span>
+        <span style="font-size:11px;color:var(--text3)">アヌビス・トト・バステト・セクメト</span>
+      </div>
+      <div class="flow">
+        <span class="badge badge-red">条件③</span>
+        <span class="flow-step">Tier 3以上のボムで確実消去</span>
+        <span style="font-size:11px;color:var(--text3)">ホルス・イシス・オシリス・セト以上</span>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>消去タイプ</th><th>得点</th><th>棺ゲージ</th></tr>
+    <tr><td>同種 4つ消去</td><td><span class="stars">★</span></td><td>小</td></tr>
+    <tr><td>同種 6つ以上</td><td><span class="stars">★★</span></td><td>中</td></tr>
+    <tr><td>カノポスセット（4種）</td><td><span class="stars">★★★</span></td><td>大</td></tr>
+    <tr><td>両方同時発生</td><td><span class="stars">★★★★</span></td><td>特大</td></tr>
+    <tr><td>連鎖</td><td>×乗数</td><td>+α</td></tr>
+  </table>
+</div>
+
+
+<!-- ━━━ 04 棺・神システム ━━━ -->
+<div class="section">
+  <div class="section-title">04 &nbsp;棺・神システム（Tier 1〜4）</div>
+
+  <div class="highlight">
+    <strong>棺メーター＝経験値バー　神解放＝レベルアップ</strong><br>
+    棺メーターが満タン → 神復活演出 → ボムストック獲得 → 次の（大きな）棺へ。棺サイズ＝神の格＝ボム威力。
+  </div>
+
+  <div class="tier-row" style="border-color:#1a6b4a;background:rgba(26,107,74,0.06)">
+    <div>
+      <div class="tier-label" style="color:#5dbb8a">Tier 1</div>
+      <div style="font-size:28px">⚰️</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">小棺</div>
+    </div>
+    <div>
+      <div class="tier-gods">ホルスの四子（イムセティ・ハピ・ドゥアムテフ・ケベフセヌエフ）</div>
+      <div class="tier-desc">臓器ピースの守護神。序盤の4体。史実と直結した「最初の解放」。</div>
+      <div class="tier-tags">
+        <span class="tier-tag" style="color:#5dbb8a;border-color:#1a6b4a">弱ボム</span>
+        <span class="tier-tag" style="color:#5dbb8a;border-color:#1a6b4a">脳消去❌</span>
+        <span class="tier-tag" style="color:#5dbb8a;border-color:#1a6b4a">縦/横/十字/囲み消し</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tier-row" style="border-color:#1a3a6b;background:rgba(26,58,107,0.06)">
+    <div>
+      <div class="tier-label" style="color:#5b8dd9">Tier 2</div>
+      <div style="font-size:32px">⚰️</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">中棺</div>
+    </div>
+    <div>
+      <div class="tier-gods">アヌビス・トト・バステト・セクメト</div>
+      <div class="tier-desc">死の管理・知恵・守護・戦争を司る専門神。脳をボムで消せるようになる。</div>
+      <div class="tier-tags">
+        <span class="tier-tag" style="color:#5b8dd9;border-color:#1a3a6b">中ボム</span>
+        <span class="tier-tag" style="color:#5b8dd9;border-color:#1a3a6b">脳消去✅</span>
+        <span class="tier-tag" style="color:#5b8dd9;border-color:#1a3a6b">エリア消し・変換・広域爆発</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tier-row" style="border-color:#6b1a1a;background:rgba(107,26,26,0.06)">
+    <div>
+      <div class="tier-label" style="color:#e06060">Tier 3</div>
+      <div style="font-size:36px">⚰️</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">大棺</div>
+    </div>
+    <div>
+      <div class="tier-gods">ホルス・イシス・オシリス・セト</div>
+      <div class="tier-desc">エジプト神話の根幹。強力ボムで局面打開。フィールドへの大きな介入が可能。</div>
+      <div class="tier-tags">
+        <span class="tier-tag" style="color:#e06060;border-color:#6b1a1a">強ボム</span>
+        <span class="tier-tag" style="color:#e06060;border-color:#6b1a1a">脳消去✅✅</span>
+        <span class="tier-tag" style="color:#e06060;border-color:#6b1a1a">縦3列・全変換・半面リセット</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tier-row" style="border-color:#d4af37;background:rgba(212,175,55,0.06)">
+    <div>
+      <div class="tier-label" style="color:var(--gold)">Tier 4</div>
+      <div style="font-size:40px">⚰️</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:3px">最大棺</div>
+    </div>
+    <div>
+      <div class="tier-gods">ラー・アメン＝ラー</div>
+      <div class="tier-desc">創世神・神々の王。ラー解放でゲームのエンディングへ。最大棺の解放は全消しに近い威力。</div>
+      <div class="tier-tags">
+        <span class="tier-tag" style="color:var(--gold);border-color:#d4af37">最強ボム</span>
+        <span class="tier-tag" style="color:var(--gold);border-color:#d4af37">脳消去✅✅✅</span>
+        <span class="tier-tag" style="color:var(--gold);border-color:#d4af37">全消し・次棺ゲージ半スタート</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 05 ゲーム進行 ━━━ -->
+<div class="section">
+  <div class="section-title">05 &nbsp;ゲーム進行・フロー</div>
+
+  <div class="code">スタート（Tier 1 / 小棺）
+  ↓ 棺メーター × 4体分（ホルスの四子）
+Tier 2 / 中棺  ← 脳をボムで消せるようになる
+  ↓ 棺メーター × 4体分
+Tier 3 / 大棺  ← 強力ボムで局面打開
+  ↓ 棺メーター × 4体分
+Tier 4 / 最大棺 ← ラー・アメン＝ラー
+  ↓ ラー解放
+エンディング演出（太陽が昇る）
+  ↓
+エンドレスモード（難度MAX・全神ボム使用可）
+  ↓
+スコアアタック・周回難度UP</div>
+
+  <div style="height:12px"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">神復活UI</div>
+      <p>右サイドバーに<strong>自動消去トースト</strong>（約4秒）。フィールド中央に神の<strong>半透明一枚絵</strong>が3秒浮かぶ。ゲームは止まらない。タップ不要。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">エンドレスモードの変化</div>
+      <p>落下速度MAX・脳の出現率UP・棺ゲージ要求量UP・全神ボム使用可。どこまで耐えられるかのスコアアタック。</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 06 UI・画面構成 ━━━ -->
+<div class="section">
+  <div class="section-title">06 &nbsp;UI・画面構成</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">フィールド</div>
+      <p>6列 × 12行のグリッド。ぷよぷよ標準サイズ。カノポスセット消去（2×2の4種配置）が組みやすい広さ。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">右サイドバー（縦並び）</div>
+      <p>NEXT（次の2個組）/ HOLD / 棺メーター（柩型） / ボムストック（最大4）。視線移動を最小化。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">上部バー</div>
+      <p>スコア / 現在の神名・Tier / ハイスコア。棺Tier交代時に神名がアニメーションで切り替わる。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">下部サマリー</div>
+      <p>連鎖数 / 解放神数 / カノポス成功回数。スコア以外の達成感を可視化する補助指標。</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 07 アートディレクション ━━━ -->
+<div class="section">
+  <div class="section-title">07 &nbsp;アートディレクション</div>
+
+  <div class="highlight">
+    <strong>スタイル方針：ヒエログリフ・フラット</strong><br>
+    古代壁画の象形文字をモダンにデフォルメ。太い輪郭線・限定色・正面向きの図像。AI画像生成と相性が良く、小サイズでも視認性が高い。
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div class="card-sub" style="margin-bottom:8px">背景・環境色</div>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-block" style="background:#0e0b07;border:0.5px solid #333"></div><div class="swatch-label">深夜砂漠</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#1a1208;border:0.5px solid #333"></div><div class="swatch-label">神殿内部</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#2d1f0a;border:0.5px solid #333"></div><div class="swatch-label">砂岩壁</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#d4af37"></div><div class="swatch-label">黄金</div></div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px">
+    <div class="card-sub" style="margin-bottom:8px">ピース6色</div>
+    <div class="swatch-row">
+      <div class="swatch"><div class="swatch-block" style="background:#c0392b;border:2px solid #7b241c"></div><div class="swatch-label">肝臓・深紅</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#2471a3;border:2px solid #1a5276"></div><div class="swatch-label">肺・青</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#ca6f1e;border:2px solid #873600"></div><div class="swatch-label">胃・橙</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#7b2d8b;border:2px solid #4a1a5c"></div><div class="swatch-label">腸・紫</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#d4af37;border:2px solid #9a7d0a"></div><div class="swatch-label">心臓・金</div></div>
+      <div class="swatch"><div class="swatch-block" style="background:#3d4f55;border:2px solid #2c3e50"></div><div class="swatch-label">脳・灰</div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">視認性の設計原則</div>
+      <p>色＋シルエット＋頂点アイコンの3要素で区別。心臓だけ金色で特別感。脳だけ頂点アイコンが欠けている。</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Tier別演出強度</div>
+      <p>Tier1：右サイド小通知のみ。Tier4（ラー）：全画面フラッシュ・一瞬停止・太陽昇る演出。格の差を演出で表現。</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 08 技術・ロードマップ ━━━ -->
+<div class="section">
+  <div class="section-title">08 &nbsp;技術選定・開発ロードマップ</div>
+
+  <div class="grid-2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">技術スタック</div>
+      <table style="margin-top:4px">
+        <tr><td style="color:var(--text3);padding:3px 0">ゲームエンジン</td><td style="padding:3px 0"><strong>Phaser.js</strong></td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">言語</td><td style="padding:3px 0">JavaScript</td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">配信</td><td style="padding:3px 0">ブラウザ（Web）</td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">モバイル</td><td style="padding:3px 0">Capacitorでラッピング</td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">ホスティング</td><td style="padding:3px 0">GitHub Pages（無料）</td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">AI支援</td><td style="padding:3px 0">Claude / Cursor</td></tr>
+        <tr><td style="color:var(--text3);padding:3px 0">費用</td><td style="padding:3px 0"><strong>ほぼ0円</strong></td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">選定理由</div>
+      <p style="margin-bottom:6px">Phaser.jsはグリッドベースの2Dパズルに最適。AIへの指示がそのままコードになりやすい。物理演算不要のため実装コストが最小。</p>
+      <p>設計書が固まっているため、AIへの指示が具体的になり生成精度が向上する。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="margin-bottom:10px">開発ロードマップ（全12週）</div>
+    <div class="phase">
+      <div>
+        <div class="phase-label">Phase 1</div>
+        <div class="phase-weeks">Week 1〜3</div>
+        <span class="badge badge-green">プロトタイプ</span>
+      </div>
+      <ul class="phase-items">
+        <li>グリッドシステム・ピース落下・着地</li>
+        <li>4方向回転・2個組ペア制御</li>
+        <li>同種4つ消去（flood fill）</li>
+        <li>基本スコア表示</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div>
+        <div class="phase-label">Phase 2</div>
+        <div class="phase-weeks">Week 4〜6</div>
+        <span class="badge badge-blue">コアメカニクス</span>
+      </div>
+      <ul class="phase-items">
+        <li>カノポスセット消去判定</li>
+        <li>心臓（ワイルド）・脳（消去不可）の挙動</li>
+        <li>棺メーターシステム</li>
+        <li>Tier1神の解放演出・弱ボム実装</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div>
+        <div class="phase-label">Phase 3</div>
+        <div class="phase-weeks">Week 7〜10</div>
+        <span class="badge badge-red">コンテンツ</span>
+      </div>
+      <ul class="phase-items">
+        <li>Tier 2〜4の棺・神・ボム効果差分</li>
+        <li>脳のボム消去条件実装</li>
+        <li>ラーのエンディング演出</li>
+        <li>エンドレスモード・周回難度UP</li>
+      </ul>
+    </div>
+    <div class="phase">
+      <div>
+        <div class="phase-label">Phase 4</div>
+        <div class="phase-weeks">Week 11〜12</div>
+        <span class="badge badge-gold">仕上げ</span>
+      </div>
+      <ul class="phase-items">
+        <li>神のビジュアル・アニメーション</li>
+        <li>BGM・SE実装</li>
+        <li>タッチ操作・モバイル対応</li>
+        <li>チュートリアル・スコアボード</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+
+<!-- ━━━ 09 独自性・差別化 ━━━ -->
+<div class="section">
+  <div class="section-title">09 &nbsp;独自性・先行作品との差別化</div>
+
+  <table>
+    <tr><th>ゲーム</th><th>テーマ</th><th>消去ロジック</th><th>差異</th></tr>
+    <tr>
+      <td>ぷよぷよ</td>
+      <td>キャラクター</td>
+      <td>同種4つ以上</td>
+      <td>テーマ・カノポスセット消去・神Tierが独自</td>
+    </tr>
+    <tr>
+      <td>ドクターマリオ</td>
+      <td>カプセル薬</td>
+      <td>同種4つ一列</td>
+      <td>操作感のみ類似。消去ロジック・テーマ・棺システムが別物</td>
+    </tr>
+    <tr>
+      <td>クレオパトラ フォーチュン（1996）</td>
+      <td>エジプト・宝石</td>
+      <td>囲む・ライン揃え</td>
+      <td>テーマ近いが消去ロジックが根本的に別。臓器モチーフは唯一</td>
+    </tr>
+  </table>
+
+  <div style="margin-top:10px">
+    <div class="highlight">
+      <strong>臓器をピースとした落ちゲーは世界に前例なし。</strong>カノポスセット消去・脳の障害ピース設計・神Tier復活システムの組み合わせも独自。著作権・パクリ疑惑のリスクは低い。
+    </div>
+  </div>
+</div>
+
+<!-- ━━━ FOOTER ━━━ -->
+<div style="text-align:center;margin-top:40px;padding-top:20px;border-top:0.5px solid var(--border)">
+  <div style="font-size:10px;color:var(--text3);letter-spacing:0.1em">GAME DESIGN DOCUMENT · v1.0 · 未タイトル · 設計完了 → Phase 1 開発へ</div>
+</div>
+
+</body>
+</html>
