@@ -24,6 +24,12 @@ import { Hud } from '../ui/Hud.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
+const BOMB_AREA_FLASH_STYLES = {
+  brain_clear: { fill: 0x4b5dff, stroke: 0x9b62c9, alpha: 0.28 },
+  knowledge_convert: { fill: 0x62f4ff, stroke: 0xf4d77a, alpha: 0.3 },
+  protective_clear: { fill: 0xf4d77a, stroke: 0xffe6a0, alpha: 0.27 },
+  war_burst: { fill: 0xc0392b, stroke: 0xf4d77a, alpha: 0.3 },
+};
 const SAME_TYPE_CLEAR_FLASH_MS = 320;
 const CANOPIC_CLEAR_FLASH_MS = 420;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
@@ -359,15 +365,48 @@ export class GameScene extends Phaser.Scene {
       this.showBombAreaFlash(result.bomb.type, target);
 
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
-      this.score += clearedCells.length * 25;
-      await this.applyBoardGravityStepwise();
+      const convertedCells = this.convertBombCells(result.convertedCells);
+      const changedCount = clearedCells.length + convertedCells.length;
+      const earnedScore = changedCount * this.bombSystem.getScorePerPiece(result.bomb.type);
+      const unlockEvents = this.coffinMeter.addPoints(Math.floor(earnedScore * 0.25));
+
+      this.score += earnedScore;
+      this.hud.updateScore(this.score);
+      this.hud.updateCoffin(this.coffinMeter.getState());
+
+      if (clearedCells.length > 0) {
+        await this.applyBoardGravityStepwise();
+      } else {
+        this.renderBoard();
+      }
+
       this.hud.updateBombStock(this.bombSystem.getStock());
-      this.hud.showBombUsed(result.bomb, clearedCells.length);
-      this.showBombFeedback(result.bomb, clearedCells.length);
+      this.hud.showBombUsed(result.bomb, changedCount);
+      this.showBombFeedback(result.bomb, changedCount);
+      this.showUnlockEvents(unlockEvents);
       await this.resolveBoardClears();
     } finally {
       this.isResolvingClears = false;
     }
+  }
+
+  convertBombCells(cells) {
+    const convertedCells = [];
+
+    cells.forEach((cell) => {
+      if (!this.board.isInsideColumn(cell.col) || !this.board.isVisibleRow(cell.row)) {
+        return;
+      }
+
+      if (!this.board.getCell(cell.col, cell.row)) {
+        return;
+      }
+
+      this.board.setCell(cell.col, cell.row, cell.toType);
+      convertedCells.push(cell);
+    });
+
+    return convertedCells;
   }
 
   async applyBoardGravityStepwise() {
@@ -507,11 +546,12 @@ export class GameScene extends Phaser.Scene {
     this.clearBombAreaFlash();
 
     const cells = this.getBombAreaFlashCells(bombType, target);
+    const style = this.getBombAreaFlashStyle(bombType);
     this.bombAreaFlashSprites = cells.map((cell) => {
       const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
       const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
-      return this.add.rectangle(x, y, CELL_SIZE - 3, CELL_SIZE - 3, BOMB_AREA_FLASH_COLOR, 0.26)
-        .setStrokeStyle(2, BOMB_AREA_FLASH_COLOR, 0.82)
+      return this.add.rectangle(x, y, CELL_SIZE - 3, CELL_SIZE - 3, style.fill, style.alpha)
+        .setStrokeStyle(2, style.stroke, 0.84)
         .setDepth(8);
     });
 
@@ -529,6 +569,14 @@ export class GameScene extends Phaser.Scene {
         this.clearBombAreaFlash(false);
       },
     });
+  }
+
+  getBombAreaFlashStyle(bombType) {
+    return BOMB_AREA_FLASH_STYLES[bombType] ?? {
+      fill: BOMB_AREA_FLASH_COLOR,
+      stroke: BOMB_AREA_FLASH_COLOR,
+      alpha: 0.26,
+    };
   }
 
   getBombAreaFlashCells(bombType, target) {
@@ -754,8 +802,8 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  showBombFeedback(bomb, clearedCount) {
-    this.boardFeedbackText.setText(`BOMB!\n${bomb.godName} ${bomb.name}\n${clearedCount} cleared`);
+  showBombFeedback(bomb, affectedCount) {
+    this.boardFeedbackText.setText(`BOMB!\n${bomb.godName} ${bomb.name}\n${affectedCount} affected`);
     this.boardFeedbackText.setAlpha(1);
 
     if (this.feedbackTimer) {
