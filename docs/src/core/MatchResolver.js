@@ -32,16 +32,29 @@ export class MatchResolver {
   }
 
   clearMatches(matches) {
-    const clearedCells = [];
+    return this.clearCells(matches.flat());
+  }
 
-    matches.forEach((group) => {
-      group.forEach((cell) => {
-        this.board.clearCell(cell.col, cell.row);
-        clearedCells.push(cell);
-      });
+  clearCells(cells) {
+    const clearedCells = [];
+    const clearedKeys = new Set();
+
+    cells.forEach((cell) => {
+      const key = this.createCellKey(cell);
+      if (clearedKeys.has(key)) {
+        return;
+      }
+
+      this.board.clearCell(cell.col, cell.row);
+      clearedCells.push(cell);
+      clearedKeys.add(key);
     });
 
     return clearedCells;
+  }
+
+  createCellKey(cell) {
+    return `${cell.col},${cell.row}`;
   }
 
   createVisitedGrid() {

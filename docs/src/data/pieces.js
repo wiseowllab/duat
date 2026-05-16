@@ -1,3 +1,13 @@
+export const CANOPIC_ORGAN_TYPES = [
+  'liver',
+  'lung',
+  'stomach',
+  'intestine',
+];
+
+export const HEART_TYPE = 'heart';
+export const BRAIN_TYPE = 'brain';
+
 export const PIECE_TYPES = [
   'liver',
   'lung',

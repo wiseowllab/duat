@@ -15,6 +15,7 @@ import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
 import { MatchResolver } from '../core/MatchResolver.js';
+import { CanopusResolver } from '../core/CanopusResolver.js';
 import { ScoreSystem } from '../core/ScoreSystem.js';
 import { Hud } from '../ui/Hud.js';
 
@@ -27,6 +28,7 @@ export class GameScene extends Phaser.Scene {
     this.board = new Board();
     this.gravity = new GravitySystem(this.board);
     this.matchResolver = new MatchResolver(this.board);
+    this.canopusResolver = new CanopusResolver(this.board);
     this.scoreSystem = new ScoreSystem();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
@@ -193,18 +195,20 @@ export class GameScene extends Phaser.Scene {
   resolveBoardAfterLock() {
     let nextChain = 1;
     let resolvedChains = 0;
+    let clearedCanopicSet = false;
 
     while (true) {
-      const matches = this.matchResolver.findMatches();
-      if (matches.length === 0) {
+      const clearResult = this.findClearResult();
+      if (clearResult.cellsToClear.length === 0) {
         break;
       }
 
-      const earnedScore = this.scoreSystem.calculateClearScore(matches, nextChain);
+      const earnedScore = this.scoreSystem.calculateCycleScore(clearResult, nextChain);
       this.score += earnedScore;
       resolvedChains = nextChain;
+      clearedCanopicSet = clearedCanopicSet || clearResult.clearTypes.has('canopic');
 
-      this.matchResolver.clearMatches(matches);
+      this.matchResolver.clearCells(clearResult.cellsToClear);
       this.gravity.applyBoardGravity();
       nextChain += 1;
     }
@@ -212,7 +216,44 @@ export class GameScene extends Phaser.Scene {
     this.chainCount = resolvedChains;
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
+
+    if (clearedCanopicSet) {
+      this.hud.showCanopicSet();
+    }
+
     this.renderBoard();
+  }
+
+  findClearResult() {
+    const sameTypeGroups = this.matchResolver.findMatches();
+    const canopicSets = this.canopusResolver.findCanopicSets();
+    const clearTypes = new Set();
+    const cellMap = new Map();
+
+    if (sameTypeGroups.length > 0) {
+      clearTypes.add('sameType');
+      this.addGroupsToCellMap(sameTypeGroups, cellMap);
+    }
+
+    if (canopicSets.length > 0) {
+      clearTypes.add('canopic');
+      this.addGroupsToCellMap(canopicSets, cellMap);
+    }
+
+    return {
+      cellsToClear: [...cellMap.values()],
+      clearTypes,
+      sameTypeGroups,
+      canopicSets,
+    };
+  }
+
+  addGroupsToCellMap(groups, cellMap) {
+    groups.forEach((group) => {
+      group.forEach((cell) => {
+        cellMap.set(`${cell.col},${cell.row}`, cell);
+      });
+    });
   }
 
   endGame() {
