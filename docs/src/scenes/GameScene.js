@@ -379,6 +379,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.selectedBombSlot === slotIndex) {
+      this.confirmSelectedBomb();
+      return;
+    }
+
     this.selectedBombSlot = slotIndex;
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.updateBombPreview();
