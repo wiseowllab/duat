@@ -193,6 +193,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   resolveBoardAfterLock() {
+    this.gravity.applyBoardGravity();
+
     let nextChain = 1;
     let resolvedChains = 0;
     let clearedCanopicSet = false;
