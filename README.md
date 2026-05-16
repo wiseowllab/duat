@@ -96,7 +96,7 @@ docs/assets/images/coffins/
   coffin_maximum.png
 ```
 
-`docs/src/data/coffins.js` maps each coffin tier to a Phaser texture key, source path, HUD label, fallback primitive size, and maximum HUD display size. `GameScene` preloads all four coffin images, and `Hud` chooses the image from the current god tier's `coffinSize`.
+`docs/src/data/coffins.js` maps each coffin tier to a Phaser texture key, required file name, source path, tier label, fallback primitive size, and maximum HUD display size. `GameScene` preloads all four coffin images, and `Hud` chooses the image from the current god tier's `coffinSize`.
 
 ### Replacing Coffin Art Later
 

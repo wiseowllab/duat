@@ -12,6 +12,7 @@ export class Hud {
     this.coffinContainer = null;
     this.coffinGlow = null;
     this.coffinGlowTween = null;
+    this.currentCoffinSize = null;
 
     this.create();
   }
@@ -116,11 +117,22 @@ export class Hud {
   }
 
   drawCoffinVisual(currentTier) {
+    const nextCoffinSize = currentTier.coffinSize ?? 'small';
+
+    if (this.coffinContainer && this.currentCoffinSize === nextCoffinSize) {
+      return;
+    }
+
+    if (this.coffinGlowTween) {
+      this.coffinGlowTween.stop();
+      this.coffinGlowTween = null;
+    }
+
     if (this.coffinContainer) {
       this.coffinContainer.destroy(true);
     }
 
-    const asset = getCoffinAsset(currentTier.coffinSize);
+    const asset = getCoffinAsset(nextCoffinSize);
     const centerX = this.x + 108;
     const centerY = this.y + 350;
     const container = this.scene.add.container(centerX, centerY);
@@ -132,6 +144,7 @@ export class Hud {
 
     container.add([this.coffinGlow, coffin]);
     this.coffinContainer = container;
+    this.currentCoffinSize = nextCoffinSize;
   }
 
   createCoffinDisplay(asset, tier) {
