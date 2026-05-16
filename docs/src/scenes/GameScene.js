@@ -29,8 +29,7 @@ const CANOPIC_CLEAR_FLASH_MS = 420;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
-const BOARD_GRAVITY_FALL_MS = 190;
-const BOARD_GRAVITY_FAILSAFE_MS = 250;
+const BOARD_GRAVITY_STEP_MS = 55;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -65,8 +64,6 @@ export class GameScene extends Phaser.Scene {
     this.bombAreaFlashTween = null;
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
-    this.boardGravitySprites = [];
-    this.boardGravityTween = null;
     this.isResolvingClears = false;
 
     this.createBackground();
@@ -291,7 +288,7 @@ export class GameScene extends Phaser.Scene {
     this.isResolvingClears = true;
 
     try {
-      await this.applyBoardGravityWithAnimation();
+      await this.applyBoardGravityStepwise();
       await this.resolveBoardClears();
     } finally {
       this.isResolvingClears = false;
@@ -322,7 +319,7 @@ export class GameScene extends Phaser.Scene {
       clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
-      await this.applyBoardGravityWithAnimation();
+      await this.applyBoardGravityStepwise();
       nextChain += 1;
     }
 
@@ -363,7 +360,7 @@ export class GameScene extends Phaser.Scene {
 
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
       this.score += clearedCells.length * 25;
-      await this.applyBoardGravityWithAnimation();
+      await this.applyBoardGravityStepwise();
       this.hud.updateBombStock(this.bombSystem.getStock());
       this.hud.showBombUsed(result.bomb, clearedCells.length);
       this.showBombFeedback(result.bomb, clearedCells.length);
@@ -373,151 +370,57 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  async applyBoardGravityWithAnimation() {
-    const beforeCells = this.captureBoardCells();
-    this.gravity.applyBoardGravity();
+  async applyBoardGravityStepwise() {
+    let movedPieces = this.gravity.applyBoardGravityStep();
 
-    const movedCells = this.getBoardGravityMoves(beforeCells, this.captureBoardCells());
-    if (movedCells.length === 0) {
+    if (movedPieces === 0) {
       this.renderBoard();
       return;
     }
 
-    await this.animateBoardGravityMoves(movedCells);
-  }
-
-  captureBoardCells() {
-    return this.board.cells.map((row) => [...row]);
-  }
-
-  getBoardGravityMoves(beforeCells, afterCells) {
-    const moves = [];
-
-    for (let col = 0; col < this.board.columns; col += 1) {
-      const beforePieces = this.getColumnPieces(beforeCells, col);
-      const afterPieces = this.getColumnPieces(afterCells, col);
-
-      afterPieces.forEach((afterPiece, index) => {
-        const beforePiece = beforePieces[index];
-        if (!beforePiece || beforePiece.row === afterPiece.row) {
-          return;
-        }
-
-        moves.push({
-          col,
-          type: afterPiece.type,
-          fromRow: beforePiece.row,
-          toRow: afterPiece.row,
-        });
-      });
-    }
-
-    return moves;
-  }
-
-  getColumnPieces(cells, col) {
-    const pieces = [];
-
-    for (let row = this.board.rows - 1; row >= 0; row -= 1) {
-      const type = cells[row][col];
-      if (type) {
-        pieces.push({ row, type });
-      }
-    }
-
-    return pieces;
-  }
-
-  animateBoardGravityMoves(gravityMoves) {
-    if (gravityMoves.length === 0) {
+    while (movedPieces > 0) {
       this.renderBoard();
-      return Promise.resolve();
+      await this.wait(BOARD_GRAVITY_STEP_MS);
+      movedPieces = this.gravity.applyBoardGravityStep();
     }
 
-    this.clearBlockSprites();
-    this.clearBoardGravitySprites();
-    this.renderBoardForGravityAnimation(gravityMoves);
+    this.renderBoard();
+  }
 
-    this.boardGravitySprites = gravityMoves.map((move) => {
-      const startPosition = this.getCellCenter(move.col, move.fromRow);
-      const sprite = this.createBlockSprite(startPosition.x, startPosition.y, move.type, 1);
-      sprite.setDepth(6);
-      return sprite;
-    });
-
-    if (this.boardGravitySprites.length === 0) {
-      this.renderBoard();
-      return Promise.resolve();
-    }
-
+  wait(ms) {
     return new Promise((resolve) => {
       let hasResolved = false;
-      let failsafeTimer = null;
+      let timeoutId = null;
 
-      const finishAnimation = () => {
+      const finish = () => {
         if (hasResolved) {
           return;
         }
 
         hasResolved = true;
 
-        if (failsafeTimer) {
-          failsafeTimer.remove(false);
-          failsafeTimer = null;
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
         }
 
-        this.boardGravityTween = null;
-        this.clearBoardGravitySprites(false);
-        this.renderBoard();
         resolve();
       };
 
-      failsafeTimer = this.time.delayedCall(BOARD_GRAVITY_FAILSAFE_MS, finishAnimation);
-      this.boardGravityTween = this.tweens.add({
-        targets: this.boardGravitySprites,
-        y: (target, targetIndex) => this.getCellCenter(gravityMoves[targetIndex].col, gravityMoves[targetIndex].toRow).y,
-        duration: BOARD_GRAVITY_FALL_MS,
-        ease: 'Cubic.easeIn',
-        onComplete: finishAnimation,
-      });
+      timeoutId = setTimeout(finish, ms + 25);
 
-      if (!this.boardGravityTween) {
-        finishAnimation();
+      if (this.time?.delayedCall) {
+        try {
+          this.time.delayedCall(ms, finish);
+        } catch (error) {
+          // The timeout fallback still resolves if Phaser's clock is unavailable.
+        }
+      } else {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(finish, ms);
       }
     });
   }
-
-  renderBoardForGravityAnimation(gravityMoves) {
-    const movingDestinations = new Set(gravityMoves.map((move) => `${move.col},${move.toRow}`));
-
-    for (let row = 0; row < this.board.rows; row += 1) {
-      for (let col = 0; col < this.board.columns; col += 1) {
-        const type = this.board.cells[row][col];
-        if (type && !movingDestinations.has(`${col},${row}`)) {
-          this.drawBlock(col, row, type, 1);
-        }
-      }
-    }
-
-    if (this.activePiece) {
-      this.activePiece.getCells().forEach((cell) => {
-        if (cell.row >= 0) {
-          this.drawBlock(cell.col, cell.row, cell.type, 0.95);
-        }
-      });
-    }
-  }
-
-  clearBoardGravitySprites(stopTween = true) {
-    if (stopTween && this.boardGravityTween) {
-      this.boardGravityTween.remove();
-      this.boardGravityTween = null;
-    }
-
-    this.boardGravitySprites.forEach((sprite) => sprite.destroy());
-    this.boardGravitySprites = [];
-  }
-
 
   highlightClearCells(clearResult) {
     const cells = this.getClearHighlightCells(clearResult);
