@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DUAT liver piece placeholder">
+  <defs>
+    <linearGradient id="liverFill" x1="56" y1="60" x2="210" y2="202" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f07c5f"/>
+      <stop offset="1" stop-color="#8f2f28"/>
+    </linearGradient>
+  </defs>
+  <path d="M46 143c0-48 35-86 84-86 53 0 91 27 91 70 0 50-45 73-100 73-48 0-75-20-75-57Z" fill="url(#liverFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M122 65c-15 31-19 64-12 112" fill="none" stroke="#5b1f1b" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+  <path d="M68 132c25 13 58 16 91 9" fill="none" stroke="#f9c27b" stroke-width="8" stroke-linecap="round" opacity="0.75"/>
+  <path d="M183 91l19 18-18 19-18-19Z" fill="#d4af37" stroke="#3b250d" stroke-width="5"/>
+  <path d="M84 84h30" stroke="#fff4c2" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+</svg>

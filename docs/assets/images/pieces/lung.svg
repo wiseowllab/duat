@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DUAT lung piece placeholder">
+  <defs>
+    <linearGradient id="lungFill" x1="52" y1="54" x2="204" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#87b7ff"/>
+      <stop offset="1" stop-color="#2f5fae"/>
+    </linearGradient>
+  </defs>
+  <path d="M118 68c-33 4-61 39-61 82 0 33 17 55 43 55 22 0 31-23 31-53V80c0-8-5-13-13-12Z" fill="url(#lungFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M138 80v72c0 30 9 53 31 53 26 0 43-22 43-55 0-43-28-78-61-82-8-1-13 4-13 12Z" fill="url(#lungFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M128 40v112" stroke="#d4af37" stroke-width="12" stroke-linecap="round"/>
+  <path d="M128 92c-16 14-29 31-37 51" fill="none" stroke="#183865" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <path d="M128 92c16 14 29 31 37 51" fill="none" stroke="#183865" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <path d="M99 85h18M157 85h18" stroke="#fff4c2" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+</svg>

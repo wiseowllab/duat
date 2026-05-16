@@ -35,6 +35,50 @@ export const PIECE_LABELS = {
   brain: 'Brain',
 };
 
+export const PIECE_ASSETS = {
+  liver: {
+    key: 'piece-liver',
+    path: 'assets/images/pieces/liver.svg',
+  },
+  lung: {
+    key: 'piece-lung',
+    path: 'assets/images/pieces/lung.svg',
+  },
+  stomach: {
+    key: 'piece-stomach',
+    path: 'assets/images/pieces/stomach.svg',
+  },
+  intestine: {
+    key: 'piece-intestine',
+    path: 'assets/images/pieces/intestine.svg',
+  },
+  heart: {
+    key: 'piece-heart',
+    path: 'assets/images/pieces/heart.svg',
+  },
+  brain: {
+    key: 'piece-brain',
+    path: 'assets/images/pieces/brain.svg',
+  },
+};
+
+export function getPieceAsset(type) {
+  return PIECE_ASSETS[type] ?? null;
+}
+
+export function preloadPieceAssets(scene) {
+  PIECE_TYPES.forEach((type) => {
+    const asset = getPieceAsset(type);
+
+    if (asset.path.endsWith('.svg')) {
+      scene.load.svg(asset.key, asset.path);
+      return;
+    }
+
+    scene.load.image(asset.key, asset.path);
+  });
+}
+
 export function randomPieceType() {
   const index = Math.floor(Math.random() * PIECE_TYPES.length);
   return PIECE_TYPES[index];

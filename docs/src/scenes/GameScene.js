@@ -10,7 +10,7 @@ import {
   NORMAL_FALL_MS,
   SOFT_DROP_FALL_MS,
 } from '../data/constants.js';
-import { createRandomPairTypes, PIECE_COLORS } from '../data/pieces.js';
+import { createRandomPairTypes, getPieceAsset, PIECE_COLORS, preloadPieceAssets } from '../data/pieces.js';
 import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
@@ -22,6 +22,10 @@ import { Hud } from '../ui/Hud.js';
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
+  }
+
+  preload() {
+    preloadPieceAssets(this);
   }
 
   create() {
@@ -294,6 +298,23 @@ export class GameScene extends Phaser.Scene {
   drawBlock(col, row, type, alpha) {
     const x = BOARD_ORIGIN_X + col * CELL_SIZE + CELL_SIZE / 2;
     const y = BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2;
+    const asset = getPieceAsset(type);
+
+    if (!asset || !this.textures.exists(asset.key)) {
+      this.drawFallbackBlock(x, y, type, alpha);
+      return;
+    }
+
+    const backplate = this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, 0x1f160d, alpha * 0.72)
+      .setStrokeStyle(2, 0xd4af37, alpha);
+    const sprite = this.add.image(x, y, asset.key)
+      .setDisplaySize(CELL_SIZE - 8, CELL_SIZE - 8)
+      .setAlpha(alpha);
+
+    this.blockSprites.push(backplate, sprite);
+  }
+
+  drawFallbackBlock(x, y, type, alpha) {
     const rect = this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, PIECE_COLORS[type], alpha)
       .setStrokeStyle(2, 0xf6e3a1);
     const shine = this.add.rectangle(x - 8, y - 9, 10, 6, 0xffffff, 0.18);

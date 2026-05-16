@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="DUAT brain piece placeholder">
+  <defs>
+    <linearGradient id="brainFill" x1="58" y1="52" x2="204" y2="203" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f1e4c8"/>
+      <stop offset="1" stop-color="#a9936e"/>
+    </linearGradient>
+  </defs>
+  <path d="M73 138c-16-11-21-34-10-51 8-12 21-18 35-16 8-17 25-27 45-23 17 3 29 14 34 29 18 0 33 14 35 33 2 18-8 34-24 41 4 21-13 41-35 41h-54c-23 0-39-28-26-54Z" fill="url(#brainFill)" stroke="#f6e3a1" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M91 92c21 4 34 18 36 41M152 78c-16 19-19 41-8 67M81 140c24-9 50-8 75 1M113 178c6-20 23-33 49-38" fill="none" stroke="#6f6046" stroke-width="8" stroke-linecap="round" opacity="0.75"/>
+  <path d="M185 62l18 18-18 18-18-18Z" fill="#d4af37" stroke="#3b250d" stroke-width="5"/>
+  <path d="M96 73h28" stroke="#fff4c2" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+</svg>
