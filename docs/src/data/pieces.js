@@ -38,27 +38,27 @@ export const PIECE_LABELS = {
 export const PIECE_ASSETS = {
   liver: {
     key: 'piece-liver',
-    path: 'assets/images/pieces/liver.svg',
+    path: 'assets/images/pieces/liver.png',
   },
   lung: {
     key: 'piece-lung',
-    path: 'assets/images/pieces/lung.svg',
+    path: 'assets/images/pieces/lung.png',
   },
   stomach: {
     key: 'piece-stomach',
-    path: 'assets/images/pieces/stomach.svg',
+    path: 'assets/images/pieces/stomach.png',
   },
   intestine: {
     key: 'piece-intestine',
-    path: 'assets/images/pieces/intestine.svg',
+    path: 'assets/images/pieces/intestine.png',
   },
   heart: {
     key: 'piece-heart',
-    path: 'assets/images/pieces/heart.svg',
+    path: 'assets/images/pieces/heart.png',
   },
   brain: {
     key: 'piece-brain',
-    path: 'assets/images/pieces/brain.svg',
+    path: 'assets/images/pieces/brain.png',
   },
 };
 

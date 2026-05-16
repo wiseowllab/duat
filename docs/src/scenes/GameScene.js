@@ -300,18 +300,17 @@ export class GameScene extends Phaser.Scene {
     const y = BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2;
     const asset = getPieceAsset(type);
 
+    this.drawFallbackBlock(x, y, type, alpha);
+
     if (!asset || !this.textures.exists(asset.key)) {
-      this.drawFallbackBlock(x, y, type, alpha);
       return;
     }
 
-    const backplate = this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, 0x1f160d, alpha * 0.72)
-      .setStrokeStyle(2, 0xd4af37, alpha);
     const sprite = this.add.image(x, y, asset.key)
       .setDisplaySize(CELL_SIZE - 8, CELL_SIZE - 8)
       .setAlpha(alpha);
 
-    this.blockSprites.push(backplate, sprite);
+    this.blockSprites.push(sprite);
   }
 
   drawFallbackBlock(x, y, type, alpha) {
@@ -320,6 +319,7 @@ export class GameScene extends Phaser.Scene {
     const shine = this.add.rectangle(x - 8, y - 9, 10, 6, 0xffffff, 0.18);
 
     this.blockSprites.push(rect, shine);
+    return rect;
   }
 
   clearBlockSprites() {

@@ -95,18 +95,18 @@ export class Hud {
   drawNextBlock(x, y, type) {
     const asset = getPieceAsset(type);
 
-    if (!asset || !this.scene.textures.exists(asset.key)) {
-      return this.scene.add.rectangle(x, y, CELL_SIZE, CELL_SIZE, PIECE_COLORS[type])
-        .setStrokeStyle(2, 0x2a1b10);
+    const container = this.scene.add.container(x, y);
+    const fallbackBlock = this.scene.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, PIECE_COLORS[type])
+      .setStrokeStyle(2, 0x2a1b10);
+
+    container.add(fallbackBlock);
+
+    if (asset && this.scene.textures.exists(asset.key)) {
+      const image = this.scene.add.image(0, 0, asset.key)
+        .setDisplaySize(CELL_SIZE - 6, CELL_SIZE - 6);
+      container.add(image);
     }
 
-    const container = this.scene.add.container(x, y);
-    const backplate = this.scene.add.rectangle(0, 0, CELL_SIZE, CELL_SIZE, 0x1f160d, 0.75)
-      .setStrokeStyle(2, 0xd4af37);
-    const image = this.scene.add.image(0, 0, asset.key)
-      .setDisplaySize(CELL_SIZE - 6, CELL_SIZE - 6);
-
-    container.add([backplate, image]);
     return container;
   }
 

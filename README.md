@@ -2,7 +2,7 @@
 
 DUAT is a browser-based falling puzzle game inspired by ancient Egyptian funerary rituals, the Book of the Dead, canopic jars, mummification, and the revival of gods.
 
-The current build is **Phase 2**, a playable falling-puzzle prototype with same-type clearing, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, and placeholder image sprites for each piece type with colored rectangle fallbacks.
+The current build is **Phase 2**, a playable falling-puzzle prototype with same-type clearing, gravity, chain resolution, basic scoring, DUAT's first unique mechanic: canopic set clearing, and PNG image sprites for each piece type with colored rectangle fallbacks.
 
 ## How to Run Locally
 
@@ -44,7 +44,7 @@ Implemented so far:
 - Brain exclusion from canopic set detection and canopic connectivity
 - Same-cycle scoring bonus when a same-type clear and canopic set clear happen together
 - HUD display for score, latest chain count, level placeholder, controls, NEXT display, and a `CANOPIC SET!` feedback flash
-- Placeholder image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
+- PNG image sprites for all six DUAT piece types, with colored rectangle fallback rendering if an asset is missing or fails to load:
   - liver
   - lung
   - stomach
@@ -60,26 +60,26 @@ Piece placeholders live in:
 
 ```text
 docs/assets/images/pieces/
-  liver.svg
-  lung.svg
-  stomach.svg
-  intestine.svg
-  heart.svg
-  brain.svg
+  liver.png
+  lung.png
+  stomach.png
+  intestine.png
+  heart.png
+  brain.png
 ```
 
 `docs/src/data/pieces.js` maps each piece type to a Phaser texture key and image path. `GameScene` preloads those images before rendering the board, and both the board cells and NEXT preview use the loaded images when available. If a texture is missing or fails to load, the game falls back to the original colored rectangle rendering so gameplay can continue.
 
 ### Replacing Placeholder Piece Art Later
 
-To replace a placeholder, keep the same file name and path, or update that piece's `path` in `docs/src/data/pieces.js`.
+To replace a placeholder, overwrite the PNG at the same path and keep the required file name unchanged.
 
 Recommended replacement image guidelines:
 
 - Use **256x256px** source images.
 - Use a **transparent background**.
 - Keep silhouettes and colors distinct because pieces are displayed small in the 40px grid cells and NEXT preview.
-- SVG or PNG files are both suitable, but if switching file formats, update the corresponding asset path in `docs/src/data/pieces.js`.
+- Keep the file names exactly `liver.png`, `lung.png`, `stomach.png`, `intestine.png`, `heart.png`, and `brain.png` so `docs/src/data/pieces.js` continues to preload the expected textures.
 
 ## Clear Rules
 
@@ -171,7 +171,7 @@ Current prototype limitations:
 
 - Clears and gravity resolve instantly without animations.
 - The level display is still a placeholder.
-- Piece art uses temporary placeholder SVGs and can be replaced with final generated PNG or SVG assets later.
+- Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
 - There is no debug board editor, so specific canopic layouts require manual play with random pieces.
 
 ## Project Structure
@@ -181,12 +181,12 @@ docs/
   index.html
   assets/
     images/pieces/
-      liver.svg
-      lung.svg
-      stomach.svg
-      intestine.svg
-      heart.svg
-      brain.svg
+      liver.png
+      lung.png
+      stomach.png
+      intestine.png
+      heart.png
+      brain.png
   src/
     main.js
     scenes/GameScene.js
