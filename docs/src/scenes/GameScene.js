@@ -24,6 +24,11 @@ import { Hud } from '../ui/Hud.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
+const SAME_TYPE_CLEAR_FLASH_MS = 320;
+const CANOPIC_CLEAR_FLASH_MS = 420;
+const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
+const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
+const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -56,6 +61,9 @@ export class GameScene extends Phaser.Scene {
     this.feedbackTimer = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
+    this.clearHighlightSprites = [];
+    this.clearHighlightTween = null;
+    this.isResolvingClears = false;
 
     this.createBackground();
     this.createInput();
@@ -72,7 +80,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_, delta) {
-    if (this.isGameOver || !this.activePiece) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -204,7 +212,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   tryMove(deltaCol, deltaRow) {
-    if (this.isGameOver || !this.activePiece) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return false;
     }
 
@@ -220,7 +228,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   tryRotate() {
-    if (this.isGameOver || !this.activePiece) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -239,7 +247,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   hardDrop() {
-    if (this.isGameOver || !this.activePiece) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -249,7 +257,7 @@ export class GameScene extends Phaser.Scene {
     this.lockActivePiece();
   }
 
-  lockActivePiece() {
+  async lockActivePiece() {
     if (!this.activePiece) {
       return;
     }
@@ -263,16 +271,22 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.resolveBoardAfterLock();
-    this.spawnPiece();
+    await this.resolveBoardAfterLock();
+
+    if (!this.isGameOver) {
+      this.spawnPiece();
+    }
   }
 
-  resolveBoardAfterLock() {
+  async resolveBoardAfterLock() {
+    this.isResolvingClears = true;
     this.gravity.applyBoardGravity();
-    this.resolveBoardClears();
+    this.renderBoard();
+    await this.resolveBoardClears();
+    this.isResolvingClears = false;
   }
 
-  resolveBoardClears() {
+  async resolveBoardClears() {
     let nextChain = 1;
     let resolvedChains = 0;
     let clearedCanopicSet = false;
@@ -285,6 +299,8 @@ export class GameScene extends Phaser.Scene {
         break;
       }
 
+      await this.highlightClearCells(clearResult);
+
       const earnedScore = this.scoreSystem.calculateCycleScore(clearResult, nextChain);
       const meterGain = this.scoreSystem.calculateCycleMeterPoints(clearResult, nextChain);
       this.score += earnedScore;
@@ -295,6 +311,7 @@ export class GameScene extends Phaser.Scene {
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
       this.gravity.applyBoardGravity();
+      this.renderBoard();
       nextChain += 1;
     }
 
@@ -313,8 +330,8 @@ export class GameScene extends Phaser.Scene {
     this.renderBoard();
   }
 
-  useBombSlot(slotIndex) {
-    if (this.isGameOver || !this.activePiece) {
+  async useBombSlot(slotIndex) {
+    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -328,6 +345,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.isResolvingClears = true;
     this.showBombAreaFlash(result.bomb.type, target);
 
     const clearedCells = this.matchResolver.clearCells(result.affectedCells);
@@ -336,7 +354,90 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateBombStock(this.bombSystem.getStock());
     this.hud.showBombUsed(result.bomb, clearedCells.length);
     this.showBombFeedback(result.bomb, clearedCells.length);
-    this.resolveBoardClears();
+    await this.resolveBoardClears();
+    this.isResolvingClears = false;
+  }
+
+
+  highlightClearCells(clearResult) {
+    const cells = this.getClearHighlightCells(clearResult);
+    if (cells.length === 0) {
+      return Promise.resolve();
+    }
+
+    const hasCanopicSet = clearResult.clearTypes.has('canopic');
+    const duration = hasCanopicSet ? CANOPIC_CLEAR_FLASH_MS : SAME_TYPE_CLEAR_FLASH_MS;
+    return this.flashCells(cells, { duration });
+  }
+
+  getClearHighlightCells(clearResult) {
+    const cellMap = new Map();
+
+    clearResult.sameTypeGroups.forEach((group) => {
+      group.forEach((cell) => {
+        cellMap.set(`${cell.col},${cell.row}`, {
+          ...cell,
+          highlightType: 'sameType',
+        });
+      });
+    });
+
+    clearResult.canopicSets.forEach((group) => {
+      group.forEach((cell) => {
+        cellMap.set(`${cell.col},${cell.row}`, {
+          ...cell,
+          highlightType: 'canopic',
+        });
+      });
+    });
+
+    return [...cellMap.values()];
+  }
+
+  flashCells(cells, { duration }) {
+    this.clearClearHighlights();
+
+    this.clearHighlightSprites = cells.map((cell) => this.createClearHighlight(cell));
+
+    return new Promise((resolve) => {
+      this.clearHighlightTween = this.tweens.add({
+        targets: this.clearHighlightSprites,
+        alpha: { from: 0.78, to: 0.18 },
+        yoyo: true,
+        repeat: 1,
+        duration: duration / 4,
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          this.clearHighlightTween = null;
+          this.clearClearHighlights(false);
+          resolve();
+        },
+      });
+    });
+  }
+
+  createClearHighlight(cell) {
+    const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
+    const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
+    const isCanopic = cell.highlightType === 'canopic';
+    const fillColor = isCanopic ? CANOPIC_CLEAR_FLASH_COLOR : SAME_TYPE_CLEAR_FLASH_COLOR;
+    const strokeColor = isCanopic ? CANOPIC_CLEAR_STROKE_COLOR : SAME_TYPE_CLEAR_FLASH_COLOR;
+    const fillAlpha = isCanopic ? 0.34 : 0.25;
+    const strokeAlpha = isCanopic ? 0.92 : 0.72;
+
+    return this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, fillColor, fillAlpha)
+      .setStrokeStyle(isCanopic ? 3 : 2, strokeColor, strokeAlpha)
+      .setDepth(9);
+  }
+
+  clearClearHighlights(stopTween = true) {
+    if (stopTween && this.clearHighlightTween) {
+      this.clearHighlightTween.remove();
+      this.clearHighlightTween = null;
+    }
+
+    this.clearHighlightSprites.forEach((sprite) => sprite.destroy());
+    this.clearHighlightSprites = [];
   }
 
   showBombAreaFlash(bombType, target) {
