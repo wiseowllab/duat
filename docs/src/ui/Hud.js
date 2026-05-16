@@ -333,6 +333,11 @@ export class Hud {
   }
 
   showBombUsed(bomb, affectedCount) {
+    if (bomb.type === 'maximum_coffin_burst') {
+      this.showFeedback(`AMUN-RA AWAKENED!\nDUAT COMPLETE!\n${affectedCount} affected`, 2200);
+      return;
+    }
+
     this.showFeedback(`BOMB! ${bomb.name}\n${affectedCount} affected`, 1200);
   }
 

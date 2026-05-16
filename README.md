@@ -58,12 +58,13 @@ Implemented so far:
 - Coffin meter progression after clears
 - Tiered god unlock progression from Imsety through Amun-Ra
 - `docs/index.html` entry point for GitHub Pages from the `docs/` folder
-- Temporary debug mode for quickly testing coffin meter progression, god unlocks, tier-based coffin image switching, and Tier 1/Tier 2/Tier 3 bomb stock
-- Bomb stock for supported Tier 1, Tier 2, and Tier 3 gods, capped at four bombs
+- Temporary debug mode for quickly testing coffin meter progression, god unlocks, tier-based coffin image switching, and Tier 1/Tier 2/Tier 3/Tier 4 bomb stock
+- Bomb stock for supported Tier 1, Tier 2, Tier 3, and Tier 4 gods, capped at four bombs
 - Basic bomb controls using number keys 1-4
 - Vertical, horizontal, cross, and 3x3 surround Tier 1 bomb effects that clear locked non-brain cells
 - Brain Clear, Convert, Protect, and Burst Tier 2 bomb effects that can affect brain pieces
 - Triple Column, Transform, Half Reset, and Chaos Tier 3 bomb effects that provide stronger board intervention and can affect brain pieces
+- Full Clear and Max Burst Tier 4 bomb effects that flash and clear the whole board, including brain pieces
 
 
 ## Piece Image Assets
@@ -189,7 +190,7 @@ Current god progression:
 
 ## Bomb Stock
 
-When a supported Tier 1, Tier 2, or Tier 3 god unlocks, that god adds one bomb to the HUD's `BOMB STOCK` list. The stock can hold up to **4 bombs**. If the stock is full, additional supported bombs are ignored safely. Tier 4 `futureBombType` values remain data-only for now and are ignored safely until later bomb tiers are implemented.
+When a supported Tier 1, Tier 2, Tier 3, or Tier 4 god unlocks, that god adds one bomb to the HUD's `BOMB STOCK` list. The stock can hold up to **4 bombs**. If the stock is full, additional supported bombs are ignored safely. Amun-Ra is the final god unlock and shows placeholder DUAT completion feedback.
 
 Current supported Tier 1 bombs:
 
@@ -212,7 +213,12 @@ Current supported Tier 3 bombs:
 - **Osiris**: `half_board_reset` / Half Reset — clears the left half or right half of the board based on the target column, including brain pieces, for **30 points per cleared piece**. On the 6-column board, columns 0-2 are the left half and columns 3-5 are the right half.
 - **Set**: `chaos_clear` / Chaos — clears up to eight occupied cells within Manhattan distance 3 of the target, including brain pieces, for **50 points per cleared piece**. Cells are selected deterministically by closest distance, then lower row, then lower column.
 
-Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. When a bomb is used, its affected row, column, cross, 3x3 area, 5x5 area, board half, triple-column area, diamond, or chaos cells briefly flash before disappearing automatically. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Tier 2 and Tier 3 bombs are stronger and **can affect brain pieces** as listed above. After a bomb effect, placeholder score and coffin meter gain are applied, gravity runs for cleared cells, and the normal same-type/canopic chain resolution loop continues.
+Current supported Tier 4 bombs:
+
+- **Ra**: `full_board_clear` / Full Clear — clears every occupied locked cell on the board, including brain pieces, for **40 points per cleared piece**. It represents Ra's sunlight purifying the full board.
+- **Amun-Ra**: `maximum_coffin_burst` / Max Burst — clears every occupied locked cell on the board, including brain pieces, for **60 points per cleared piece plus a 1000-point placeholder final-stage bonus**. It shows `AMUN-RA AWAKENED!` / `DUAT COMPLETE!` feedback and does not start a full ending sequence yet.
+
+Bombs target the active falling pair's pivot cell. If the pivot is above the visible board, the target row clamps to row 0. When a bomb is used, its affected row, column, cross, 3x3 area, 5x5 area, board half, triple-column area, diamond, chaos cells, or entire board briefly flash before disappearing automatically. Bombs only affect existing locked board cells, not the active falling pair. Tier 1 bombs **do not clear brain pieces**; brains remain on the board even when they are inside the affected row, column, cross, or 3x3 area. Tier 2, Tier 3, and Tier 4 bombs are stronger and **can affect brain pieces** as listed above. Tier 4 bombs affect the whole board and do not need a meaningful target position, though they still use the active pair pivot for control compatibility. After a bomb effect, placeholder score and coffin meter gain are applied, gravity runs for cleared cells, and the normal same-type/canopic chain resolution loop continues.
 
 
 ## Controls
@@ -259,10 +265,10 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. To test post-lock gravity, place a horizontal pair so one side lands on support and the other side is floating over an empty column. After the pair locks, the unsupported locked cell should visibly fall straight down one row at a time instead of teleporting, then the next piece should spawn.
 3. To test same-type and canopic clear gravity, create a same-type clear or canopic set clear with cells above the cleared area. After the clear highlight finishes, unsupported locked cells should settle through short one-row board updates before the next chain check.
-4. To test bomb clear gravity, enable debug mode with **D**, unlock Tier 1, Tier 2, or Tier 3 bombs with **T**, use keys **1**-**4** to clear cells below existing locked cells, and confirm the remaining locked cells visibly fall before normal clear resolution continues.
+4. To test bomb clear gravity, enable debug mode with **D**, unlock Tier 1, Tier 2, Tier 3, or Tier 4 bombs with **T**, use keys **1**-**4** to clear cells below existing locked cells, and confirm the remaining locked cells visibly fall before normal clear resolution continues.
 5. During each test, confirm pieces do not duplicate or disappear incorrectly and player movement is ignored while gravity/clear resolution is running.
 
-## How to Test Tier 1, Tier 2, and Tier 3 Bomb Stock in the Browser
+## How to Test Tier 1, Tier 2, Tier 3, and Tier 4 Bomb Stock in the Browser
 
 1. Start the local server with `python3 -m http.server 8000` and open <http://localhost:8000/docs/>.
 2. Press **D** to enable debug mode and confirm the HUD shows `DEBUG ON`.
@@ -274,7 +280,9 @@ Debug mode is a temporary development/testing helper for validating DUAT progres
 8. To verify brain safety, use a Tier 1 bomb on a row, column, cross, or 3x3 area containing a brain. The non-brain pieces in the affected area may clear, but brain pieces should remain.
 9. To test Tier 3 bombs, spend or reset earlier stock so the four-slot cap has room, then press **T** until Horus, Isis, Osiris, and Set unlock. The HUD should display `Horus / Triple Column`, `Isis / Transform`, `Osiris / Half Reset`, and `Set / Chaos` as stock is added.
 10. Use Horus on a stack spanning adjacent columns to confirm three columns clear including brains; use Isis on a 5x5 area with brains to confirm they convert to hearts, or without brains to confirm up to three organs convert; use Osiris from columns 0-2 or 3-5 to confirm the correct half clears; use Set near occupied cells to confirm up to eight nearby cells flash and clear in deterministic priority.
-11. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
+11. To test Tier 4 bombs, spend or reset earlier stock so the four-slot cap has room, then press **T** until Ra and Amun-Ra unlock. The HUD should display `Ra / Full Clear` and `Amun-Ra / Max Burst` as stock is added.
+12. Use Ra to confirm the entire board flashes bright gold and all occupied locked cells, including brains, clear for 40 points each. Use Amun-Ra to confirm the whole board flashes with stronger maximum-coffin colors, all occupied locked cells clear including brains, the score gains 60 points per cleared piece plus 1000 bonus points, and `AMUN-RA AWAKENED!` / `DUAT COMPLETE!` feedback appears without stopping the game.
+13. Press **R** while debug mode is on to reset coffin/god progression and empty the bomb stock for another pass.
 
 ## How to Test Post-Lock Gravity in the Browser
 
@@ -322,7 +330,6 @@ Because pieces are random in this prototype, the simplest manual browser test is
 
 These features are intentionally left for later phases:
 
-- Tier 4 bomb effects
 - Full heart same-type wild-card behavior
 - Adjacent brain clearing from canopic clears
 - Endless mode
@@ -336,7 +343,7 @@ Current prototype limitations:
 - Clear highlights are simple flashes, and board gravity uses simple stepwise one-row updates rather than polished falling sprite animations.
 - The level display is still a placeholder; coffin tier and god progression are shown separately.
 - Coffin meter values and god requirements are placeholder tuning values.
-- Tier 1, Tier 2, and Tier 3 gods grant active bomb effects; Tier 4 god bomb data is ignored safely until later phases.
+- Tier 1, Tier 2, Tier 3, and Tier 4 gods grant active bomb effects; final Amun-Ra completion is still placeholder feedback rather than a full ending sequence.
 - Piece art uses PNG assets from `docs/assets/images/pieces/` and can be replaced with final generated PNG assets later.
 - Debug mode accelerates coffin/god progression and bomb stock testing only; there is no debug board editor, so specific canopic and bomb layouts still require manual play with random pieces.
 

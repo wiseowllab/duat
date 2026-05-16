@@ -55,6 +55,16 @@ const SET = {
   name: 'Set',
   futureBombType: 'chaos_clear',
 };
+const RA = {
+  id: 'ra',
+  name: 'Ra',
+  futureBombType: 'full_board_clear',
+};
+const AMUN_RA = {
+  id: 'amun_ra',
+  name: 'Amun-Ra',
+  futureBombType: 'maximum_coffin_burst',
+};
 
 function sortCells(cells) {
   return cells
@@ -419,5 +429,67 @@ test('tier 3 bombs are added to stock when tier 3 gods unlock', () => {
     { type: 'piece_transform', name: 'Transform', godId: 'isis', godName: 'Isis' },
     { type: 'half_board_reset', name: 'Half Reset', godId: 'osiris', godName: 'Osiris' },
     { type: 'chaos_clear', name: 'Chaos', godId: 'set', godName: 'Set' },
+  ]);
+});
+
+
+test('ra full_board_clear clears all occupied cells including brain pieces', () => {
+  const board = new Board(6, 12);
+  const bombs = new BombSystem();
+
+  board.setCell(0, 0, 'brain');
+  board.setCell(2, 4, 'liver');
+  board.setCell(5, 11, 'heart');
+
+  bombs.addBombForGod(RA);
+  const result = bombs.useBomb(0, { col: 2, row: 5 }, board);
+
+  assert.deepEqual(sortCells(result.affectedCells), [
+    { col: 0, row: 0, type: 'brain' },
+    { col: 2, row: 4, type: 'liver' },
+    { col: 5, row: 11, type: 'heart' },
+  ]);
+  assert.equal(bombs.getScorePerPiece(result.bomb.type), 40);
+  assert.equal(bombs.getBonusScore(result.bomb.type), 0);
+});
+
+test('amun-ra maximum_coffin_burst clears all occupied cells including brain pieces with bonus scoring', () => {
+  const board = new Board(6, 12);
+  const bombs = new BombSystem();
+
+  board.setCell(0, 1, 'brain');
+  board.setCell(1, 2, 'stomach');
+  board.setCell(4, 8, 'lung');
+  board.setCell(5, 11, 'brain');
+
+  bombs.addBombForGod(AMUN_RA);
+  const result = bombs.useBomb(0, { col: 3, row: 6 }, board);
+  const earnedScore = (result.affectedCells.length * bombs.getScorePerPiece(result.bomb.type))
+    + bombs.getBonusScore(result.bomb.type);
+
+  assert.deepEqual(sortCells(result.affectedCells), [
+    { col: 0, row: 1, type: 'brain' },
+    { col: 1, row: 2, type: 'stomach' },
+    { col: 4, row: 8, type: 'lung' },
+    { col: 5, row: 11, type: 'brain' },
+  ]);
+  assert.equal(bombs.getScorePerPiece(result.bomb.type), 60);
+  assert.equal(bombs.getBonusScore(result.bomb.type), 1000);
+  assert.equal(earnedScore, 1240);
+  assert.equal(bombs.isFinalStageBomb(result.bomb.type), true);
+});
+
+test('tier 4 bombs are added to stock when tier 4 gods unlock', () => {
+  const meter = new CoffinMeter([
+    { ...RA, tier: 4, tierName: 'Maximum Coffin', coffinSize: 'maximum', requiredMeter: 100 },
+    { ...AMUN_RA, tier: 4, tierName: 'Maximum Coffin', coffinSize: 'maximum', requiredMeter: 100 },
+  ]);
+  const bombs = new BombSystem();
+
+  meter.addPoints(200).forEach((unlockEvent) => bombs.addBombForGod(unlockEvent.god));
+
+  assert.deepEqual(bombs.getStock(), [
+    { type: 'full_board_clear', name: 'Full Clear', godId: 'ra', godName: 'Ra' },
+    { type: 'maximum_coffin_burst', name: 'Max Burst', godId: 'amun_ra', godName: 'Amun-Ra' },
   ]);
 });

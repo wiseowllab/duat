@@ -33,6 +33,8 @@ const BOMB_AREA_FLASH_STYLES = {
   piece_transform: { fill: 0x62f4ff, stroke: 0xfff0a8, alpha: 0.32 },
   half_board_reset: { fill: 0xb8860b, stroke: 0xf4d77a, alpha: 0.28 },
   chaos_clear: { fill: 0x7b2d8b, stroke: 0xf4d77a, alpha: 0.34 },
+  full_board_clear: { fill: 0xf4d77a, stroke: 0xffffff, alpha: 0.34 },
+  maximum_coffin_burst: { fill: 0xfff0a8, stroke: 0xc0392b, alpha: 0.44, strokeWidth: 3 },
 };
 const SAME_TYPE_CLEAR_FLASH_MS = 320;
 const CANOPIC_CLEAR_FLASH_MS = 420;
@@ -371,7 +373,8 @@ export class GameScene extends Phaser.Scene {
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
       const convertedCells = this.convertBombCells(result.convertedCells);
       const changedCount = clearedCells.length + convertedCells.length;
-      const earnedScore = changedCount * this.bombSystem.getScorePerPiece(result.bomb.type);
+      const earnedScore = (changedCount * this.bombSystem.getScorePerPiece(result.bomb.type))
+        + this.bombSystem.getBonusScore(result.bomb.type);
       const unlockEvents = this.coffinMeter.addPoints(Math.floor(earnedScore * 0.25));
 
       this.score += earnedScore;
@@ -589,7 +592,7 @@ export class GameScene extends Phaser.Scene {
       const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
       const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
       return this.add.rectangle(x, y, CELL_SIZE - 3, CELL_SIZE - 3, style.fill, style.alpha)
-        .setStrokeStyle(2, style.stroke, 0.84)
+        .setStrokeStyle(style.strokeWidth ?? 2, style.stroke, 0.84)
         .setDepth(8);
     });
 
@@ -848,14 +851,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   showBombFeedback(bomb, affectedCount) {
-    this.boardFeedbackText.setText(`BOMB!\n${bomb.godName} ${bomb.name}\n${affectedCount} affected`);
+    const message = this.bombSystem.isFinalStageBomb(bomb.type)
+      ? `AMUN-RA AWAKENED!\nDUAT COMPLETE!\n${affectedCount} affected`
+      : `BOMB!\n${bomb.godName} ${bomb.name}\n${affectedCount} affected`;
+
+    this.boardFeedbackText.setText(message);
     this.boardFeedbackText.setAlpha(1);
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
     }
 
-    this.feedbackTimer = this.time.delayedCall(1000, () => {
+    this.feedbackTimer = this.time.delayedCall(this.bombSystem.isFinalStageBomb(bomb.type) ? 2200 : 1000, () => {
       this.boardFeedbackText.setText('');
     });
   }
