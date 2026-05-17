@@ -21,6 +21,7 @@ import { ScoreSystem } from '../core/ScoreSystem.js';
 import { CoffinMeter } from '../core/CoffinMeter.js';
 import { BombSystem } from '../core/BombSystem.js';
 import { Hud } from '../ui/Hud.js';
+import { SoundManager } from '../audio/SoundManager.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -68,6 +69,7 @@ export class GameScene extends Phaser.Scene {
     this.scoreSystem = new ScoreSystem();
     this.coffinMeter = new CoffinMeter();
     this.bombSystem = new BombSystem();
+    this.sfx = new SoundManager();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
     this.level = INITIAL_LEVEL;
@@ -101,6 +103,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
+    this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.createTitleOverlay();
   }
 
@@ -226,6 +229,7 @@ export class GameScene extends Phaser.Scene {
       '↑ / Z  Rotate',
       'Space  Hard drop / Confirm bomb',
       'Enter  Pause / Resume',
+      'M  Sound On/Off',
       '1-4  Select bomb    Esc  Cancel',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
@@ -272,6 +276,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.sfx.resume();
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
     this.titleOverlay?.setVisible(false);
@@ -284,6 +289,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.sfx.resume();
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
     this.spawnPiece();
@@ -336,6 +342,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.drawNext(this.nextPairTypes);
     this.hud.clearFeedback();
     this.hud.showReadyStatus();
+    this.hud.updateSoundStatus(!this.sfx.isMuted);
   }
 
   pauseGame() {
@@ -344,6 +351,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.gameState = GAME_STATES.PAUSED;
+    this.sfx.playPause();
     this.cancelBombSelection();
     this.pauseOverlay?.setVisible(true);
   }
@@ -354,6 +362,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.gameState = GAME_STATES.PLAYING;
+    this.sfx.playPause();
     this.pauseOverlay?.setVisible(false);
   }
 
@@ -376,6 +385,7 @@ export class GameScene extends Phaser.Scene {
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+    this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.bombKeys = [
@@ -385,8 +395,9 @@ export class GameScene extends Phaser.Scene {
       this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR),
     ];
 
-    this.cursors.left.on('down', () => this.tryMove(-1, 0));
-    this.cursors.right.on('down', () => this.tryMove(1, 0));
+    this.input.keyboard.on('keydown', () => this.sfx.resume());
+    this.cursors.left.on('down', () => this.tryMoveSideways(-1));
+    this.cursors.right.on('down', () => this.tryMoveSideways(1));
     this.cursors.up.on('down', () => this.tryRotate());
     this.keyZ.on('down', () => this.tryRotate());
     this.cursors.space.on('down', () => this.handleSpaceKey());
@@ -395,6 +406,7 @@ export class GameScene extends Phaser.Scene {
     this.keyT.on('down', () => this.advanceDebugGod());
     this.keyR.on('down', () => this.handleRestartOrDebugReset());
     this.keyP.on('down', () => this.handlePauseKey());
+    this.keyM.on('down', () => this.toggleMute());
     this.keyEnter.on('down', () => this.handleEnterKey());
     this.keyEsc.on('down', () => this.handleEscKey());
     this.bombKeys.forEach((key, index) => {
@@ -470,6 +482,12 @@ export class GameScene extends Phaser.Scene {
     this.renderBoard();
   }
 
+  tryMoveSideways(deltaCol) {
+    if (this.tryMove(deltaCol, 0)) {
+      this.sfx.playMove();
+    }
+  }
+
   tryMove(deltaCol, deltaRow) {
     if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return false;
@@ -498,13 +516,22 @@ export class GameScene extends Phaser.Scene {
       this.lockTimer = 0;
       this.renderBoard();
       this.updateBombPreview();
+      this.sfx.playRotate();
+      return true;
     }
+
+    return false;
   }
 
   stepDown(delta) {
-    if (!this.tryMove(0, 1)) {
-      this.lockTimer += delta;
+    if (this.tryMove(0, 1)) {
+      if (this.cursors.down.isDown) {
+        this.sfx.playSoftDrop();
+      }
+      return;
     }
+
+    this.lockTimer += delta;
   }
 
   handleSpaceKey() {
@@ -541,6 +568,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     const distance = this.gravity.getDropDistance(this.activePiece);
+    this.sfx.playHardDrop();
     this.activePiece = this.activePiece.moved(0, distance);
     this.renderBoard();
     this.lockActivePiece();
@@ -560,6 +588,8 @@ export class GameScene extends Phaser.Scene {
       this.endGame();
       return;
     }
+
+    this.sfx.playLock();
 
     try {
       await this.resolveBoardAfterLock();
@@ -598,6 +628,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       await this.highlightClearCells(clearResult);
+      this.playClearSounds(clearResult, nextChain);
 
       const earnedScore = this.scoreSystem.calculateCycleScore(clearResult, nextChain);
       const meterGain = this.scoreSystem.calculateCycleMeterPoints(clearResult, nextChain);
@@ -643,6 +674,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.selectedBombSlot = slotIndex;
+    this.sfx.playBombSelect();
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.updateBombPreview();
   }
@@ -712,6 +744,7 @@ export class GameScene extends Phaser.Scene {
     this.isResolvingClears = true;
 
     try {
+      this.sfx.playBombUse();
       this.showBombAreaFlash(result.bomb.type, target);
 
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
@@ -1017,6 +1050,26 @@ export class GameScene extends Phaser.Scene {
     this.bombAreaFlashSprites = [];
   }
 
+
+  playClearSounds(clearResult, chainCount) {
+    if (clearResult.clearTypes.has('sameType')) {
+      this.sfx.playClear();
+    }
+
+    if (clearResult.clearTypes.has('canopic')) {
+      this.sfx.playCanopic();
+    }
+
+    if (chainCount >= 2) {
+      this.sfx.playChain(chainCount);
+    }
+  }
+
+  toggleMute() {
+    const isMuted = this.sfx.toggleMute();
+    this.hud.updateSoundStatus(!isMuted);
+  }
+
   toggleDebugMode() {
     if (this.gameState !== GAME_STATES.PLAYING) {
       return;
@@ -1085,6 +1138,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.sfx.playGodUnlock();
     this.addBombsForUnlockEvents(unlockEvents);
     this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
     this.hud.showGodUnlocked(unlockEvents);
@@ -1138,6 +1192,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   endGame() {
+    this.sfx.playGameOver();
     this.gameState = GAME_STATES.GAME_OVER;
     this.isGameOver = true;
     this.activePiece = null;
