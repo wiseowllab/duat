@@ -6,8 +6,8 @@ const HUD_WIDTH = 346;
 const PANEL_FILL = 0x17100a;
 const PANEL_STROKE = 0xd4af37;
 const PANEL_STONE = 0x2a1c10;
-const COFFIN_MAX_DISPLAY_WIDTH = 158;
-const COFFIN_MAX_DISPLAY_HEIGHT = 142;
+const COFFIN_MAX_DISPLAY_WIDTH = 164;
+const COFFIN_MAX_DISPLAY_HEIGHT = 146;
 const COFFIN_BACKPLATE_WIDTH = 190;
 const COFFIN_BACKPLATE_HEIGHT = 146;
 const COFFIN_BAR_WIDTH = 282;
@@ -38,13 +38,13 @@ export class Hud {
       letterSpacing: 2,
     });
 
-    this.debugText = this.scene.add.text(this.x + 108, this.y + 18, 'DEBUG ON', {
+    this.debugText = this.scene.add.text(this.x + 248, this.y + 16, 'DEBUG ON', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '12px',
+      fontSize: '10px',
       color: '#ffdf6e',
       fontStyle: 'bold',
       backgroundColor: '#3a1f00',
-      padding: { x: 4, y: 2 },
+      padding: { x: 3, y: 2 },
     }).setVisible(false);
 
     this.scene.add.text(this.x + 18, this.y + 62, 'SCORE', this.headingStyle(15));
@@ -68,9 +68,9 @@ export class Hud {
       .setOrigin(0, 0.5);
     this.unlockedText = this.createLabel(22, 451, 'Unlocked: 0 / 14', 12);
 
-    this.scene.add.text(this.x + 18, this.y + 486, 'BOMB STOCK', this.headingStyle(15));
-    this.bombStockText = this.createLabel(18, 511, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 11, 2);
-    this.selectedBombText = this.createLabel(176, 511, 'Selected: None', 11, 2);
+    this.scene.add.text(this.x + 18, this.y + 487, 'BOMB STOCK', this.headingStyle(14));
+    this.bombStockText = this.createLabel(18, 509, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 10, 0);
+    this.selectedBombText = this.createLabel(174, 509, 'Selected: None', 10, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
     this.feedbackText = this.createLabel(198, 196, '', 15);
@@ -160,7 +160,7 @@ export class Hud {
     const selectedBomb = Number.isInteger(selectedSlot) ? stock[selectedSlot] : null;
     const lines = [0, 1, 2, 3].map((index) => {
       const bomb = stock[index];
-      const marker = index === selectedSlot ? '▶ ' : '  ';
+      const marker = index === selectedSlot ? '▶' : ' ';
       if (!bomb) {
         return `${marker}${index + 1}: Empty`;
       }
@@ -171,18 +171,18 @@ export class Hud {
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`Selected: ${selectedSlot + 1}\n${this.compactBombName(selectedBomb)}\nDrop/Space: use\nEsc: cancel`);
+      this.selectedBombText.setText(`Sel: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDrop/Space use\nEsc cancel`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
 
-    this.selectedBombText.setText('Selected: None\n1-4/B1-B4:\npreview');
+    this.selectedBombText.setText('Sel: None\n1-4/B1-B4 preview');
     this.selectedBombText.setColor('#9fdfe8');
   }
 
   compactBombName(bomb) {
     const label = `${bomb.godName} / ${bomb.name}`;
-    const maxLength = 21;
+    const maxLength = 18;
     return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
   }
 
