@@ -213,7 +213,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 
 ## Current Audio
 
-- Sound effects are generated at runtime with the Web Audio API and remain intentionally balanced above the music. BGM is mixed lower as background ambience so gameplay SFX stay clear.
+- Sound effects are generated at runtime with the Web Audio API and are intentionally mixed well above the music. The MP3 BGM is kept low as background ambience so gameplay SFX stay clear.
 - Background music uses external MP3 files loaded from `docs/assets/audio/bgm/`.
 - The prototype expects exactly these eight BGM filenames:
   - `bgm_tier1_normal.mp3`
@@ -230,6 +230,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 - Danger music returns to normal only after the highest locked piece is below row 5, preventing rapid switching around the danger line.
 - Only locked board cells affect danger music; the currently falling pair is ignored.
 - BGM default volume is intentionally low relative to SFX, and pause fades the current BGM even lower. Resume fades it back up, game over fades/stops it, and restart starts the correct current Tier 1 normal loop.
+- Major SFX events briefly duck the current BGM so clears, canopic sets, bomb use, god unlocks, and game-over cues stand out before the music returns to its current gameplay or paused level.
 - **M** toggles both generated sound effects and BGM between Sound: ON and Sound: OFF. Unmuting during gameplay restores the correct tier/danger BGM.
 
 ## Current Asset Locations

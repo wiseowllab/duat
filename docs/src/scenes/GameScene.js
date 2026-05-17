@@ -763,6 +763,7 @@ export class GameScene extends Phaser.Scene {
 
     try {
       this.sfx.playBombUse();
+      this.bgm.duck(700, 0.45);
       this.showBombAreaFlash(result.bomb.type, target);
 
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
@@ -1071,16 +1072,28 @@ export class GameScene extends Phaser.Scene {
 
 
   playClearSounds(clearResult, chainCount) {
-    if (clearResult.clearTypes.has('sameType')) {
+    const hasSameTypeClear = clearResult.clearTypes.has('sameType');
+    const hasCanopicClear = clearResult.clearTypes.has('canopic');
+    const hasChain = chainCount >= 2;
+
+    if (hasSameTypeClear) {
       this.sfx.playClear();
     }
 
-    if (clearResult.clearTypes.has('canopic')) {
+    if (hasCanopicClear) {
       this.sfx.playCanopic();
     }
 
-    if (chainCount >= 2) {
+    if (hasChain) {
       this.sfx.playChain(chainCount);
+    }
+
+    if (hasCanopicClear) {
+      this.bgm.duck(700, 0.45);
+    } else if (hasChain) {
+      this.bgm.duck(650, 0.5);
+    } else if (hasSameTypeClear) {
+      this.bgm.duck(500, 0.55);
     }
   }
 
@@ -1165,6 +1178,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.bgm.duck(800, 0.4);
     this.sfx.playGodUnlock();
     this.addBombsForUnlockEvents(unlockEvents);
     this.showGodUnlockFeedback(unlockEvents[unlockEvents.length - 1]);
@@ -1305,6 +1319,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   endGame() {
+    this.bgm.duck(800, 0.4);
     this.sfx.playGameOver();
     this.bgm.stop();
     this.gameState = GAME_STATES.GAME_OVER;

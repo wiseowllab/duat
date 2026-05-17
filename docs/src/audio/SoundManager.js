@@ -1,4 +1,4 @@
-const DEFAULT_VOLUME = 0.7;
+const DEFAULT_VOLUME = 0.9;
 const MASTER_GAIN_RAMP_SECONDS = 0.01;
 
 export class SoundManager {
@@ -6,7 +6,7 @@ export class SoundManager {
     this.context = null;
     this.masterGain = null;
     this.isMuted = false;
-    this.volume = volume;
+    this.volume = this.clampVolume(volume);
     this.lastSoftDropAt = 0;
   }
 
@@ -61,7 +61,7 @@ export class SoundManager {
   }
 
   setVolume(volume) {
-    this.volume = Math.max(0, Math.min(1, volume));
+    this.volume = this.clampVolume(volume);
     this.updateMasterGain();
   }
 
@@ -77,11 +77,11 @@ export class SoundManager {
   }
 
   playMove() {
-    this.playTone({ frequency: 330, duration: 0.035, type: 'square', gain: 0.055 });
+    this.playTone({ frequency: 330, duration: 0.035, type: 'square', gain: 0.075 });
   }
 
   playRotate() {
-    this.playTone({ frequency: 520, duration: 0.045, type: 'triangle', gain: 0.085 });
+    this.playTone({ frequency: 520, duration: 0.055, type: 'triangle', gain: 0.16 });
   }
 
   playSoftDrop() {
@@ -91,50 +91,50 @@ export class SoundManager {
     }
 
     this.lastSoftDropAt = nowMs;
-    this.playTone({ frequency: 150, duration: 0.035, type: 'square', gain: 0.032 });
+    this.playTone({ frequency: 150, duration: 0.035, type: 'square', gain: 0.035 });
   }
 
   playHardDrop() {
-    this.playNoise({ duration: 0.09, gain: 0.22, filterFrequency: 180, filterType: 'lowpass' });
-    this.playTone({ frequency: 92, duration: 0.1, type: 'sine', gain: 0.15 });
+    this.playNoise({ duration: 0.1, gain: 0.35, filterFrequency: 180, filterType: 'lowpass' });
+    this.playTone({ frequency: 92, duration: 0.11, type: 'sine', gain: 0.24 });
   }
 
   playLock() {
-    this.playNoise({ duration: 0.075, gain: 0.16, filterFrequency: 240, filterType: 'lowpass' });
-    this.playTone({ frequency: 115, duration: 0.075, type: 'triangle', gain: 0.105 });
+    this.playNoise({ duration: 0.085, gain: 0.27, filterFrequency: 240, filterType: 'lowpass' });
+    this.playTone({ frequency: 115, duration: 0.085, type: 'triangle', gain: 0.18 });
   }
 
   playClear() {
-    this.playArpeggio([720, 960, 1200], 0.04, { type: 'sine', gain: 0.12, gap: 0.028 });
+    this.playArpeggio([720, 960, 1200], 0.05, { type: 'sine', gain: 0.22, gap: 0.032 });
   }
 
   playCanopic() {
-    this.playArpeggio([440, 660, 880, 1320], 0.085, { type: 'triangle', gain: 0.15, gap: 0.058 });
+    this.playArpeggio([440, 660, 880, 1320], 0.095, { type: 'triangle', gain: 0.28, gap: 0.062 });
   }
 
   playChain(chainCount) {
     const baseFrequency = 500 + Math.min(chainCount, 8) * 55;
     this.playArpeggio([baseFrequency, baseFrequency * 1.25, baseFrequency * 1.5], 0.055, {
       type: 'sine',
-      gain: 0.13,
+      gain: 0.24,
       gap: 0.04,
     });
   }
 
   playBombSelect() {
-    this.playTone({ frequency: 620, duration: 0.06, type: 'sine', gain: 0.11 });
+    this.playTone({ frequency: 620, duration: 0.07, type: 'sine', gain: 0.17 });
   }
 
   playBombUse() {
-    this.playNoise({ duration: 0.17, gain: 0.24, filterFrequency: 520, filterType: 'bandpass' });
-    this.playTone({ frequency: 75, duration: 0.17, type: 'sawtooth', gain: 0.11 });
+    this.playNoise({ duration: 0.19, gain: 0.38, filterFrequency: 520, filterType: 'bandpass' });
+    this.playTone({ frequency: 75, duration: 0.19, type: 'sawtooth', gain: 0.22 });
   }
 
   playGodUnlock() {
     this.playArpeggio([523.25, 659.25, 783.99, 1046.5, 1318.51], 0.11, {
       type: 'triangle',
-      gain: 0.16,
-      gap: 0.07,
+      gain: 0.32,
+      gap: 0.075,
     });
   }
 
@@ -143,7 +143,7 @@ export class SoundManager {
   }
 
   playGameOver() {
-    this.playArpeggio([220, 174.61, 130.81, 98], 0.16, { type: 'triangle', gain: 0.13, gap: 0.1 });
+    this.playArpeggio([220, 174.61, 130.81, 98], 0.17, { type: 'triangle', gain: 0.25, gap: 0.1 });
   }
 
   playTone({ frequency, duration, type = 'sine', gain = 0.08, startTime = 0 }) {
@@ -159,8 +159,10 @@ export class SoundManager {
 
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(frequency, start);
+    const safeGain = this.clampVolume(gain);
+
     gainNode.gain.setValueAtTime(0.0001, start);
-    gainNode.gain.exponentialRampToValueAtTime(gain, start + Math.min(0.01, duration * 0.35));
+    gainNode.gain.exponentialRampToValueAtTime(safeGain, start + Math.min(0.01, duration * 0.35));
     gainNode.gain.exponentialRampToValueAtTime(0.0001, end);
 
     oscillator.connect(gainNode);
@@ -204,7 +206,7 @@ export class SoundManager {
     source.buffer = buffer;
     filter.type = filterType;
     filter.frequency.setValueAtTime(filterFrequency, start);
-    gainNode.gain.setValueAtTime(gain, start);
+    gainNode.gain.setValueAtTime(this.clampVolume(gain), start);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, end);
 
     source.connect(filter);
@@ -212,6 +214,10 @@ export class SoundManager {
     gainNode.connect(this.masterGain);
     source.start(start);
     source.stop(end + 0.01);
+  }
+
+  clampVolume(volume) {
+    return Math.max(0, Math.min(1, Number(volume) || 0));
   }
 
   getPlayableContext() {
