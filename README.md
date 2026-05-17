@@ -19,6 +19,8 @@ Then open one of these URLs in a browser:
 
 A local server is recommended because the prototype uses JavaScript modules.
 
+To test on a phone or tablet, run the same server on your development machine, make sure the phone is on the same network, then open `http://<your-computer-LAN-IP>:8000/docs/` in the mobile browser. You can also use browser devtools device emulation or a narrow desktop viewport for a quick layout check.
+
 ## Current Playable State
 
 DUAT is currently a single-scene falling puzzle prototype with a basic title, pause, and game-over flow plus these implemented systems:
@@ -26,10 +28,10 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 ### Game Flow
 
 - The page opens on a **DUAT** title screen before pieces begin falling.
-- **Enter** or **Space** starts a fresh game from the title screen.
+- **Enter**, **Space**, or tapping the title prompt starts a fresh game from the title screen.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
-- **Enter** or **Space** resumes from pause.
-- Game over shows a restart prompt, and **Enter** or **Space** restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset. **R** remains an optional game-over restart shortcut.
+- **Enter**, **Space**, or tapping the pause overlay resumes from pause.
+- Game over shows a restart prompt, and **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
@@ -85,9 +87,12 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 ## Current Controls
 
+Keyboard controls still work on desktop and on mobile devices with hardware keyboards. The prototype also includes a responsive, mobile-first touch control panel; the mobile layout is intentionally prototype-level and keeps the existing 6x12 board and HUD rather than redesigning the whole screen.
+
 ### Title Screen
 
 - **Enter / Space**: start the game. Pieces do not spawn or fall until one of these keys is pressed.
+- **Tap the title prompt/panel**: start the game and unlock/resume browser audio for SFX and BGM.
 
 ### Normal Play
 
@@ -103,6 +108,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 ### Paused
 
 - **Enter / Space**: resume gameplay.
+- **Tap the pause overlay**: resume gameplay.
 - **Esc**: also resumes gameplay.
 - **P**: optional resume shortcut.
 - **M**: toggle BGM and generated sound effects on/off. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
@@ -110,6 +116,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 ### Game Over
 
 - **Enter / Space**: restart after game over.
+- **Tap the restart prompt/panel**: restart after game over.
 - **R**: optional restart shortcut.
 - **M**: toggle BGM and generated sound effects on/off.
 
@@ -123,6 +130,20 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - When a bomb is selected, **Space** confirms the bomb instead of hard dropping.
 
 Bombs target the current active pair position. The preview shows the bomb's affected area before confirmation.
+
+### Mobile Touch Controls
+
+The touch controls appear on touch devices and narrow viewports below the game canvas. They use the same game actions as the keyboard controls:
+
+- **← / →**: move the active pair horizontally.
+- **↓**: hold for soft drop; tapping/pressing also steps the pair down once when possible.
+- **ROT**: rotate the active pair.
+- **DROP**: hard drop when no bomb is selected; confirm/use the selected bomb when a bomb is selected.
+- **B1-B4**: select and preview bomb slots 1-4. Tap the same bomb button again to confirm/use it; tap a different bomb button to switch selection.
+- **ESC**: cancel the current bomb selection; while paused, it resumes just like the keyboard Esc behavior.
+- **PAUSE**: pause active gameplay or resume from pause.
+
+The page uses responsive CSS, canvas scaling, and `touch-action: none` on the game/touch-control areas to reduce accidental browser scrolling during play. This is a prototype mobile layout, so button placement and sizing are functional placeholders rather than final mobile UI art.
 
 ### Debug Controls
 
@@ -224,7 +245,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - `bgm_tier3_danger.mp3`
   - `bgm_tier4_normal.mp3`
   - `bgm_tier4_danger.mp3`
-- BGM starts only after the title screen is started with a keyboard gesture; browsers generally require user interaction before audio playback can begin.
+- BGM starts only after the title screen is started with a keyboard or touch gesture; browsers generally require user interaction before audio playback can begin.
 - During gameplay, the current coffin/god tier selects Tier 1-4 BGM. If all gods are unlocked or DUAT is complete, Tier 4 BGM is used.
 - Each tier has a normal loop and a danger/up-tempo loop. Danger music begins when any locked board piece reaches row 3 or above, where row 0 is the top row.
 - Danger music returns to normal only after the highest locked piece is below row 5, preventing rapid switching around the danger line.
