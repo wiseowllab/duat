@@ -1,6 +1,6 @@
-export const BGM_VOLUME = 0.2;
+export const BGM_VOLUME = 0.14;
 export const BGM_FADE_MS = 800;
-export const BGM_PAUSED_VOLUME = 0.05;
+export const BGM_PAUSED_VOLUME = 0.03;
 export const BGM_BASE_PATH = 'assets/audio/bgm';
 
 export const BGM_TRACKS = {
@@ -51,6 +51,7 @@ export class BgmManager {
     this.isMuted = false;
     this.isPaused = false;
     this.fadeTweens = new Map();
+    this.duckRestoreTimer = null;
   }
 
   setMuted(isMuted) {
@@ -126,8 +127,45 @@ export class BgmManager {
     });
   }
 
+
+  duck(durationMs = 600, ratio = 0.45) {
+    this.safeRun('duck', () => {
+      if (this.isMuted || !this.isValidTrack(this.currentTrack)) {
+        return;
+      }
+
+      this.clearDuckRestoreTimer();
+
+      const duckRatio = Math.max(0, Math.min(1, Number(ratio) || 0));
+      const duration = Math.max(0, Number(durationMs) || 0);
+      const baseVolume = this.getTargetVolume();
+      if (baseVolume <= 0) {
+        return;
+      }
+
+      const duckedVolume = baseVolume * duckRatio;
+      this.fadeTrackTo(this.currentTrack, duckedVolume, 90);
+
+      const restore = () => {
+        this.duckRestoreTimer = null;
+        if (this.isMuted || !this.isValidTrack(this.currentTrack)) {
+          return;
+        }
+
+        this.fadeTrackTo(this.currentTrack, this.getTargetVolume(), 180);
+      };
+
+      if (this.scene?.time?.delayedCall) {
+        this.duckRestoreTimer = this.scene.time.delayedCall(duration, restore);
+      } else {
+        this.duckRestoreTimer = globalThis.setTimeout?.(restore, duration) ?? null;
+      }
+    });
+  }
+
   stop() {
     this.safeRun('stop', () => {
+      this.clearDuckRestoreTimer();
       const track = this.currentTrack;
       this.currentKey = null;
       this.currentTrack = null;
@@ -319,6 +357,20 @@ export class BgmManager {
         track.setVolume(volume);
       }
     });
+  }
+
+  clearDuckRestoreTimer() {
+    if (!this.duckRestoreTimer) {
+      return;
+    }
+
+    if (this.duckRestoreTimer.remove) {
+      this.duckRestoreTimer.remove(false);
+    } else {
+      globalThis.clearTimeout?.(this.duckRestoreTimer);
+    }
+
+    this.duckRestoreTimer = null;
   }
 
   stopFadeTween(track) {
