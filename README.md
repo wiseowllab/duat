@@ -97,18 +97,21 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **Space**: hard drop when no bomb is selected.
 - **Enter**: pause gameplay when no bomb is selected.
 - **P**: optional pause shortcut.
+- **M**: toggle generated sound effects on/off.
 - **Space** does not pause during normal gameplay.
 
 ### Paused
 
 - **Enter / Space**: resume gameplay.
 - **Esc**: also resumes gameplay.
-- **P**: optional resume shortcut. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
+- **P**: optional resume shortcut.
+- **M**: toggle generated sound effects on/off. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
 
 ### Game Over
 
 - **Enter / Space**: restart after game over.
 - **R**: optional restart shortcut.
+- **M**: toggle generated sound effects on/off.
 
 ### Bomb Controls
 
@@ -208,6 +211,15 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 - Bomb stock is capped at four bombs.
 - Current meter requirements and scoring values are placeholder balance values.
 
+## Current Audio
+
+- Sound effects are generated at runtime with the Web Audio API.
+- No external sound assets are required yet.
+- **M** toggles generated sound effects between Sound: ON and Sound: OFF.
+- Browsers may wait for Enter, Space, or another keyboard gesture before audio can start; the game safely retries audio resume on key presses.
+- Final audio assets may replace these generated prototype sounds later.
+- Background music is not implemented yet.
+
 ## Current Asset Locations
 
 ### Piece PNG Assets
@@ -253,7 +265,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 
 ## Known Limitations
 
-- No sound effects yet.
+- Sound effects are generated placeholders and are not final audio assets yet.
 - No background music yet.
 - No mobile controls yet.
 - No save data yet.
@@ -268,7 +280,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 
 1. Gameplay balance pass for scoring, coffin meter requirements, bomb strength, brain frequency, and chain value.
 2. Mobile/touch controls.
-3. Sound effects and background music hooks.
+3. Final sound effects, audio asset loading, and background music hooks.
 4. Final god unlock presentation.
 5. High score persistence.
 6. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.

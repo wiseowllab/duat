@@ -39,6 +39,8 @@ export class Hud {
     this.scoreText = this.createLabel(20, 68, 'Score: 0');
     this.chainText = this.createLabel(20, 96, 'Chain: 0');
     this.levelText = this.createLabel(20, 124, 'Level: 1', 15);
+    this.soundText = this.createLabel(92, 124, 'Sound: ON', 12);
+    this.soundText.setColor('#9fdfe8');
 
     this.scene.add.text(this.x + 20, this.y + 158, 'NEXT', {
       fontFamily: 'Arial, sans-serif',
@@ -76,7 +78,7 @@ export class Hud {
     this.feedbackText = this.createLabel(20, 522, '', 15);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
-    this.statusText = this.createLabel(20, 552, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  1-4 Bomb', 12);
+    this.statusText = this.createLabel(20, 552, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  M Mute', 12);
   }
 
   createPanels() {
@@ -113,6 +115,11 @@ export class Hud {
 
   updateLevel(level) {
     this.levelText.setText(`Level: ${level}`);
+  }
+
+  updateSoundStatus(isSoundOn) {
+    this.soundText.setText(`Sound: ${isSoundOn ? 'ON' : 'OFF'}`);
+    this.soundText.setColor(isSoundOn ? '#9fdfe8' : '#c2b39c');
   }
 
   setDebugMode(isEnabled) {
@@ -383,7 +390,7 @@ export class Hud {
   }
 
   showReadyStatus() {
-    this.statusText.setText('←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  1-4 Bomb');
+    this.statusText.setText('←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  M Mute');
     this.statusText.setColor('#eadfca');
   }
 
