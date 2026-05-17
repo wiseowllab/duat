@@ -1,6 +1,6 @@
-export const BGM_VOLUME = 0.3;
+export const BGM_VOLUME = 0.2;
 export const BGM_FADE_MS = 800;
-export const BGM_PAUSED_VOLUME = 0.08;
+export const BGM_PAUSED_VOLUME = 0.05;
 export const BGM_BASE_PATH = 'assets/audio/bgm';
 
 export const BGM_TRACKS = {
