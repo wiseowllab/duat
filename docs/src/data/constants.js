@@ -4,7 +4,7 @@ export const CELL_SIZE = 40;
 export const BOARD_ORIGIN_X = 96;
 export const BOARD_ORIGIN_Y = 48;
 
-export const GAME_WIDTH = 560;
+export const GAME_WIDTH = 760;
 export const GAME_HEIGHT = 600;
 
 export const NORMAL_FALL_MS = 700;

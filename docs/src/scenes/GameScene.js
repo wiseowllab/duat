@@ -4,6 +4,8 @@ import {
   BOARD_ORIGIN_X,
   BOARD_ORIGIN_Y,
   CELL_SIZE,
+  GAME_HEIGHT,
+  GAME_WIDTH,
   INITIAL_LEVEL,
   INITIAL_SCORE,
   LOCK_DELAY_MS,
@@ -105,7 +107,7 @@ export class GameScene extends Phaser.Scene {
 
     this.createBackground();
     this.createInput();
-    this.hud = new Hud(this, 370, 54);
+    this.hud = new Hud(this, 390, 16);
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateLevel(this.level);
@@ -143,8 +145,8 @@ export class GameScene extends Phaser.Scene {
   createBackground() {
     this.cameras.main.setBackgroundColor('#080704');
 
-    this.add.rectangle(280, 300, 560, 600, 0x090705);
-    this.add.rectangle(280, 300, 520, 560, 0x17100a, 0.72)
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x090705);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH - 40, GAME_HEIGHT - 40, 0x17100a, 0.72)
       .setStrokeStyle(1, 0x6e5525, 0.32);
 
     const boardCenterX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
@@ -204,11 +206,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   createTitleOverlay() {
-    this.titleOverlay = this.add.container(280, 300).setDepth(30);
+    this.titleOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setDepth(30);
 
-    const panel = this.add.rectangle(0, 0, 500, 520, 0x100b06, 0.94)
+    const panel = this.add.rectangle(0, 0, 560, 520, 0x100b06, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.85);
-    const innerPanel = this.add.rectangle(0, 0, 460, 478, 0x1b1208, 0.72)
+    const innerPanel = this.add.rectangle(0, 0, 520, 478, 0x1b1208, 0.72)
       .setStrokeStyle(1, 0xf0d27a, 0.34);
     const title = this.add.text(0, -188, 'DUAT', {
       fontFamily: 'Georgia, serif',
@@ -230,7 +232,7 @@ export class GameScene extends Phaser.Scene {
       fontSize: '17px',
       color: '#eadfca',
       align: 'center',
-      wordWrap: { width: 390 },
+      wordWrap: { width: 450 },
     }).setOrigin(0.5);
     const controls = this.add.text(0, 26, [
       'Controls',
@@ -264,8 +266,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   createPauseOverlay() {
-    this.pauseOverlay = this.add.container(280, 300).setDepth(35).setVisible(false);
-    const shade = this.add.rectangle(0, 0, 560, 600, 0x050301, 0.62);
+    this.pauseOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setDepth(35).setVisible(false);
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.62);
     const panel = this.add.rectangle(0, 0, 330, 180, 0x100b06, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.82);
     const title = this.add.text(0, -32, 'PAUSED', {

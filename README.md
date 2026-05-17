@@ -39,6 +39,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Falling two-piece pairs.
 - Random next-pair generation.
 - NEXT piece preview.
+- Wider desktop HUD layout with separated score, NEXT, current coffin, and bomb stock panels.
 - Left/right movement.
 - Soft drop.
 - Hard drop.
@@ -82,8 +83,12 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - 14-god unlock progression.
 - Amun-Ra as the final god unlock.
 - Bomb stock generated from god unlocks.
-- Tier-based coffin PNGs for the HUD.
+- Tier-based coffin PNGs for the HUD, displayed prominently in the current coffin panel so tier changes are easier to see.
 - Debug mode for testing meter progress, god unlocks, coffin tier changes, bomb stock, and reset behavior.
+
+## Current Desktop Layout
+
+The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses the existing tier-based coffin PNGs at a larger display size so Tier 1-4 changes are visibly distinct.
 
 ## Current Controls
 
@@ -227,7 +232,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - Tier 2: Medium Coffin
   - Tier 3: Large Coffin
   - Tier 4: Maximum Coffin
-- Tier-based coffin images update in the HUD as the current god tier changes.
+- Tier-based coffin images update in the prominent current coffin panel as the current god tier changes.
 - Each supported god unlock tries to add that god's bomb to the bomb stock.
 - Bomb stock is capped at four bombs.
 - Current meter requirements and scoring values are placeholder balance values.
