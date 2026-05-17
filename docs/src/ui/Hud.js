@@ -59,14 +59,14 @@ export class Hud {
     this.godText = this.createLabel(20, 336, 'God: Imsety', 13);
     this.coffinText = this.createLabel(20, 376, 'Meter: 0 / 1000', 13);
     this.unlockedText = this.createLabel(20, 394, 'Unlocked: 0 / 14', 13);
-    this.scene.add.text(this.x + 20, this.y + 430, 'BOMB STOCK', {
+    this.scene.add.text(this.x + 20, this.y + 428, 'BOMB STOCK', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: '14px',
       color: '#f3e2a0',
       fontStyle: 'bold',
     });
-    this.bombStockText = this.createLabel(20, 450, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 12);
-    this.selectedBombText = this.createLabel(20, 500, 'Selected: None', 11);
+    this.bombStockText = this.createLabel(20, 446, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 11, 3);
+    this.selectedBombText = this.createLabel(20, 494, 'Selected: None', 10, 2);
     this.selectedBombText.setColor('#9fdfe8');
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinBarBack = this.scene.add.rectangle(this.x + 20, this.y + 410, 120, 14, 0x0b0906, 0.92)
@@ -96,12 +96,12 @@ export class Hud {
       .setStrokeStyle(1, 0x8b7446, 0.2);
   }
 
-  createLabel(offsetX, offsetY, text, fontSize = 18) {
+  createLabel(offsetX, offsetY, text, fontSize = 18, lineSpacing = 8) {
     return this.scene.add.text(this.x + offsetX, this.y + offsetY, text, {
       fontFamily: 'Arial, sans-serif',
       fontSize: `${fontSize}px`,
       color: '#eadfca',
-      lineSpacing: 8,
+      lineSpacing,
     });
   }
 
@@ -136,19 +136,25 @@ export class Hud {
         return `${marker}${index + 1}: Empty`;
       }
 
-      return `${marker}${index + 1}: ${bomb.godName} / ${bomb.name}`;
+      return `${marker}${index + 1}: ${this.compactBombName(bomb)}`;
     });
 
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`Selected: ${selectedSlot + 1} ${selectedBomb.godName} / ${selectedBomb.name}\nPress same number again or Enter/Space to use. Esc to cancel.`);
+      this.selectedBombText.setText(`Selected: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDROP/Space/same B: use\nEsc: cancel`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
 
-    this.selectedBombText.setText('Selected: None\n1-4: Preview bomb');
+    this.selectedBombText.setText('Selected: None\n1-4/B1-B4: preview');
     this.selectedBombText.setColor('#9fdfe8');
+  }
+
+  compactBombName(bomb) {
+    const label = `${bomb.godName} ${bomb.name}`;
+    const maxLength = 18;
+    return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
   }
 
   updateCoffin(state) {
