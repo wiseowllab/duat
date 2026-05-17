@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>DUAT — Phase 3 Prototype</title>
     <style>
       :root {
@@ -12,12 +12,20 @@
         color: #eadfca;
       }
 
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+        overscroll-behavior: none;
+      }
+
       body {
         min-height: 100vh;
-        margin: 0;
+        min-height: 100dvh;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow-x: hidden;
         background:
           radial-gradient(circle at 50% 8%, rgba(212, 175, 55, 0.16), transparent 28rem),
           radial-gradient(circle at 18% 24%, rgba(112, 74, 28, 0.24), transparent 20rem),
@@ -25,6 +33,9 @@
       }
 
       main {
+        width: min(100%, 44rem);
+        padding: 0.5rem;
+        box-sizing: border-box;
         text-align: center;
       }
 
@@ -40,11 +51,119 @@
         color: #cdbf9d;
       }
 
+      #game {
+        display: flex;
+        justify-content: center;
+        touch-action: none;
+      }
+
       #game canvas {
+        width: auto;
+        max-width: 100%;
+        height: min(600px, 107vw, calc(100dvh - 15rem));
         border: 2px solid rgba(212, 175, 55, 0.78);
         box-shadow:
           0 18px 44px rgba(0, 0, 0, 0.58),
           0 0 34px rgba(212, 175, 55, 0.12);
+        box-sizing: border-box;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .touch-controls {
+        display: none;
+        width: min(100%, 560px);
+        margin: 0.6rem auto 0;
+        gap: 0.45rem;
+        touch-action: none;
+        user-select: none;
+      }
+
+      .touch-row,
+      .touch-controls__top,
+      .touch-controls__main,
+      .touch-cluster,
+      .touch-actions,
+      .touch-bombs {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .touch-controls__top,
+      .touch-controls__main {
+        grid-template-columns: 1fr 1fr;
+        align-items: end;
+      }
+
+      .touch-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .touch-actions,
+      .touch-bombs {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .touch-button {
+        min-height: 2.65rem;
+        border: 2px solid rgba(212, 175, 55, 0.82);
+        border-radius: 0.55rem;
+        background:
+          linear-gradient(180deg, rgba(67, 43, 22, 0.98), rgba(24, 16, 9, 0.98));
+        box-shadow: inset 0 0 0 1px rgba(244, 215, 122, 0.16), 0 0.35rem 0.9rem rgba(0, 0, 0, 0.32);
+        color: #f4d77a;
+        font-weight: 800;
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .touch-button:active {
+        transform: translateY(1px);
+        background: linear-gradient(180deg, rgba(92, 61, 27, 1), rgba(36, 24, 13, 1));
+      }
+
+      .touch-button--pause,
+      .touch-button--cancel {
+        min-height: 2.15rem;
+        font-size: 0.82rem;
+        color: #eadfca;
+        border-color: rgba(244, 215, 122, 0.62);
+      }
+
+      @media (hover: none), (max-width: 760px) {
+        body {
+          align-items: start;
+        }
+
+        main {
+          padding: max(0.35rem, env(safe-area-inset-top)) max(0.35rem, env(safe-area-inset-right)) max(0.55rem, env(safe-area-inset-bottom)) max(0.35rem, env(safe-area-inset-left));
+        }
+
+        h1 {
+          font-size: 1.35rem;
+        }
+
+        p {
+          margin-bottom: 0.45rem;
+          font-size: 0.78rem;
+        }
+
+        #game canvas {
+          height: min(600px, 107vw, calc(100dvh - 14.5rem));
+        }
+
+        .touch-controls {
+          display: grid;
+        }
+      }
+
+      @media (max-width: 420px) {
+        .touch-button {
+          min-height: 2.45rem;
+          font-size: 0.92rem;
+        }
       }
     </style>
   </head>
@@ -53,8 +172,64 @@
       <h1>DUAT</h1>
       <p>Phase 3 coffin meter, god unlock, canopic set, clear, gravity, chain, and score prototype</p>
       <div id="game"></div>
+      <section class="touch-controls" aria-label="DUAT touch controls">
+        <div class="touch-controls__top">
+          <button class="touch-button touch-button--cancel" type="button" data-duat-action="cancel">ESC</button>
+          <button class="touch-button touch-button--pause" type="button" data-duat-action="pause">PAUSE</button>
+        </div>
+        <div class="touch-controls__main">
+          <div class="touch-cluster" aria-label="Movement controls">
+            <div class="touch-row">
+              <span aria-hidden="true"></span>
+              <button class="touch-button" type="button" data-duat-action="down" data-duat-hold="true">↓</button>
+              <span aria-hidden="true"></span>
+            </div>
+            <div class="touch-row">
+              <button class="touch-button" type="button" data-duat-action="left">←</button>
+              <button class="touch-button" type="button" data-duat-action="down" data-duat-hold="true">↓</button>
+              <button class="touch-button" type="button" data-duat-action="right">→</button>
+            </div>
+          </div>
+          <div class="touch-actions" aria-label="Action controls">
+            <button class="touch-button" type="button" data-duat-action="rotate">ROT</button>
+            <button class="touch-button" type="button" data-duat-action="drop">DROP</button>
+          </div>
+        </div>
+        <div class="touch-bombs" aria-label="Bomb controls">
+          <button class="touch-button" type="button" data-duat-action="bomb-0">B1</button>
+          <button class="touch-button" type="button" data-duat-action="bomb-1">B2</button>
+          <button class="touch-button" type="button" data-duat-action="bomb-2">B3</button>
+          <button class="touch-button" type="button" data-duat-action="bomb-3">B4</button>
+        </div>
+      </section>
     </main>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
     <script type="module" src="./src/main.js"></script>
+    <script>
+      const dispatchDuatTouchAction = (action, phase = 'tap') => {
+        window.dispatchEvent(new CustomEvent('duat-touch-action', { detail: { action, phase } }));
+      };
+
+      document.querySelectorAll('[data-duat-action]').forEach((button) => {
+        const action = button.dataset.duatAction;
+        const isHoldButton = button.dataset.duatHold === 'true';
+
+        button.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+          button.setPointerCapture?.(event.pointerId);
+          dispatchDuatTouchAction(action, isHoldButton ? 'down' : 'tap');
+        });
+
+        if (isHoldButton) {
+          const release = (event) => {
+            event.preventDefault();
+            dispatchDuatTouchAction(action, 'up');
+          };
+          button.addEventListener('pointerup', release);
+          button.addEventListener('pointercancel', release);
+          button.addEventListener('lostpointercapture', () => dispatchDuatTouchAction(action, 'up'));
+        }
+      });
+    </script>
   </body>
 </html>

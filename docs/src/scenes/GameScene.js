@@ -100,6 +100,8 @@ export class GameScene extends Phaser.Scene {
     this.isDangerState = false;
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
+    this.isTouchSoftDropping = false;
+    this.touchActionHandler = null;
 
     this.createBackground();
     this.createInput();
@@ -120,7 +122,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const fallInterval = this.cursors.down.isDown ? SOFT_DROP_FALL_MS : NORMAL_FALL_MS;
+    const fallInterval = this.isSoftDropActive() ? SOFT_DROP_FALL_MS : NORMAL_FALL_MS;
     this.fallTimer += delta;
 
     if (this.fallTimer >= fallInterval) {
@@ -246,7 +248,7 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 7,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 205, 'Press Enter or Space to Start', {
+    const prompt = this.add.text(0, 205, 'Press Enter, Space, or Tap to Start', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
@@ -255,6 +257,10 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.titleOverlay.add([panel, innerPanel, title, subtitle, description, controls, prompt]);
+    panel.setInteractive({ useHandCursor: true });
+    prompt.setInteractive({ useHandCursor: true });
+    panel.on('pointerdown', () => this.startGame());
+    prompt.on('pointerdown', () => this.startGame());
   }
 
   createPauseOverlay() {
@@ -269,7 +275,7 @@ export class GameScene extends Phaser.Scene {
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press Enter or Space to Resume', {
+    const prompt = this.add.text(0, 34, 'Press Enter, Space, or Tap to Resume', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#eadfca',
@@ -277,6 +283,12 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.pauseOverlay.add([shade, panel, title, prompt]);
+    shade.setInteractive({ useHandCursor: true });
+    panel.setInteractive({ useHandCursor: true });
+    prompt.setInteractive({ useHandCursor: true });
+    [shade, panel, prompt].forEach((target) => {
+      target.on('pointerdown', () => this.resumeGame());
+    });
   }
 
   startGame() {
@@ -320,6 +332,7 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.isDebugMode = false;
     this.isResolvingClears = false;
+    this.isTouchSoftDropping = false;
     this.isDangerState = false;
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
@@ -378,6 +391,7 @@ export class GameScene extends Phaser.Scene {
 
     this.gameState = GAME_STATES.PLAYING;
     this.sfx.playPause();
+    this.sfx.resume();
     this.pauseOverlay?.setVisible(false);
     this.bgm.resume();
     this.safeUpdateBgmForGameState();
@@ -430,7 +444,110 @@ export class GameScene extends Phaser.Scene {
       key.on('down', () => this.selectBombSlot(index));
     });
 
+    this.registerTouchControls();
     this.createPauseOverlay();
+  }
+
+  registerTouchControls() {
+    this.touchActionHandler = (event) => this.handleTouchAction(event.detail);
+    window.addEventListener('duat-touch-action', this.touchActionHandler);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.touchActionHandler) {
+        window.removeEventListener('duat-touch-action', this.touchActionHandler);
+        this.touchActionHandler = null;
+      }
+    });
+  }
+
+  handleTouchAction(detail = {}) {
+    this.sfx.resume();
+
+    const { action, phase = 'tap' } = detail;
+
+    if (action === 'start') {
+      this.startGame();
+      return;
+    }
+
+    if (action === 'pause') {
+      this.handlePauseKey();
+      return;
+    }
+
+    if (action === 'cancel') {
+      this.handleEscKey();
+      return;
+    }
+
+    if (action === 'down') {
+      this.handleTouchDownButton(phase);
+      return;
+    }
+
+    if (phase === 'up') {
+      return;
+    }
+
+    if (action === 'left') {
+      this.tryMoveSideways(-1);
+      return;
+    }
+
+    if (action === 'right') {
+      this.tryMoveSideways(1);
+      return;
+    }
+
+    if (action === 'rotate') {
+      this.tryRotate();
+      return;
+    }
+
+    if (action === 'drop') {
+      this.handleTouchDropButton();
+      return;
+    }
+
+    if (action?.startsWith('bomb-')) {
+      const slotIndex = Number.parseInt(action.slice(5), 10);
+      if (Number.isInteger(slotIndex)) {
+        this.selectBombSlot(slotIndex);
+      }
+    }
+  }
+
+  handleTouchDropButton() {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
+      return;
+    }
+
+    if (this.selectedBombSlot !== null) {
+      this.confirmSelectedBomb();
+      return;
+    }
+
+    this.hardDrop();
+  }
+
+  handleTouchDownButton(phase) {
+    if (phase === 'up') {
+      this.isTouchSoftDropping = false;
+      return;
+    }
+
+    if (phase === 'down') {
+      if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
+        this.isTouchSoftDropping = false;
+        return;
+      }
+
+      this.isTouchSoftDropping = true;
+      this.stepDown(SOFT_DROP_FALL_MS);
+    }
+  }
+
+  isSoftDropActive() {
+    return this.cursors.down.isDown || this.isTouchSoftDropping;
   }
 
   handleEnterKey() {
@@ -542,7 +659,7 @@ export class GameScene extends Phaser.Scene {
 
   stepDown(delta) {
     if (this.tryMove(0, 1)) {
-      if (this.cursors.down.isDown) {
+      if (this.isSoftDropActive()) {
         this.sfx.playSoftDrop();
       }
       return;
@@ -1350,7 +1467,7 @@ export class GameScene extends Phaser.Scene {
       stroke: '#1a0505',
       strokeThickness: 4,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press Enter or Space to Restart', {
+    const prompt = this.add.text(0, 34, 'Press Enter, Space, or Tap to Restart', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#eadfca',
@@ -1358,6 +1475,10 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     this.gameOverOverlay.add([panel, title, prompt]);
+    panel.setInteractive({ useHandCursor: true });
+    prompt.setInteractive({ useHandCursor: true });
+    panel.on('pointerdown', () => this.restartGame());
+    prompt.on('pointerdown', () => this.restartGame());
   }
 
   renderBoard() {
