@@ -1,4 +1,4 @@
-const DEFAULT_VOLUME = 0.45;
+const DEFAULT_VOLUME = 0.7;
 const MASTER_GAIN_RAMP_SECONDS = 0.01;
 
 export class SoundManager {
@@ -77,11 +77,11 @@ export class SoundManager {
   }
 
   playMove() {
-    this.playTone({ frequency: 330, duration: 0.035, type: 'square', gain: 0.08 });
+    this.playTone({ frequency: 330, duration: 0.035, type: 'square', gain: 0.055 });
   }
 
   playRotate() {
-    this.playTone({ frequency: 520, duration: 0.045, type: 'triangle', gain: 0.09 });
+    this.playTone({ frequency: 520, duration: 0.045, type: 'triangle', gain: 0.085 });
   }
 
   playSoftDrop() {
@@ -91,49 +91,49 @@ export class SoundManager {
     }
 
     this.lastSoftDropAt = nowMs;
-    this.playTone({ frequency: 150, duration: 0.035, type: 'square', gain: 0.045 });
+    this.playTone({ frequency: 150, duration: 0.035, type: 'square', gain: 0.032 });
   }
 
   playHardDrop() {
-    this.playNoise({ duration: 0.09, gain: 0.16, filterFrequency: 180, filterType: 'lowpass' });
-    this.playTone({ frequency: 92, duration: 0.1, type: 'sine', gain: 0.12 });
+    this.playNoise({ duration: 0.09, gain: 0.22, filterFrequency: 180, filterType: 'lowpass' });
+    this.playTone({ frequency: 92, duration: 0.1, type: 'sine', gain: 0.15 });
   }
 
   playLock() {
-    this.playNoise({ duration: 0.075, gain: 0.12, filterFrequency: 240, filterType: 'lowpass' });
-    this.playTone({ frequency: 115, duration: 0.075, type: 'triangle', gain: 0.075 });
+    this.playNoise({ duration: 0.075, gain: 0.16, filterFrequency: 240, filterType: 'lowpass' });
+    this.playTone({ frequency: 115, duration: 0.075, type: 'triangle', gain: 0.105 });
   }
 
   playClear() {
-    this.playArpeggio([720, 960, 1200], 0.035, { type: 'sine', gain: 0.07, gap: 0.025 });
+    this.playArpeggio([720, 960, 1200], 0.04, { type: 'sine', gain: 0.12, gap: 0.028 });
   }
 
   playCanopic() {
-    this.playArpeggio([440, 660, 880, 1320], 0.08, { type: 'triangle', gain: 0.07, gap: 0.055 });
+    this.playArpeggio([440, 660, 880, 1320], 0.085, { type: 'triangle', gain: 0.15, gap: 0.058 });
   }
 
   playChain(chainCount) {
     const baseFrequency = 500 + Math.min(chainCount, 8) * 55;
     this.playArpeggio([baseFrequency, baseFrequency * 1.25, baseFrequency * 1.5], 0.055, {
       type: 'sine',
-      gain: 0.075,
+      gain: 0.13,
       gap: 0.04,
     });
   }
 
   playBombSelect() {
-    this.playTone({ frequency: 620, duration: 0.055, type: 'sine', gain: 0.065 });
+    this.playTone({ frequency: 620, duration: 0.06, type: 'sine', gain: 0.11 });
   }
 
   playBombUse() {
-    this.playNoise({ duration: 0.16, gain: 0.18, filterFrequency: 520, filterType: 'bandpass' });
-    this.playTone({ frequency: 75, duration: 0.16, type: 'sawtooth', gain: 0.08 });
+    this.playNoise({ duration: 0.17, gain: 0.24, filterFrequency: 520, filterType: 'bandpass' });
+    this.playTone({ frequency: 75, duration: 0.17, type: 'sawtooth', gain: 0.11 });
   }
 
   playGodUnlock() {
     this.playArpeggio([523.25, 659.25, 783.99, 1046.5, 1318.51], 0.11, {
       type: 'triangle',
-      gain: 0.075,
+      gain: 0.16,
       gap: 0.07,
     });
   }
@@ -143,7 +143,7 @@ export class SoundManager {
   }
 
   playGameOver() {
-    this.playArpeggio([220, 174.61, 130.81, 98], 0.16, { type: 'triangle', gain: 0.08, gap: 0.1 });
+    this.playArpeggio([220, 174.61, 130.81, 98], 0.16, { type: 'triangle', gain: 0.13, gap: 0.1 });
   }
 
   playTone({ frequency, duration, type = 'sine', gain = 0.08, startTime = 0 }) {
