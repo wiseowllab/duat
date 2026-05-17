@@ -97,7 +97,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **Space**: hard drop when no bomb is selected.
 - **Enter**: pause gameplay when no bomb is selected.
 - **P**: optional pause shortcut.
-- **M**: toggle generated sound effects on/off.
+- **M**: toggle BGM and generated sound effects on/off.
 - **Space** does not pause during normal gameplay.
 
 ### Paused
@@ -105,13 +105,13 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **Enter / Space**: resume gameplay.
 - **Esc**: also resumes gameplay.
 - **P**: optional resume shortcut.
-- **M**: toggle generated sound effects on/off. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
+- **M**: toggle BGM and generated sound effects on/off. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
 
 ### Game Over
 
 - **Enter / Space**: restart after game over.
 - **R**: optional restart shortcut.
-- **M**: toggle generated sound effects on/off.
+- **M**: toggle BGM and generated sound effects on/off.
 
 ### Bomb Controls
 
@@ -213,12 +213,24 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 
 ## Current Audio
 
-- Sound effects are generated at runtime with the Web Audio API.
-- No external sound assets are required yet.
-- **M** toggles generated sound effects between Sound: ON and Sound: OFF.
-- Browsers may wait for Enter, Space, or another keyboard gesture before audio can start; the game safely retries audio resume on key presses.
-- Final audio assets may replace these generated prototype sounds later.
-- Background music is not implemented yet.
+- Sound effects are generated at runtime with the Web Audio API and remain balanced above the music.
+- Background music uses external MP3 files loaded from `docs/assets/audio/bgm/`.
+- The prototype expects exactly these eight BGM filenames:
+  - `bgm_tier1_normal.mp3`
+  - `bgm_tier1_danger.mp3`
+  - `bgm_tier2_normal.mp3`
+  - `bgm_tier2_danger.mp3`
+  - `bgm_tier3_normal.mp3`
+  - `bgm_tier3_danger.mp3`
+  - `bgm_tier4_normal.mp3`
+  - `bgm_tier4_danger.mp3`
+- BGM starts only after the title screen is started with a keyboard gesture; browsers generally require user interaction before audio playback can begin.
+- During gameplay, the current coffin/god tier selects Tier 1-4 BGM. If all gods are unlocked or DUAT is complete, Tier 4 BGM is used.
+- Each tier has a normal loop and a danger/up-tempo loop. Danger music begins when any locked board piece reaches row 3 or above, where row 0 is the top row.
+- Danger music returns to normal only after the highest locked piece is below row 5, preventing rapid switching around the danger line.
+- Only locked board cells affect danger music; the currently falling pair is ignored.
+- Pause fades the current BGM down, resume fades it back up, game over fades/stops it, and restart starts the correct current Tier 1 normal loop.
+- **M** toggles both generated sound effects and BGM between Sound: ON and Sound: OFF. Unmuting during gameplay restores the correct tier/danger BGM.
 
 ## Current Asset Locations
 
@@ -266,7 +278,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 ## Known Limitations
 
 - Sound effects are generated placeholders and are not final audio assets yet.
-- No background music yet.
+- BGM requires the eight expected external MP3 files to be present in `docs/assets/audio/bgm/`.
 - No mobile controls yet.
 - No save data yet.
 - No high score persistence yet.
@@ -280,7 +292,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 
 1. Gameplay balance pass for scoring, coffin meter requirements, bomb strength, brain frequency, and chain value.
 2. Mobile/touch controls.
-3. Final sound effects, audio asset loading, and background music hooks.
+3. Final sound effects and final BGM mix pass.
 4. Final god unlock presentation.
 5. High score persistence.
 6. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.
