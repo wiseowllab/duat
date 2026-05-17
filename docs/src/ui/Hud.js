@@ -76,7 +76,7 @@ export class Hud {
     this.feedbackText = this.createLabel(20, 522, '', 15);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
-    this.statusText = this.createLabel(20, 552, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\n1-4 Select Bomb', 12);
+    this.statusText = this.createLabel(20, 552, '←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  1-4 Bomb', 12);
   }
 
   createPanels() {
@@ -383,12 +383,12 @@ export class Hud {
   }
 
   showReadyStatus() {
-    this.statusText.setText('←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nP Pause  R Restart after Game Over');
+    this.statusText.setText('←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nEnter Pause  1-4 Bomb');
     this.statusText.setColor('#eadfca');
   }
 
   showGameOver() {
-    this.statusText.setText('Game Over\nPress R to Restart');
+    this.statusText.setText('Game Over\nEnter/Space Restart');
     this.statusText.setColor('#ff7b7b');
   }
 

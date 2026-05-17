@@ -27,8 +27,9 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 - The page opens on a **DUAT** title screen before pieces begin falling.
 - **Enter** or **Space** starts a fresh game from the title screen.
-- **P** pauses and resumes active gameplay; falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
-- Game over shows a restart prompt, and **R** restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset.
+- **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
+- **Enter** or **Space** resumes from pause.
+- Game over shows a restart prompt, and **Enter** or **Space** restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
@@ -94,22 +95,29 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **Down**: soft drop.
 - **Up / Z**: rotate the active pair.
 - **Space**: hard drop when no bomb is selected.
-- **P**: pause gameplay.
+- **Enter**: pause gameplay when no bomb is selected.
+- **P**: optional pause shortcut.
+- **Space** does not pause during normal gameplay.
 
 ### Paused
 
-- **P**: resume gameplay. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
+- **Enter / Space**: resume gameplay.
+- **Esc**: also resumes gameplay.
+- **P**: optional resume shortcut. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
 
 ### Game Over
 
-- **R**: restart after game over.
+- **Enter / Space**: restart after game over.
+- **R**: optional restart shortcut.
 
 ### Bomb Controls
 
 - **1-4**: select and preview a bomb slot.
 - **Same number again**: use the selected bomb.
+- **Different number**: switch selected bomb slot.
 - **Enter / Space**: use the selected bomb when a bomb is selected.
 - **Esc**: cancel bomb selection.
+- When a bomb is selected, **Space** confirms the bomb instead of hard dropping.
 
 Bombs target the current active pair position. The preview shows the bomb's affected area before confirmation.
 
@@ -252,8 +260,6 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 - No high score persistence yet.
 - No final god illustrations yet.
 - No final ending sequence yet.
-- No title/start screen yet.
-- No pause/restart UI yet.
 - Balance values are placeholder.
 - Visual effects are still prototype-level.
 - Current art is placeholder/prototype art and needs final polish.
@@ -264,7 +270,5 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 2. Mobile/touch controls.
 3. Sound effects and background music hooks.
 4. Final god unlock presentation.
-5. Title/start screen.
-6. Pause/restart UI.
-7. High score persistence.
-8. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.
+5. High score persistence.
+6. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.

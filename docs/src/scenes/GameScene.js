@@ -225,8 +225,8 @@ export class GameScene extends Phaser.Scene {
       '↓  Soft drop',
       '↑ / Z  Rotate',
       'Space  Hard drop / Confirm bomb',
+      'Enter  Pause / Resume',
       '1-4  Select bomb    Esc  Cancel',
-      'P  Pause / Resume',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
@@ -257,7 +257,7 @@ export class GameScene extends Phaser.Scene {
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press P to Resume', {
+    const prompt = this.add.text(0, 34, 'Press Enter or Space to Resume', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#eadfca',
@@ -396,7 +396,7 @@ export class GameScene extends Phaser.Scene {
     this.keyR.on('down', () => this.handleRestartOrDebugReset());
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyEnter.on('down', () => this.handleEnterKey());
-    this.keyEsc.on('down', () => this.cancelBombSelection());
+    this.keyEsc.on('down', () => this.handleEscKey());
     this.bombKeys.forEach((key, index) => {
       key.on('down', () => this.selectBombSlot(index));
     });
@@ -410,8 +410,34 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.gameState === GAME_STATES.GAME_OVER) {
+      this.restartGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PAUSED) {
+      this.resumeGame();
+      return;
+    }
+
     if (this.gameState === GAME_STATES.PLAYING) {
-      this.confirmSelectedBomb();
+      if (this.selectedBombSlot !== null) {
+        this.confirmSelectedBomb();
+        return;
+      }
+
+      this.pauseGame();
+    }
+  }
+
+  handleEscKey() {
+    if (this.gameState === GAME_STATES.PAUSED) {
+      this.resumeGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PLAYING) {
+      this.cancelBombSelection();
     }
   }
 
@@ -484,6 +510,16 @@ export class GameScene extends Phaser.Scene {
   handleSpaceKey() {
     if (this.gameState === GAME_STATES.TITLE) {
       this.startGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.GAME_OVER) {
+      this.restartGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PAUSED) {
+      this.resumeGame();
       return;
     }
 
@@ -1130,7 +1166,7 @@ export class GameScene extends Phaser.Scene {
       stroke: '#1a0505',
       strokeThickness: 4,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press R to Restart', {
+    const prompt = this.add.text(0, 34, 'Press Enter or Space to Restart', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#eadfca',
