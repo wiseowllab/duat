@@ -22,9 +22,11 @@ import { CanopusResolver } from '../core/CanopusResolver.js';
 import { ScoreSystem } from '../core/ScoreSystem.js';
 import { CoffinMeter } from '../core/CoffinMeter.js';
 import { BombSystem } from '../core/BombSystem.js';
+import { HighScoreManager } from '../core/HighScoreManager.js';
 import { Hud } from '../ui/Hud.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js';
+import { TOTAL_GOD_COUNT } from '../data/gods.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -75,10 +77,15 @@ export class GameScene extends Phaser.Scene {
     this.scoreSystem = new ScoreSystem();
     this.coffinMeter = new CoffinMeter();
     this.bombSystem = new BombSystem();
+    this.highScoreManager = new HighScoreManager();
+    this.highScoreRecords = this.highScoreManager.getRecords();
     this.sfx = new SoundManager();
     this.bgm = new BgmManager(this);
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
+    this.bestChainThisRun = 0;
+    this.maxTierThisRun = 1;
+    this.maxGodsUnlockedThisRun = 0;
     this.level = INITIAL_LEVEL;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
@@ -110,6 +117,7 @@ export class GameScene extends Phaser.Scene {
     this.hud = new Hud(this, 390, 16);
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
+    this.hud.updateBestScore(this.highScoreRecords.highScore);
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
     this.hud.updateCoffin(this.coffinMeter.getState());
@@ -234,7 +242,15 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       wordWrap: { width: 450 },
     }).setOrigin(0.5);
-    const controls = this.add.text(0, 26, [
+    const bestRecords = this.createBestRecordsText();
+    const bestText = this.add.text(0, -52, bestRecords, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '15px',
+      color: '#f4d77a',
+      align: 'center',
+      lineSpacing: 4,
+    }).setOrigin(0.5);
+    const controls = this.add.text(0, 58, [
       'Controls',
       '← / →  Move pair',
       '↓  Soft drop',
@@ -250,7 +266,7 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 7,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 205, 'Press Enter, Space, or Tap to Start', {
+    const prompt = this.add.text(0, 212, 'Press Enter, Space, or Tap to Start', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
@@ -258,11 +274,22 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
-    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, controls, prompt]);
+    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, bestText, controls, prompt]);
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => this.startGame());
     prompt.on('pointerdown', () => this.startGame());
+  }
+
+  createBestRecordsText() {
+    const records = this.highScoreRecords ?? this.highScoreManager?.getRecords();
+
+    return [
+      `BEST SCORE: ${records.highScore}`,
+      `MAX CHAIN: ${records.maxChain}`,
+      `MAX TIER: ${records.maxTier}`,
+      `GODS: ${records.maxGodsUnlocked}/${TOTAL_GOD_COUNT}`,
+    ].join('\n');
   }
 
   createPauseOverlay() {
@@ -326,6 +353,9 @@ export class GameScene extends Phaser.Scene {
     this.bombSystem.reset();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
+    this.bestChainThisRun = 0;
+    this.maxTierThisRun = 1;
+    this.maxGodsUnlockedThisRun = 0;
     this.level = INITIAL_LEVEL;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
@@ -364,6 +394,7 @@ export class GameScene extends Phaser.Scene {
   updateHudForReset() {
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
+    this.hud.updateBestScore(this.highScoreRecords.highScore);
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
     this.hud.updateCoffin(this.coffinMeter.getState());
@@ -771,6 +802,7 @@ export class GameScene extends Phaser.Scene {
       const meterGain = this.scoreSystem.calculateCycleMeterPoints(clearResult, nextChain);
       this.score += earnedScore;
       unlockEvents.push(...this.coffinMeter.addPoints(meterGain));
+      this.updateRunProgressionRecords();
       resolvedChains = nextChain;
       clearedCanopicSet = clearedCanopicSet || clearResult.clearTypes.has('canopic');
       clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
@@ -781,6 +813,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.chainCount = resolvedChains;
+    this.bestChainThisRun = Math.max(this.bestChainThisRun, this.chainCount);
+    this.updateRunProgressionRecords();
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateCoffin(this.coffinMeter.getState());
@@ -893,6 +927,7 @@ export class GameScene extends Phaser.Scene {
       const unlockEvents = this.coffinMeter.addPoints(Math.floor(earnedScore * 0.25));
 
       this.score += earnedScore;
+      this.updateRunProgressionRecords();
       this.hud.updateScore(this.score);
       this.hud.updateCoffin(this.coffinMeter.getState());
 
@@ -1250,6 +1285,7 @@ export class GameScene extends Phaser.Scene {
 
   addDebugMeterPoints(points) {
     const unlockEvents = this.coffinMeter.addPoints(points);
+    this.updateRunProgressionRecords();
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.showUnlockEvents(unlockEvents);
     this.safeUpdateBgmForGameState();
@@ -1257,6 +1293,7 @@ export class GameScene extends Phaser.Scene {
 
   fillDebugGod() {
     const unlockEvents = this.coffinMeter.fillCurrentGod();
+    this.updateRunProgressionRecords();
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.showUnlockEvents(unlockEvents);
     this.safeUpdateBgmForGameState();
@@ -1270,12 +1307,19 @@ export class GameScene extends Phaser.Scene {
     this.fillDebugGod();
   }
 
+  updateRunProgressionRecords() {
+    const state = this.coffinMeter.getState();
+    this.maxTierThisRun = Math.max(this.maxTierThisRun, state.currentTier?.tier ?? 4);
+    this.maxGodsUnlockedThisRun = Math.max(this.maxGodsUnlockedThisRun, state.unlockedCount);
+  }
+
   resetDebugProgression() {
     if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
       return;
     }
 
     this.coffinMeter.reset();
+    this.updateRunProgressionRecords();
     this.cancelBombSelection();
     this.bombSystem.reset();
     this.hud.updateCoffin(this.coffinMeter.getState());
@@ -1446,11 +1490,26 @@ export class GameScene extends Phaser.Scene {
     this.activePiece = null;
     this.cancelBombSelection();
     this.pauseOverlay?.setVisible(false);
+    const highScoreResult = this.recordHighScoreForCurrentRun();
+    this.hud.updateBestScore(highScoreResult.records.highScore);
     this.hud.showGameOver();
-    this.showGameOverOverlay();
+    this.showGameOverOverlay(highScoreResult);
   }
 
-  showGameOverOverlay() {
+  recordHighScoreForCurrentRun() {
+    this.updateRunProgressionRecords();
+    const result = this.highScoreManager.recordRun({
+      score: this.score,
+      maxChain: this.bestChainThisRun,
+      maxTier: this.maxTierThisRun,
+      maxGodsUnlocked: this.maxGodsUnlockedThisRun,
+    });
+
+    this.highScoreRecords = result.records;
+    return result;
+  }
+
+  showGameOverOverlay(highScoreResult) {
     if (this.gameOverOverlay) {
       this.gameOverOverlay.destroy(true);
     }
@@ -1458,25 +1517,42 @@ export class GameScene extends Phaser.Scene {
     const centerX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
     const centerY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25);
-    const panel = this.add.rectangle(0, 0, 250, 160, 0x120806, 0.92)
-      .setStrokeStyle(2, 0xff7b7b, 0.8);
-    const title = this.add.text(0, -32, 'GAME OVER', {
+    const panel = this.add.rectangle(0, 0, 286, 238, 0x120806, 0.94)
+      .setStrokeStyle(2, 0xd4af37, 0.82);
+    const title = this.add.text(0, -88, 'GAME OVER', {
       fontFamily: 'Georgia, serif',
       fontSize: '30px',
-      color: '#ff7b7b',
+      color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
-      stroke: '#1a0505',
+      stroke: '#1a1006',
       strokeThickness: 4,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press Enter, Space, or Tap to Restart', {
+    const recordText = this.add.text(0, 0, [
+      `Final Score: ${this.score}`,
+      `Best Score: ${highScoreResult.records.highScore}`,
+      highScoreResult.isNewHighScore ? 'New Record!' : '',
+      `Max Chain: ${this.bestChainThisRun}`,
+      `Gods Unlocked: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+    ].filter(Boolean).join('\n'), {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: '17px',
+      color: '#eadfca',
+      align: 'center',
+      lineSpacing: 6,
+    }).setOrigin(0.5);
+    if (highScoreResult.isNewHighScore) {
+      recordText.setColor('#f4d77a');
+      recordText.setFontStyle('bold');
+    }
+    const prompt = this.add.text(0, 90, 'Press Enter, Space, or Tap to Restart', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
       color: '#eadfca',
       align: 'center',
     }).setOrigin(0.5);
 
-    this.gameOverOverlay.add([panel, title, prompt]);
+    this.gameOverOverlay.add([panel, title, recordText, prompt]);
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => this.restartGame());

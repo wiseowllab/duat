@@ -49,9 +49,10 @@ export class Hud {
 
     this.scene.add.text(this.x + 18, this.y + 62, 'SCORE', this.headingStyle(15));
     this.scoreText = this.createLabel(18, 90, 'Score: 0', 18);
-    this.chainText = this.createLabel(18, 120, 'Chain: 0', 16);
-    this.levelText = this.createLabel(18, 148, 'Level: 1', 15);
-    this.soundText = this.createLabel(96, 148, 'Sound: ON', 13);
+    this.chainText = this.createLabel(18, 116, 'Chain: 0', 15);
+    this.bestScoreText = this.createLabel(18, 139, 'Best: 0', 13);
+    this.levelText = this.createLabel(18, 158, 'Level: 1', 12);
+    this.soundText = this.createLabel(96, 158, 'Sound: ON', 11);
     this.soundText.setColor('#9fdfe8');
 
     this.scene.add.text(this.x + 196, this.y + 62, 'NEXT', this.headingStyle(15));
@@ -140,6 +141,10 @@ export class Hud {
 
   updateChain(chainCount) {
     this.chainText.setText(`Chain: ${chainCount}`);
+  }
+
+  updateBestScore(highScore) {
+    this.bestScoreText.setText(`Best: ${highScore}`);
   }
 
   updateLevel(level) {

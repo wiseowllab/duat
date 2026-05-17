@@ -31,7 +31,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **Enter**, **Space**, or tapping the title prompt starts a fresh game from the title screen.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
-- Game over shows a restart prompt, and **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset. **R** remains an optional game-over restart shortcut.
+- Game over shows final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
@@ -39,7 +39,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Falling two-piece pairs.
 - Random next-pair generation.
 - NEXT piece preview.
-- Wider desktop HUD layout with separated score, NEXT, current coffin, and bomb stock panels.
+- Wider desktop HUD layout with separated score, saved best score, NEXT, current coffin, and bomb stock panels.
 - Left/right movement.
 - Soft drop.
 - Hard drop.
@@ -55,7 +55,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Clear highlights before cells are removed:
   - Pale gold for same-type clears.
   - Sacred cyan/gold for canopic set clears.
-- Basic score display and chain display.
+- Basic score display, chain display, and browser-local high score display.
 
 ### Canopic and Brain Rules
 
@@ -208,6 +208,19 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 - **Full Clear** (`full_board_clear`): clears the entire board, including brain pieces.
 - **Max Burst** (`maximum_coffin_burst`): clears the entire board, including brain pieces, and awards a final-stage bonus.
 
+## Local High Scores
+
+- High score records are saved locally in the browser with `localStorage` under the DUAT high score data key.
+- Saved values include:
+  - High score.
+  - Max chain.
+  - Max coffin tier reached.
+  - Max gods unlocked.
+  - Best run date metadata.
+- Records are local to the current browser profile and device; they do not sync between browsers, devices, or private browsing sessions.
+- Clearing browser site data/storage for DUAT resets these records.
+- Restarting after game over and debug progression resets do not erase high score records.
+
 ## Current Progression System
 
 - The coffin meter gains points from clears and bomb effects.
@@ -315,8 +328,8 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 - Sound effects are generated placeholders and are not final audio assets yet.
 - BGM requires the eight expected external MP3 files to be present in `docs/assets/audio/bgm/`.
 - Mobile controls are implemented, but their layout and art are still prototype-level.
-- No save data yet.
-- No high score persistence yet.
+- No cloud save data yet.
+- High scores are browser/device local only.
 - No final god illustrations yet.
 - No final ending sequence yet.
 - Balance values are placeholder.
@@ -329,5 +342,4 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 2. Mobile/touch control polish and final mobile UI art.
 3. Final sound effects and final BGM mix pass.
 4. Final god unlock presentation.
-5. High score persistence.
-6. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.
+5. Final art polish for pieces, coffins, board, HUD, bomb effects, and unlock effects.
