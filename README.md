@@ -275,6 +275,14 @@ Required coffin PNG filenames:
 
 The current prototype uses four tier-based coffin images, not one coffin image per god. Use transparent backgrounds for replacement coffin art.
 
+## Troubleshooting
+
+### BGM
+
+- If BGM does not play, confirm the MP3 files in `docs/assets/audio/bgm/` use the exact expected filenames listed in the Current Audio section. The preload keys are derived from those names.
+- If BGM switching fails because an audio asset is missing, invalid, destroyed, or rejected by the browser/Phaser sound system, gameplay should continue. Check the browser console for a `BGM ... failed; gameplay will continue.` warning.
+- **M** toggles both generated sound effects and BGM. If the HUD shows `Sound: OFF`, press **M** again to unmute both SFX and BGM.
+
 ## Known Limitations
 
 - Sound effects are generated placeholders and are not final audio assets yet.
