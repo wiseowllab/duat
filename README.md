@@ -87,7 +87,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 ## Current Controls
 
-Keyboard controls still work on desktop and on mobile devices with hardware keyboards. The prototype also includes a responsive, mobile-first touch control panel; the mobile layout is intentionally prototype-level and keeps the existing 6x12 board and HUD rather than redesigning the whole screen.
+Keyboard controls still work on desktop and on mobile devices with hardware keyboards. The prototype also includes a responsive, mobile-first touch control panel. The narrow-screen layout has been adjusted so the scaled canvas, HUD, and controls fit more comfortably above the fold on phones, but the mobile UI is still prototype-level and keeps the existing 6x12 board and HUD rather than redesigning the whole screen.
 
 ### Title Screen
 
@@ -133,17 +133,17 @@ Bombs target the current active pair position. The preview shows the bomb's affe
 
 ### Mobile Touch Controls
 
-The touch controls appear on touch devices and narrow viewports below the game canvas. They use the same game actions as the keyboard controls:
+The touch controls appear on touch devices and narrow viewports below the game canvas. On narrow screens they are arranged as a compact two-row panel: ESC, PAUSE, B1-B4 on the first row, and Left, Down, Right, ROT, DROP on the second row. They use the same game actions as the keyboard controls:
 
-- **← / →**: move the active pair horizontally.
-- **↓**: hold for soft drop; tapping/pressing also steps the pair down once when possible.
+- **LEFT / RIGHT**: move the active pair horizontally.
+- **DOWN**: hold for soft drop; tapping/pressing also steps the pair down once when possible.
 - **ROT**: rotate the active pair.
 - **DROP**: hard drop when no bomb is selected; confirm/use the selected bomb when a bomb is selected.
 - **B1-B4**: select and preview bomb slots 1-4. Tap the same bomb button again to confirm/use it; tap a different bomb button to switch selection.
 - **ESC**: cancel the current bomb selection; while paused, it resumes just like the keyboard Esc behavior.
 - **PAUSE**: pause active gameplay or resume from pause.
 
-The page uses responsive CSS, canvas scaling, and `touch-action: none` on the game/touch-control areas to reduce accidental browser scrolling during play. This is a prototype mobile layout, so button placement and sizing are functional placeholders rather than final mobile UI art.
+The page uses responsive CSS, canvas scaling, compact touch-control rows, and `touch-action: none` on the game/touch-control areas to reduce accidental browser scrolling during play. This is a prototype mobile layout, so button placement and sizing are functional placeholders rather than final mobile UI art.
 
 ### Debug Controls
 
@@ -309,7 +309,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 
 - Sound effects are generated placeholders and are not final audio assets yet.
 - BGM requires the eight expected external MP3 files to be present in `docs/assets/audio/bgm/`.
-- No mobile controls yet.
+- Mobile controls are implemented, but their layout and art are still prototype-level.
 - No save data yet.
 - No high score persistence yet.
 - No final god illustrations yet.
@@ -321,7 +321,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 ## Recommended Next Priorities
 
 1. Gameplay balance pass for scoring, coffin meter requirements, bomb strength, brain frequency, and chain value.
-2. Mobile/touch controls.
+2. Mobile/touch control polish and final mobile UI art.
 3. Final sound effects and final BGM mix pass.
 4. Final god unlock presentation.
 5. High score persistence.
