@@ -1,7 +1,70 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BGM_TRACKS, getBgmKey, getBgmPath } from '../docs/src/audio/BgmManager.js';
+import { BgmManager, BGM_TRACKS, getBgmKey, getBgmPath } from '../docs/src/audio/BgmManager.js';
+
+function createFakeScene({ hasAsset = true, throwOnAdd = false, throwOnPlay = false } = {}) {
+  const tracks = [];
+  return {
+    tracks,
+    cache: {
+      audio: {
+        exists: () => hasAsset,
+      },
+    },
+    sound: {
+      add: (key, config) => {
+        if (throwOnAdd) {
+          throw new Error('add failed');
+        }
+
+        const track = {
+          key,
+          volume: config.volume,
+          isPlaying: false,
+          isDestroyed: false,
+          play() {
+            if (throwOnPlay) {
+              throw new Error('play failed');
+            }
+            this.isPlaying = true;
+          },
+          stop() {
+            this.isPlaying = false;
+          },
+          destroy() {
+            this.isDestroyed = true;
+          },
+          setMute(isMuted) {
+            this.isMuted = isMuted;
+          },
+          setVolume(volume) {
+            this.volume = volume;
+          },
+        };
+
+        tracks.push(track);
+        return track;
+      },
+    },
+    tweens: {
+      addCounter: ({ to, onUpdate, onComplete }) => {
+        const tween = {
+          getValue: () => to,
+          isPlaying: () => false,
+          stop() {},
+        };
+        onUpdate?.(tween);
+        onComplete?.();
+        return tween;
+      },
+    },
+    time: {
+      delayedCall: (_delay, callback) => callback(),
+    },
+  };
+}
+
 
 test('BGM mapping provides normal and danger MP3 files for all four tiers', () => {
   assert.deepEqual(BGM_TRACKS, {
@@ -29,4 +92,61 @@ test('BGM keys and paths are selected from tier and danger state', () => {
   assert.equal(getBgmKey(1, true), 'bgm_tier1_danger');
   assert.equal(getBgmPath(4, false), 'assets/audio/bgm/bgm_tier4_normal.mp3');
   assert.equal(getBgmPath(4, true), 'assets/audio/bgm/bgm_tier4_danger.mp3');
+});
+
+test('playForState safely ignores missing assets', () => {
+  const scene = createFakeScene({ hasAsset: false });
+  const bgm = new BgmManager(scene);
+
+  assert.doesNotThrow(() => bgm.playForState(1, false));
+  assert.equal(bgm.currentTrack, null);
+});
+
+test('playForState safely handles sound manager failures', () => {
+  const scene = createFakeScene({ throwOnAdd: true });
+  const bgm = new BgmManager(scene);
+
+  assert.doesNotThrow(() => bgm.playForState(1, false));
+  assert.equal(bgm.currentTrack, null);
+});
+
+test('playForState does not replace the current track when the next track cannot play', () => {
+  const scene = createFakeScene();
+  const bgm = new BgmManager(scene);
+  bgm.playForState(1, true);
+  const dangerTrack = bgm.currentTrack;
+
+  scene.sound.add = (key, config) => {
+    const track = {
+      key,
+      volume: config.volume,
+      isPlaying: false,
+      isDestroyed: false,
+      play() { throw new Error('play failed'); },
+      stop() { this.isPlaying = false; },
+      destroy() { this.isDestroyed = true; },
+      setMute(isMuted) { this.isMuted = isMuted; },
+      setVolume(volume) { this.volume = volume; },
+    };
+    scene.tracks.push(track);
+    return track;
+  };
+
+  assert.doesNotThrow(() => bgm.playForState(1, false));
+  assert.equal(bgm.currentTrack, dangerTrack);
+  assert.equal(bgm.currentKey, 'bgm_tier1_danger');
+});
+
+test('playForState switches tracks without leaving the previous track playing', () => {
+  const scene = createFakeScene();
+  const bgm = new BgmManager(scene);
+
+  bgm.playForState(1, true);
+  const dangerTrack = bgm.currentTrack;
+  bgm.playForState(1, false);
+
+  assert.equal(bgm.currentKey, 'bgm_tier1_normal');
+  assert.equal(dangerTrack.isPlaying, false);
+  assert.equal(dangerTrack.isDestroyed, true);
+  assert.equal(bgm.currentTrack.isPlaying, true);
 });
