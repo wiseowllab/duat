@@ -8,6 +8,8 @@ const PANEL_STROKE = 0xd4af37;
 const PANEL_STONE = 0x2a1c10;
 const COFFIN_MAX_DISPLAY_WIDTH = 158;
 const COFFIN_MAX_DISPLAY_HEIGHT = 142;
+const COFFIN_BACKPLATE_WIDTH = 190;
+const COFFIN_BACKPLATE_HEIGHT = 146;
 const COFFIN_BAR_WIDTH = 282;
 
 export class Hud {
@@ -54,21 +56,21 @@ export class Hud {
 
     this.scene.add.text(this.x + 196, this.y + 62, 'NEXT', this.headingStyle(15));
 
-    this.scene.add.text(this.x + 18, this.y + 200, 'CURRENT COFFIN', this.headingStyle(18));
-    this.tierText = this.createLabel(22, 232, 'Tier 1 — Small Coffin', 15);
-    this.godText = this.createLabel(22, 256, 'God: Imsety', 15);
+    this.scene.add.text(this.x + 18, this.y + 198, 'CURRENT COFFIN', this.headingStyle(17));
+    this.tierText = this.createLabel(22, 225, 'Tier 1 — Small Coffin', 14);
+    this.godText = this.createLabel(22, 249, 'God: Imsety', 14);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinText = this.createLabel(22, 420, 'Meter: 0 / 1000', 14);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 448, COFFIN_BAR_WIDTH, 16, 0x0b0906, 0.94)
+    this.coffinText = this.createLabel(22, 412, 'Meter: 0 / 1000', 13);
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, 15, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(1, 0xd4af37, 0.58);
-    this.coffinBarFill = this.scene.add.rectangle(this.x + 24, this.y + 448, 0, 10, 0xd4af37, 0.88)
+    this.coffinBarFill = this.scene.add.rectangle(this.x + 24, this.y + 436, 0, 9, 0xd4af37, 0.88)
       .setOrigin(0, 0.5);
-    this.unlockedText = this.createLabel(22, 464, 'Unlocked: 0 / 14', 13);
+    this.unlockedText = this.createLabel(22, 451, 'Unlocked: 0 / 14', 12);
 
-    this.scene.add.text(this.x + 18, this.y + 494, 'BOMB STOCK', this.headingStyle(15));
-    this.bombStockText = this.createLabel(18, 520, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 12, 4);
-    this.selectedBombText = this.createLabel(170, 520, 'Selected: None', 12, 4);
+    this.scene.add.text(this.x + 18, this.y + 486, 'BOMB STOCK', this.headingStyle(15));
+    this.bombStockText = this.createLabel(18, 511, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 11, 2);
+    this.selectedBombText = this.createLabel(176, 511, 'Selected: None', 11, 2);
     this.selectedBombText.setColor('#9fdfe8');
 
     this.feedbackText = this.createLabel(198, 196, '', 15);
@@ -76,7 +78,8 @@ export class Hud {
     this.feedbackText.setFontStyle('bold');
     this.feedbackText.setWordWrapWidth(130);
 
-    this.statusText = this.createLabel(18, 572, '←/→ Move  ↓ Soft  ↑/Z Rotate  Space Drop  Enter Pause  M Mute', 10);
+    this.statusText = this.createLabel(184, 30, '', 11);
+    this.statusText.setColor('#eadfca');
   }
 
   createPanels() {
@@ -85,8 +88,8 @@ export class Hud {
 
     this.createPanel(12, 52, 160, 126, '');
     this.createPanel(184, 52, 150, 126, '');
-    this.createPanel(12, 190, 322, 292, '');
-    this.createPanel(12, 486, 322, 82, '');
+    this.createPanel(12, 190, 322, 280, '');
+    this.createPanel(12, 476, 322, 92, '');
 
     this.drawEgyptianAccents();
   }
@@ -104,7 +107,7 @@ export class Hud {
   drawEgyptianAccents() {
     const graphics = this.scene.add.graphics();
     graphics.lineStyle(1, 0xf0d27a, 0.38);
-    [58, 196, 494].forEach((offsetY) => {
+    [58, 196, 486].forEach((offsetY) => {
       graphics.lineBetween(this.x + 22, this.y + offsetY, this.x + 68, this.y + offsetY);
       graphics.lineBetween(this.x + 278, this.y + offsetY, this.x + 324, this.y + offsetY);
     });
@@ -168,7 +171,7 @@ export class Hud {
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`Selected: ${selectedSlot + 1}\n${this.compactBombName(selectedBomb)}\nDROP/Space: use\nEsc: cancel`);
+      this.selectedBombText.setText(`Selected: ${selectedSlot + 1}\n${this.compactBombName(selectedBomb)}\nDrop/Space: use\nEsc: cancel`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
@@ -178,8 +181,8 @@ export class Hud {
   }
 
   compactBombName(bomb) {
-    const label = `${bomb.godName} ${bomb.name}`;
-    const maxLength = 20;
+    const label = `${bomb.godName} / ${bomb.name}`;
+    const maxLength = 21;
     return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
   }
 
@@ -220,15 +223,17 @@ export class Hud {
 
     const asset = getCoffinAsset(nextCoffinSize);
     const centerX = this.x + HUD_WIDTH / 2;
-    const centerY = this.y + 342;
+    const centerY = this.y + 336;
     const container = this.scene.add.container(centerX, centerY);
     const glowSize = Math.max(COFFIN_MAX_DISPLAY_WIDTH, COFFIN_MAX_DISPLAY_HEIGHT) + 26;
 
+    const backplate = this.scene.add.rectangle(0, 0, COFFIN_BACKPLATE_WIDTH, COFFIN_BACKPLATE_HEIGHT, 0x0b0906, 0.64)
+      .setStrokeStyle(1, 0xd4af37, 0.24);
     this.coffinGlow = this.scene.add.ellipse(0, 0, glowSize, glowSize, 0xd4af37, 0.08)
       .setStrokeStyle(2, 0xf4d77a, 0.16);
     const coffin = this.createCoffinDisplay(asset, currentTier.tier);
 
-    container.add([this.coffinGlow, coffin]);
+    container.add([backplate, this.coffinGlow, coffin]);
     this.coffinContainer = container;
     this.currentCoffinSize = nextCoffinSize;
   }
@@ -422,12 +427,12 @@ export class Hud {
   }
 
   showReadyStatus() {
-    this.statusText.setText('←/→ Move  ↓ Soft  ↑/Z Rotate  Space Drop  Enter Pause  M Mute');
+    this.statusText.setText('');
     this.statusText.setColor('#eadfca');
   }
 
   showGameOver() {
-    this.statusText.setText('Game Over\nEnter/Space Restart');
+    this.statusText.setText('Game Over — Enter/Space Restart');
     this.statusText.setColor('#ff7b7b');
   }
 

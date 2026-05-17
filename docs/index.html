@@ -55,6 +55,15 @@
         color: #cdbf9d;
       }
 
+      .desktop-control-help {
+        width: min(100%, 760px);
+        margin: 0.55rem auto 0;
+        color: #bcae90;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        letter-spacing: 0.02em;
+      }
+
       #game {
         display: flex;
         justify-content: center;
@@ -65,7 +74,7 @@
       #game canvas {
         width: auto;
         max-width: 100%;
-        height: min(600px, 79vw, calc(100dvh - 15rem));
+        height: min(600px, 79vw, calc(100dvh - 16rem));
         border: 2px solid rgba(212, 175, 55, 0.78);
         box-shadow:
           0 18px 44px rgba(0, 0, 0, 0.58),
@@ -163,6 +172,10 @@
           height: min(600px, calc((100vw - 0.7rem) * 0.789), calc(100dvh - 8.35rem));
         }
 
+        .desktop-control-help {
+          display: none;
+        }
+
         .touch-controls {
           display: grid;
           grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -250,6 +263,7 @@
       <h1>DUAT</h1>
       <p>Phase 3 coffin meter, god unlock, canopic set, clear, gravity, chain, and score prototype</p>
       <div id="game"></div>
+      <p class="desktop-control-help">Keyboard: ←/→ Move · ↓ Soft Drop · ↑/Z Rotate · Space Drop/Use Bomb · 1–4 Preview Bomb · Esc Cancel · Enter Pause · M Mute</p>
       <section class="touch-controls" aria-label="DUAT touch controls">
         <div class="touch-controls__top">
           <button class="touch-button touch-button--cancel" type="button" data-duat-action="cancel">ESC</button>
