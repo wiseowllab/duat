@@ -43,6 +43,12 @@ const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 const BOARD_GRAVITY_STEP_MS = 55;
+const GAME_STATES = {
+  TITLE: 'title',
+  PLAYING: 'playing',
+  PAUSED: 'paused',
+  GAME_OVER: 'gameOver',
+};
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -70,6 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.blockSprites = [];
     this.fallTimer = 0;
     this.lockTimer = 0;
+    this.gameState = GAME_STATES.TITLE;
     this.isGameOver = false;
     this.isDebugMode = false;
     this.feedbackTimer = null;
@@ -80,6 +87,9 @@ export class GameScene extends Phaser.Scene {
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
     this.isResolvingClears = false;
+    this.titleOverlay = null;
+    this.pauseOverlay = null;
+    this.gameOverOverlay = null;
 
     this.createBackground();
     this.createInput();
@@ -91,12 +101,11 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
-
-    this.spawnPiece();
+    this.createTitleOverlay();
   }
 
   update(_, delta) {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -181,6 +190,184 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  createTitleOverlay() {
+    this.titleOverlay = this.add.container(280, 300).setDepth(30);
+
+    const panel = this.add.rectangle(0, 0, 500, 520, 0x100b06, 0.94)
+      .setStrokeStyle(2, 0xd4af37, 0.85);
+    const innerPanel = this.add.rectangle(0, 0, 460, 478, 0x1b1208, 0.72)
+      .setStrokeStyle(1, 0xf0d27a, 0.34);
+    const title = this.add.text(0, -188, 'DUAT', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '62px',
+      color: '#d4af37',
+      fontStyle: 'bold',
+      align: 'center',
+      stroke: '#050301',
+      strokeThickness: 6,
+    }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -136, 'Ancient Egyptian Falling Puzzle', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '22px',
+      color: '#f4d77a',
+      align: 'center',
+    }).setOrigin(0.5);
+    const description = this.add.text(0, -84, 'Collect organs, complete canopic sets, awaken the gods.', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '17px',
+      color: '#eadfca',
+      align: 'center',
+      wordWrap: { width: 390 },
+    }).setOrigin(0.5);
+    const controls = this.add.text(0, 26, [
+      'Controls',
+      '← / →  Move pair',
+      '↓  Soft drop',
+      '↑ / Z  Rotate',
+      'Space  Hard drop / Confirm bomb',
+      '1-4  Select bomb    Esc  Cancel',
+      'P  Pause / Resume',
+    ].join('\n'), {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#d9c8a8',
+      align: 'center',
+      lineSpacing: 7,
+    }).setOrigin(0.5);
+    const prompt = this.add.text(0, 205, 'Press Enter or Space to Start', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '22px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, controls, prompt]);
+  }
+
+  createPauseOverlay() {
+    this.pauseOverlay = this.add.container(280, 300).setDepth(35).setVisible(false);
+    const shade = this.add.rectangle(0, 0, 560, 600, 0x050301, 0.62);
+    const panel = this.add.rectangle(0, 0, 330, 180, 0x100b06, 0.94)
+      .setStrokeStyle(2, 0xd4af37, 0.82);
+    const title = this.add.text(0, -32, 'PAUSED', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '38px',
+      color: '#d4af37',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5);
+    const prompt = this.add.text(0, 34, 'Press P to Resume', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#eadfca',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.pauseOverlay.add([shade, panel, title, prompt]);
+  }
+
+  startGame() {
+    if (this.gameState !== GAME_STATES.TITLE) {
+      return;
+    }
+
+    this.resetGameState();
+    this.gameState = GAME_STATES.PLAYING;
+    this.titleOverlay?.setVisible(false);
+    this.pauseOverlay?.setVisible(false);
+    this.spawnPiece();
+  }
+
+  restartGame() {
+    if (this.gameState !== GAME_STATES.GAME_OVER) {
+      return;
+    }
+
+    this.resetGameState();
+    this.gameState = GAME_STATES.PLAYING;
+    this.spawnPiece();
+  }
+
+  resetGameState() {
+    this.board.reset();
+    this.scoreSystem = new ScoreSystem();
+    this.coffinMeter.reset();
+    this.bombSystem.reset();
+    this.score = INITIAL_SCORE;
+    this.chainCount = 0;
+    this.level = INITIAL_LEVEL;
+    this.activePiece = null;
+    this.nextPairTypes = createRandomPairTypes();
+    this.fallTimer = 0;
+    this.lockTimer = 0;
+    this.isGameOver = false;
+    this.isDebugMode = false;
+    this.isResolvingClears = false;
+    this.clearTransientVisuals();
+    this.updateHudForReset();
+    this.renderBoard();
+  }
+
+  clearTransientVisuals() {
+    this.cancelBombSelection();
+    this.clearBombAreaFlash();
+    this.clearClearHighlights();
+    this.boardFeedbackText.setText('');
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+      this.feedbackTimer = null;
+    }
+
+    if (this.gameOverOverlay) {
+      this.gameOverOverlay.destroy(true);
+      this.gameOverOverlay = null;
+    }
+  }
+
+  updateHudForReset() {
+    this.hud.updateScore(this.score);
+    this.hud.updateChain(this.chainCount);
+    this.hud.updateLevel(this.level);
+    this.hud.setDebugMode(this.isDebugMode);
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.hud.drawNext(this.nextPairTypes);
+    this.hud.clearFeedback();
+    this.hud.showReadyStatus();
+  }
+
+  pauseGame() {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears) {
+      return;
+    }
+
+    this.gameState = GAME_STATES.PAUSED;
+    this.cancelBombSelection();
+    this.pauseOverlay?.setVisible(true);
+  }
+
+  resumeGame() {
+    if (this.gameState !== GAME_STATES.PAUSED) {
+      return;
+    }
+
+    this.gameState = GAME_STATES.PLAYING;
+    this.pauseOverlay?.setVisible(false);
+  }
+
+  handlePauseKey() {
+    if (this.gameState === GAME_STATES.PLAYING) {
+      this.pauseGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PAUSED) {
+      this.resumeGame();
+    }
+  }
+
   createInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
@@ -188,6 +375,7 @@ export class GameScene extends Phaser.Scene {
     this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.bombKeys = [
@@ -205,12 +393,37 @@ export class GameScene extends Phaser.Scene {
     this.keyD.on('down', () => this.toggleDebugMode());
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
     this.keyT.on('down', () => this.advanceDebugGod());
-    this.keyR.on('down', () => this.resetDebugProgression());
-    this.keyEnter.on('down', () => this.confirmSelectedBomb());
+    this.keyR.on('down', () => this.handleRestartOrDebugReset());
+    this.keyP.on('down', () => this.handlePauseKey());
+    this.keyEnter.on('down', () => this.handleEnterKey());
     this.keyEsc.on('down', () => this.cancelBombSelection());
     this.bombKeys.forEach((key, index) => {
       key.on('down', () => this.selectBombSlot(index));
     });
+
+    this.createPauseOverlay();
+  }
+
+  handleEnterKey() {
+    if (this.gameState === GAME_STATES.TITLE) {
+      this.startGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PLAYING) {
+      this.confirmSelectedBomb();
+    }
+  }
+
+  handleRestartOrDebugReset() {
+    if (this.gameState === GAME_STATES.GAME_OVER) {
+      this.restartGame();
+      return;
+    }
+
+    if (this.gameState === GAME_STATES.PLAYING) {
+      this.resetDebugProgression();
+    }
   }
 
   spawnPiece() {
@@ -232,7 +445,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   tryMove(deltaCol, deltaRow) {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return false;
     }
 
@@ -249,7 +462,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   tryRotate() {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -269,6 +482,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   handleSpaceKey() {
+    if (this.gameState === GAME_STATES.TITLE) {
+      this.startGame();
+      return;
+    }
+
+    if (this.gameState !== GAME_STATES.PLAYING) {
+      return;
+    }
+
     if (this.selectedBombSlot !== null) {
       this.confirmSelectedBomb();
       return;
@@ -278,7 +500,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   hardDrop() {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -310,7 +532,7 @@ export class GameScene extends Phaser.Scene {
       this.renderBoard();
     }
 
-    if (!this.isGameOver) {
+    if (this.gameState === GAME_STATES.PLAYING && !this.isGameOver) {
       this.spawnPiece();
     }
   }
@@ -370,7 +592,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   selectBombSlot(slotIndex) {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -420,7 +642,7 @@ export class GameScene extends Phaser.Scene {
       return false;
     }
 
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece || !this.bombSystem.hasBombAt(this.selectedBombSlot)) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece || !this.bombSystem.hasBombAt(this.selectedBombSlot)) {
       this.cancelBombSelection();
       return false;
     }
@@ -440,7 +662,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   async useBombSlot(slotIndex) {
-    if (this.isGameOver || this.isResolvingClears || !this.activePiece) {
+    if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
 
@@ -760,12 +982,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   toggleDebugMode() {
+    if (this.gameState !== GAME_STATES.PLAYING) {
+      return;
+    }
+
     this.isDebugMode = !this.isDebugMode;
     this.hud.setDebugMode(this.isDebugMode);
   }
 
   handleDebugMeterKey(event) {
-    if (!this.isDebugMode) {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
       return;
     }
 
@@ -790,7 +1016,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   advanceDebugGod() {
-    if (!this.isDebugMode) {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
       return;
     }
 
@@ -798,7 +1024,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   resetDebugProgression() {
-    if (!this.isDebugMode) {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
       return;
     }
 
@@ -876,16 +1102,42 @@ export class GameScene extends Phaser.Scene {
   }
 
   endGame() {
+    this.gameState = GAME_STATES.GAME_OVER;
     this.isGameOver = true;
     this.activePiece = null;
     this.cancelBombSelection();
+    this.pauseOverlay?.setVisible(false);
     this.hud.showGameOver();
-    this.add.text(BOARD_ORIGIN_X + 22, BOARD_ORIGIN_Y + 215, 'GAME OVER', {
+    this.showGameOverOverlay();
+  }
+
+  showGameOverOverlay() {
+    if (this.gameOverOverlay) {
+      this.gameOverOverlay.destroy(true);
+    }
+
+    const centerX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
+    const centerY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
+    this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25);
+    const panel = this.add.rectangle(0, 0, 250, 160, 0x120806, 0.92)
+      .setStrokeStyle(2, 0xff7b7b, 0.8);
+    const title = this.add.text(0, -32, 'GAME OVER', {
       fontFamily: 'Georgia, serif',
-      fontSize: '28px',
+      fontSize: '30px',
       color: '#ff7b7b',
       fontStyle: 'bold',
-    });
+      align: 'center',
+      stroke: '#1a0505',
+      strokeThickness: 4,
+    }).setOrigin(0.5);
+    const prompt = this.add.text(0, 34, 'Press R to Restart', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#eadfca',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.gameOverOverlay.add([panel, title, prompt]);
   }
 
   renderBoard() {

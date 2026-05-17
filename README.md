@@ -21,7 +21,14 @@ A local server is recommended because the prototype uses JavaScript modules.
 
 ## Current Playable State
 
-DUAT is currently a single-scene falling puzzle prototype with these implemented systems:
+DUAT is currently a single-scene falling puzzle prototype with a basic title, pause, and game-over flow plus these implemented systems:
+
+### Game Flow
+
+- The page opens on a **DUAT** title screen before pieces begin falling.
+- **Enter** or **Space** starts a fresh game from the title screen.
+- **P** pauses and resumes active gameplay; falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
+- Game over shows a restart prompt, and **R** restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset.
 
 ### Board and Falling Pair
 
@@ -77,12 +84,25 @@ DUAT is currently a single-scene falling puzzle prototype with these implemented
 
 ## Current Controls
 
+### Title Screen
+
+- **Enter / Space**: start the game. Pieces do not spawn or fall until one of these keys is pressed.
+
 ### Normal Play
 
 - **Left / Right**: move the active pair horizontally.
 - **Down**: soft drop.
 - **Up / Z**: rotate the active pair.
 - **Space**: hard drop when no bomb is selected.
+- **P**: pause gameplay.
+
+### Paused
+
+- **P**: resume gameplay. Movement, rotation, dropping, bomb selection, and debug inputs are ignored while paused.
+
+### Game Over
+
+- **R**: restart after game over.
 
 ### Bomb Controls
 
@@ -99,7 +119,7 @@ Bombs target the current active pair position. The preview shows the bomb's affe
 - **G**: when debug mode is on, add 500 coffin meter points.
 - **Shift+G**: when debug mode is on, fill the current god's coffin meter and unlock that god.
 - **T**: when debug mode is on, advance by filling the current god's coffin meter.
-- **R**: when debug mode is on, reset coffin progression and bomb stock.
+- **R**: when debug mode is on during normal play, reset coffin progression and bomb stock. On the game over screen, **R** restarts the game instead.
 
 ## Current Piece Rules
 

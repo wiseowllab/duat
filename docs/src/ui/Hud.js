@@ -373,8 +373,22 @@ export class Hud {
     });
   }
 
+  clearFeedback() {
+    this.feedbackText.setText('');
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+      this.feedbackTimer = null;
+    }
+  }
+
+  showReadyStatus() {
+    this.statusText.setText('←/→ Move   ↓ Soft\n↑/Z Rotate  Space Drop\nP Pause  R Restart after Game Over');
+    this.statusText.setColor('#eadfca');
+  }
+
   showGameOver() {
-    this.statusText.setText('Game Over\nRefresh to restart');
+    this.statusText.setText('Game Over\nPress R to Restart');
     this.statusText.setColor('#ff7b7b');
   }
 
