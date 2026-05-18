@@ -29,6 +29,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 - The page opens on a **DUAT** title screen before pieces begin falling.
 - **Enter**, **Space**, or tapping the title prompt starts a fresh game from the title screen.
+- **H** opens the title-screen **How To Play** overlay, and **Esc** closes it back to the title screen without starting gameplay.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
 - Game over shows final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
@@ -113,7 +114,10 @@ Keyboard controls still work on desktop and on mobile devices with hardware keyb
 ### Title Screen
 
 - **Enter / Space**: start the game. Pieces do not spawn or fall until one of these keys is pressed.
-- **Tap the title prompt/panel**: start the game and unlock/resume browser audio for SFX and BGM.
+- **H**: open the in-game **How To Play** overlay. It summarizes basic matching, canopic sets, heart substitution, brain obstacle rules, coffin meter/god unlocks, bombs, keyboard controls, and touch controls.
+- **Esc**: close the **How To Play** overlay and return to the title screen.
+- **Tap the title start prompt**: start the game and unlock/resume browser audio for SFX and BGM.
+- **Tap the How To Play prompt**: open the title-screen tutorial overlay; tap its Back prompt to return.
 
 ### Normal Play
 
