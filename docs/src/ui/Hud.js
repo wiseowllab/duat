@@ -11,6 +11,10 @@ const COFFIN_MAX_DISPLAY_HEIGHT = 146;
 const COFFIN_BACKPLATE_WIDTH = 190;
 const COFFIN_BACKPLATE_HEIGHT = 146;
 const COFFIN_BAR_WIDTH = 282;
+const COFFIN_BAR_HEIGHT = 18;
+const COFFIN_BAR_INSET = 3;
+const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
+const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 
 export class Hud {
   constructor(scene, x, y) {
@@ -22,7 +26,10 @@ export class Hud {
     this.coffinContainer = null;
     this.coffinGlow = null;
     this.coffinGlowTween = null;
+    this.coffinBarPulseTween = null;
     this.currentCoffinSize = null;
+    this.previousCoffinMeterValue = null;
+    this.previousCoffinGodId = null;
 
     this.create();
   }
@@ -62,11 +69,26 @@ export class Hud {
     this.godText = this.createLabel(22, 249, 'God: Imsety', 14);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinText = this.createLabel(22, 412, 'Meter: 0 / 1000', 13);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, 15, 0x0b0906, 0.94)
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
-      .setStrokeStyle(1, 0xd4af37, 0.58);
-    this.coffinBarFill = this.scene.add.rectangle(this.x + 24, this.y + 436, 0, 9, 0xd4af37, 0.88)
-      .setOrigin(0, 0.5);
+      .setStrokeStyle(2, 0xd4af37, 0.72);
+    this.coffinBarFill = this.scene.add.rectangle(
+      this.x + 22 + COFFIN_BAR_INSET,
+      this.y + 436,
+      COFFIN_BAR_INNER_WIDTH,
+      COFFIN_BAR_FILL_HEIGHT,
+      0xffd84d,
+      0.96,
+    ).setOrigin(0, 0.5);
+    this.coffinBarHighlight = this.scene.add.rectangle(
+      this.x + 22 + COFFIN_BAR_INSET,
+      this.y + 432,
+      COFFIN_BAR_INNER_WIDTH,
+      2,
+      0xffffb8,
+      0.58,
+    ).setOrigin(0, 0.5);
+    this.updateCoffinBar(0);
     this.unlockedText = this.createLabel(22, 451, 'Unlocked: 0 / 14', 12);
 
     this.scene.add.text(this.x + 18, this.y + 487, 'BOMB STOCK', this.headingStyle(14));
@@ -208,6 +230,7 @@ export class Hud {
 
     this.unlockedText.setText(`Unlocked: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
+    this.pulseCoffinBarOnGain(currentGod, progress);
   }
 
   drawCoffinVisual(currentTier) {
@@ -368,8 +391,58 @@ export class Hud {
 
   updateCoffinBar(ratio) {
     const clampedRatio = Phaser.Math.Clamp(ratio, 0, 1);
-    this.coffinBarFill.setDisplaySize((COFFIN_BAR_WIDTH - 4) * clampedRatio, 10);
+    this.coffinBarFill.setScale(clampedRatio, 1);
+    this.coffinBarHighlight.setScale(clampedRatio, 1);
     this.coffinBarFill.setVisible(clampedRatio > 0);
+    this.coffinBarHighlight.setVisible(clampedRatio > 0);
+  }
+
+  pulseCoffinBarOnGain(currentGod, progress) {
+    const currentGodId = currentGod?.id ?? 'complete';
+    const previousValue = this.previousCoffinMeterValue;
+    const previousGodId = this.previousCoffinGodId;
+    const gainedMeter = previousValue !== null
+      && previousGodId === currentGodId
+      && progress.value > previousValue;
+
+    this.previousCoffinMeterValue = progress.value;
+    this.previousCoffinGodId = currentGodId;
+
+    if (!gainedMeter) {
+      return;
+    }
+
+    this.pulseCoffinBar();
+  }
+
+  pulseCoffinBar() {
+    if (this.coffinBarPulseTween) {
+      this.coffinBarPulseTween.stop();
+    }
+
+    this.coffinBarFill.setScale(this.coffinBarFill.scaleX, 1);
+    this.coffinBarHighlight.setScale(this.coffinBarHighlight.scaleX, 1);
+    this.coffinBarFill.setFillStyle(0xffff66, 1);
+    this.coffinBarHighlight.setAlpha(0.95);
+    this.coffinBarBack.setStrokeStyle(2, 0xffec8b, 0.96);
+
+    this.coffinBarPulseTween = this.scene.tweens.add({
+      targets: [this.coffinBarFill, this.coffinBarHighlight],
+      alpha: { from: 1, to: 0.86 },
+      scaleY: { from: 1.28, to: 1 },
+      duration: 260,
+      yoyo: true,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.coffinBarFill.setScale(this.coffinBarFill.scaleX, 1);
+        this.coffinBarHighlight.setScale(this.coffinBarHighlight.scaleX, 1);
+        this.coffinBarFill.setFillStyle(0xffd84d, 0.96);
+        this.coffinBarFill.setAlpha(0.96);
+        this.coffinBarHighlight.setAlpha(0.58);
+        this.coffinBarBack.setStrokeStyle(2, 0xd4af37, 0.72);
+        this.coffinBarPulseTween = null;
+      },
+    });
   }
 
   showCanopicSet() {
