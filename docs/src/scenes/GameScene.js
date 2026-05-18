@@ -59,6 +59,59 @@ const GAME_STATES = {
   GAME_OVER: 'gameOver',
 };
 
+const HOW_TO_PLAY_SECTIONS = [
+  {
+    heading: 'Basic Rule',
+    lines: [
+      'Move falling pairs.',
+      'Connect 4+ of the same organ to clear them.',
+    ],
+  },
+  {
+    heading: 'Canopic Set',
+    lines: [
+      'Connect liver, lung, stomach, and intestine in one group.',
+      'A heart can substitute for one missing organ.',
+      'Canopic sets give higher rewards.',
+    ],
+  },
+  {
+    heading: 'Brain Piece',
+    lines: [
+      'Brain is an obstacle.',
+      'It does not clear by matching 4 or connect canopic sets.',
+      'A canopic set can clear up to one adjacent brain.',
+      'Stronger bombs can clear brain.',
+    ],
+  },
+  {
+    heading: 'Coffin Meter and Gods',
+    lines: [
+      'Clears fill the coffin meter.',
+      'When the meter fills, a god awakens.',
+      'Awakened gods grant bombs.',
+    ],
+  },
+  {
+    heading: 'Bombs',
+    lines: [
+      'Press 1-4 or tap B1-B4 to select a bomb.',
+      'Preview the area.',
+      'Press the same number, Enter, Space, or DROP to use it.',
+      'Esc cancels selection.',
+    ],
+  },
+  {
+    heading: 'Controls',
+    lines: [
+      'Keyboard: ←/→ move, ↓ soft drop, ↑/Z rotate.',
+      'Space: hard drop or confirm bomb. Enter: pause/resume.',
+      'M: mute. 1-4: bombs.',
+      'Touch: use on-screen buttons.',
+    ],
+  },
+];
+
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -105,6 +158,8 @@ export class GameScene extends Phaser.Scene {
     this.clearHighlightTween = null;
     this.isResolvingClears = false;
     this.titleOverlay = null;
+    this.howToPlayOverlay = null;
+    this.isHowToPlayOpen = false;
     this.pauseOverlay = null;
     this.gameOverOverlay = null;
     this.isDangerState = false;
@@ -267,7 +322,14 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 7,
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 212, 'Press Enter, Space, or Tap to Start', {
+    const howToPrompt = this.add.text(0, 172, 'Press H or Tap for How To Play', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#d4af37',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5);
+    const prompt = this.add.text(0, 222, 'Press Enter, Space, or Tap to Start', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
@@ -275,11 +337,99 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
-    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, bestText, controls, prompt]);
-    panel.setInteractive({ useHandCursor: true });
+    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, bestText, controls, howToPrompt, prompt]);
+    howToPrompt.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
-    panel.on('pointerdown', () => this.startGame());
+    howToPrompt.on('pointerdown', () => this.openHowToPlay());
     prompt.on('pointerdown', () => this.startGame());
+    this.createHowToPlayOverlay();
+  }
+
+  createHowToPlayOverlay() {
+    this.howToPlayOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2)
+      .setDepth(45)
+      .setVisible(false);
+
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.74);
+    const panel = this.add.rectangle(0, 0, 680, 552, 0x100b06, 0.98)
+      .setStrokeStyle(2, 0xd4af37, 0.88);
+    const innerPanel = this.add.rectangle(0, 0, 640, 510, 0x1b1208, 0.82)
+      .setStrokeStyle(1, 0xf0d27a, 0.36);
+    const title = this.add.text(0, -238, 'HOW TO PLAY', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '34px',
+      color: '#d4af37',
+      fontStyle: 'bold',
+      align: 'center',
+      stroke: '#050301',
+      strokeThickness: 4,
+    }).setOrigin(0.5);
+
+    const sectionTexts = this.createHowToPlaySectionTexts();
+    const closePrompt = this.add.text(0, 244, 'Esc or Tap Back to Return', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.howToPlayOverlay.add([shade, panel, innerPanel, title, ...sectionTexts, closePrompt]);
+    shade.setInteractive();
+    panel.setInteractive();
+    closePrompt.setInteractive({ useHandCursor: true });
+    closePrompt.on('pointerdown', () => this.closeHowToPlay());
+  }
+
+  createHowToPlaySectionTexts() {
+    const columnSettings = [
+      { x: -292, y: -190, width: 285 },
+      { x: 24, y: -190, width: 285 },
+    ];
+    const sectionTexts = [];
+    const nextY = [...columnSettings.map((settings) => settings.y)];
+
+    HOW_TO_PLAY_SECTIONS.forEach((section, index) => {
+      const columnIndex = index < 3 ? 0 : 1;
+      const settings = columnSettings[columnIndex];
+      const heading = this.add.text(settings.x, nextY[columnIndex], section.heading.toUpperCase(), {
+        fontFamily: 'Georgia, serif',
+        fontSize: '15px',
+        color: '#d4af37',
+        fontStyle: 'bold',
+      }).setOrigin(0, 0);
+      const body = this.add.text(settings.x, nextY[columnIndex] + 22, section.lines.map((line) => `• ${line}`).join('\n'), {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '13px',
+        color: '#eadfca',
+        lineSpacing: 4,
+        wordWrap: { width: settings.width },
+      }).setOrigin(0, 0);
+
+      sectionTexts.push(heading, body);
+      nextY[columnIndex] += heading.height + body.height + 24;
+    });
+
+    return sectionTexts;
+  }
+
+  openHowToPlay() {
+    if (this.gameState !== GAME_STATES.TITLE || this.isHowToPlayOpen) {
+      return;
+    }
+
+    this.sfx.resume();
+    this.isHowToPlayOpen = true;
+    this.howToPlayOverlay?.setVisible(true);
+  }
+
+  closeHowToPlay() {
+    if (!this.isHowToPlayOpen) {
+      return;
+    }
+
+    this.isHowToPlayOpen = false;
+    this.howToPlayOverlay?.setVisible(false);
   }
 
   createBestRecordsText() {
@@ -322,7 +472,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   startGame() {
-    if (this.gameState !== GAME_STATES.TITLE) {
+    if (this.gameState !== GAME_STATES.TITLE || this.isHowToPlayOpen) {
       return;
     }
 
@@ -330,6 +480,7 @@ export class GameScene extends Phaser.Scene {
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
     this.titleOverlay?.setVisible(false);
+    this.closeHowToPlay();
     this.pauseOverlay?.setVisible(false);
     this.safeUpdateBgmForGameState();
     this.spawnPiece();
@@ -451,6 +602,7 @@ export class GameScene extends Phaser.Scene {
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
     this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
+    this.keyH = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
     this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.bombKeys = [
@@ -472,6 +624,7 @@ export class GameScene extends Phaser.Scene {
     this.keyR.on('down', () => this.handleRestartOrDebugReset());
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyM.on('down', () => this.toggleMute());
+    this.keyH.on('down', () => this.handleHowToPlayKey());
     this.keyEnter.on('down', () => this.handleEnterKey());
     this.keyEsc.on('down', () => this.handleEscKey());
     this.bombKeys.forEach((key, index) => {
@@ -584,7 +737,17 @@ export class GameScene extends Phaser.Scene {
     return this.cursors.down.isDown || this.isTouchSoftDropping;
   }
 
+  handleHowToPlayKey() {
+    if (this.gameState === GAME_STATES.TITLE) {
+      this.openHowToPlay();
+    }
+  }
+
   handleEnterKey() {
+    if (this.isHowToPlayOpen) {
+      return;
+    }
+
     if (this.gameState === GAME_STATES.TITLE) {
       this.startGame();
       return;
@@ -611,6 +774,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   handleEscKey() {
+    if (this.isHowToPlayOpen) {
+      this.closeHowToPlay();
+      return;
+    }
+
     if (this.gameState === GAME_STATES.PAUSED) {
       this.resumeGame();
       return;
@@ -703,6 +871,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   handleSpaceKey() {
+    if (this.isHowToPlayOpen) {
+      return;
+    }
+
     if (this.gameState === GAME_STATES.TITLE) {
       this.startGame();
       return;
