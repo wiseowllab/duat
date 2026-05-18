@@ -27,6 +27,7 @@ import { Hud } from '../ui/Hud.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js';
 import { TOTAL_GOD_COUNT } from '../data/gods.js';
+import { COFFIN_METER, DANGER_BGM } from '../data/balance.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -49,8 +50,8 @@ const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 const BOARD_GRAVITY_STEP_MS = 55;
-const DANGER_ENTER_ROW = 3;
-const DANGER_EXIT_ROW = 5;
+const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
+const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const GAME_STATES = {
   TITLE: 'title',
   PLAYING: 'playing',
@@ -924,7 +925,7 @@ export class GameScene extends Phaser.Scene {
       const changedCount = clearedCells.length + convertedCells.length;
       const earnedScore = (changedCount * this.bombSystem.getScorePerPiece(result.bomb.type))
         + this.bombSystem.getBonusScore(result.bomb.type);
-      const unlockEvents = this.coffinMeter.addPoints(Math.floor(earnedScore * 0.25));
+      const unlockEvents = this.coffinMeter.addPoints(Math.floor(earnedScore * COFFIN_METER.bombGainRatio));
 
       this.score += earnedScore;
       this.updateRunProgressionRecords();

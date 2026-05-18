@@ -86,6 +86,22 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Tier-based coffin PNGs for the HUD, displayed prominently in the current coffin panel so tier changes are easier to see.
 - Debug mode for testing meter progress, god unlocks, coffin tier changes, bomb stock, and reset behavior.
 
+
+## Balance Tuning
+
+Prototype balance values are centralized in `docs/src/data/balance.js`. The current numbers are first-pass prototype tuning values, not final production balance, and are safe to adjust during future playtest passes.
+
+Major tunable categories include:
+
+- Piece weights for liver, lung, stomach, intestine, heart, and brain generation frequency.
+- Fall speed values for normal falling, soft drop, and lock delay.
+- Scoring values for same-type clears, canopic sets, adjacent brain bonuses, and bombs.
+- Coffin meter gain ratios and required meter values by god tier.
+- Danger BGM enter/exit row thresholds.
+- Bomb stock capacity.
+
+To tune piece frequency later, adjust the relative `PIECE_WEIGHTS` numbers: higher weights appear more often, while lower weights appear less often. To tune coffin meter speed, adjust `COFFIN_METER.requiredByTier` for unlock thresholds or the meter gain ratios for same-type, canopic, and bomb scoring.
+
 ## Current Desktop Layout
 
 The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses the existing tier-based coffin PNGs at a larger display size so Tier 1-4 changes are visibly distinct.

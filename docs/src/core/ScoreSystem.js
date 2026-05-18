@@ -1,7 +1,4 @@
-const CANOPIC_SET_SCORE = 500;
-const CANOPIC_EXTRA_PIECE_SCORE = 50;
-const ADJACENT_BRAIN_BONUS_SCORE = 100;
-const SAME_CYCLE_BONUS_MULTIPLIER = 2;
+import { COFFIN_METER, SCORING } from '../data/balance.js';
 
 export class ScoreSystem {
   calculateClearScore(groups, chainNumber) {
@@ -22,7 +19,7 @@ export class ScoreSystem {
     );
 
     if (clearResult.clearTypes.has('sameType') && clearResult.clearTypes.has('canopic')) {
-      baseScore *= SAME_CYCLE_BONUS_MULTIPLIER;
+      baseScore *= SCORING.sameCycleBonusMultiplier;
     }
 
     baseScore += this.calculateAdjacentBrainBonusScore(clearResult);
@@ -33,7 +30,7 @@ export class ScoreSystem {
   calculateCycleMeterPoints(clearResult, chainNumber) {
     const hasSameType = clearResult.clearTypes.has('sameType');
     const hasCanopic = clearResult.clearTypes.has('canopic');
-    const sameCycleMultiplier = hasSameType && hasCanopic ? SAME_CYCLE_BONUS_MULTIPLIER : 1;
+    const sameCycleMultiplier = hasSameType && hasCanopic ? SCORING.sameCycleBonusMultiplier : 1;
     const sameTypeScore = clearResult.sameTypeGroups.reduce(
       (total, group) => total + this.calculateSameTypeGroupScore(group.length),
       0,
@@ -43,7 +40,7 @@ export class ScoreSystem {
       0,
     ) * sameCycleMultiplier * chainNumber;
 
-    return Math.floor(sameTypeScore * 0.25 + canopicScore * 0.4);
+    return Math.floor(sameTypeScore * COFFIN_METER.sameTypeGainRatio + canopicScore * COFFIN_METER.canopicGainRatio);
   }
 
   calculateSameTypeGroupScore(pieceCount) {
@@ -51,7 +48,7 @@ export class ScoreSystem {
       return 0;
     }
 
-    return 100 + (pieceCount - 4) * 25;
+    return SCORING.sameTypeBaseScore + (pieceCount - 4) * SCORING.sameTypeExtraPieceScore;
   }
 
   calculateGroupScore(pieceCount) {
@@ -59,10 +56,10 @@ export class ScoreSystem {
   }
 
   calculateCanopicSetScore(pieceCount) {
-    return CANOPIC_SET_SCORE + Math.max(0, pieceCount - 4) * CANOPIC_EXTRA_PIECE_SCORE;
+    return SCORING.canopicSetBaseScore + Math.max(0, pieceCount - 4) * SCORING.canopicExtraPieceScore;
   }
 
   calculateAdjacentBrainBonusScore(clearResult) {
-    return clearResult.adjacentBrainBonusCell ? ADJACENT_BRAIN_BONUS_SCORE : 0;
+    return clearResult.adjacentBrainBonusCell ? SCORING.adjacentBrainBonusScore : 0;
   }
 }

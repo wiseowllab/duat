@@ -1,9 +1,6 @@
-const TIER_REQUIRED_METER = {
-  1: 1000,
-  2: 1500,
-  3: 2200,
-  4: 3000,
-};
+import { COFFIN_METER } from './balance.js';
+
+const TIER_REQUIRED_METER = COFFIN_METER.requiredByTier;
 
 const TIER_NAMES = {
   1: 'Small Coffin',

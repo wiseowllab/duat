@@ -1,6 +1,7 @@
 import { CELL_SIZE } from '../data/constants.js';
 import { getCoffinAsset } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
+import { COFFIN_METER } from '../data/balance.js';
 
 const HUD_WIDTH = 346;
 const PANEL_FILL = 0x17100a;
@@ -68,7 +69,7 @@ export class Hud {
     this.tierText = this.createLabel(22, 225, 'Tier 1 — Small Coffin', 14);
     this.godText = this.createLabel(22, 249, 'God: Imsety', 14);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinText = this.createLabel(22, 412, 'Meter: 0 / 1000', 13);
+    this.coffinText = this.createLabel(22, 412, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
     this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72);
