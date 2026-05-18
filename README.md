@@ -29,7 +29,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 - The page opens on a **DUAT** title screen before pieces begin falling.
 - **Enter**, **Space**, or tapping the title prompt starts a fresh game from the title screen.
-- **H** opens the title-screen Japanese **遊び方** overlay, and **Esc** closes it back to the title screen without starting gameplay.
+- **H** opens the title-screen Japanese paged **遊び方** overlay. **Left/Right** or **A/D** changes pages, **Enter** or **Space** advances to the next page, and **Esc** closes it back to the title screen without starting gameplay.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
 - Game over shows Japanese labels for final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
@@ -114,10 +114,12 @@ Keyboard controls still work on desktop and on mobile devices with hardware keyb
 ### Title Screen
 
 - **Enter / Space**: start the game. Pieces do not spawn or fall until one of these keys is pressed.
-- **H**: open the in-game Japanese **遊び方** overlay. It summarizes basic matching, canopic sets, heart substitution, brain obstacle rules, coffin meter/god unlocks, bombs, keyboard controls, and touch controls.
+- **H**: open the in-game Japanese paged **遊び方** overlay. It summarizes basic matching, canopic sets, heart substitution, brain obstacle rules, coffin meter/god unlocks, bombs, and keyboard controls across three pages.
+- **Left / Right** or **A / D**: move between **遊び方** pages while the overlay is open.
+- **Enter / Space**: advance to the next **遊び方** page while the overlay is open.
 - **Esc**: close the **遊び方** overlay and return to the title screen.
 - **Tap the title start prompt**: start the game and unlock/resume browser audio for SFX and BGM.
-- **Tap the 遊び方 prompt**: open the title-screen tutorial overlay; tap its close prompt to return.
+- **Tap the 遊び方 prompt**: open the title-screen tutorial overlay; use **前へ**, **次へ**, and **閉じる** in the overlay to navigate or return.
 
 ### Normal Play
 

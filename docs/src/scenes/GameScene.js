@@ -76,64 +76,58 @@ const BOMB_LABELS_JA = {
   maximum_coffin_burst: '最大爆発',
 };
 
-const HOW_TO_PLAY_SECTIONS = [
+const HOW_TO_PLAY_PAGES = [
   {
-    heading: 'A. 基本ルール',
-    lines: [
-      '落ちてくる2つ組のピースを動かします。',
-      '同じ臓器ピースを4つ以上つなげると消えます。',
-    ],
+    title: '遊び方 1/3：基本ルール',
+    body: [
+      '・落ちてくる2つ組のピースを操作します。',
+      '・同じ臓器ピースを4つ以上つなげると消えます。',
+      '・消えたあと、上のピースは下へ落ちます。',
+      '・連鎖するとスコアが伸びます。',
+      '',
+      '操作:',
+      '← / →：移動',
+      '↓：ソフトドロップ',
+      '↑ / Z：回転',
+      'Space：ハードドロップ',
+    ].join('\n'),
   },
   {
-    heading: 'B. カノプスセット',
-    lines: [
-      '肝臓・肺・胃・腸を、ひとつのつながったグループにそろえると成立します。',
-      '心臓は足りない臓器1種類の代わりになります。',
-      'カノプスセットは高得点で、棺メーターもたまりやすくなります。',
-    ],
+    title: '遊び方 2/3：カノプスセットと脳',
+    body: [
+      '・肝臓、肺、胃、腸をひとつのつながったグループにそろえると、カノプスセットが成立します。',
+      '・心臓は、足りない臓器1種類の代わりになります。',
+      '・カノプスセットは高得点で、棺メーターもたまりやすくなります。',
+      '',
+      '脳ピース:',
+      '・脳は障害ピースです。',
+      '・脳は4つそろえても消えません。',
+      '・脳はカノプスセットのつながりにも使えません。',
+      '・カノプスセット成立時、隣接する脳を最大1つ巻き込んで消せます。',
+      '・強力なボムでも脳を消せます。',
+    ].join('\n'),
   },
   {
-    heading: 'C. 脳ピース',
-    lines: [
-      '脳は障害ピースです。',
-      '脳は同じものを4つそろえても消えません。',
-      '脳はカノプスセットのつながりにも使えません。',
-      'カノプスセット成立時、隣接する脳を最大1つ巻き込んで消せます。',
-      '強力なボムでも脳を消せます。',
-    ],
-  },
-  {
-    heading: 'D. 棺メーターと神々',
-    lines: [
-      'ピースを消すと棺メーターがたまります。',
-      '棺メーターが満タンになると神が目覚めます。',
-      '目覚めた神はボムを授けてくれます。',
-    ],
-  },
-  {
-    heading: 'E. ボム',
-    lines: [
-      '1〜4キー、またはB1〜B4ボタンでボムを選択します。',
-      '範囲を確認してから発動できます。',
-      '同じ数字をもう一度押す、Enter、Space、またはDROPで発動します。',
-      'Escでキャンセルできます。',
-    ],
-  },
-  {
-    heading: 'F. 操作方法',
-    lines: [
-      'キーボード:',
-      '← / →: 移動',
-      '↓: ソフトドロップ',
-      '↑ / Z: 回転',
-      'Space: ハードドロップ / ボム発動',
-      'Enter: ポーズ / 再開',
-      'M: ミュート',
-      '1〜4: ボム選択',
-      'タッチ: 画面下のボタンで操作できます。',
-    ],
+    title: '遊び方 3/3：棺・神・ボム',
+    body: [
+      '・ピースを消すと棺メーターがたまります。',
+      '・棺メーターが満タンになると神が目覚めます。',
+      '・目覚めた神はボムを授けてくれます。',
+      '・Tierが上がるほど、ボムは強力になります。',
+      '',
+      'ボム操作:',
+      '1〜4：ボム選択',
+      '同じ数字をもう一度：発動',
+      'Enter / Space / DROP：発動',
+      'Esc：キャンセル',
+      '',
+      'その他:',
+      'Enter：ポーズ / 再開',
+      'M：ミュート',
+    ].join('\n'),
   },
 ];
+
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -182,6 +176,13 @@ export class GameScene extends Phaser.Scene {
     this.isResolvingClears = false;
     this.titleOverlay = null;
     this.howToPlayOverlay = null;
+    this.howToPlayTitleText = null;
+    this.howToPlayPageIndicatorText = null;
+    this.howToPlayBodyText = null;
+    this.howToPlayFooterText = null;
+    this.howToPlayPreviousButton = null;
+    this.howToPlayNextButton = null;
+    this.helpPageIndex = 0;
     this.isHowToPlayOpen = false;
     this.pauseOverlay = null;
     this.gameOverOverlay = null;
@@ -295,64 +296,65 @@ export class GameScene extends Phaser.Scene {
   createTitleOverlay() {
     this.titleOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setDepth(30);
 
-    const panel = this.add.rectangle(0, 0, 560, 520, 0x100b06, 0.94)
+    const panel = this.add.rectangle(0, 0, 600, 552, 0x100b06, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.85);
-    const innerPanel = this.add.rectangle(0, 0, 520, 478, 0x1b1208, 0.72)
+    const innerPanel = this.add.rectangle(0, 0, 560, 510, 0x1b1208, 0.72)
       .setStrokeStyle(1, 0xf0d27a, 0.34);
-    const title = this.add.text(0, -188, 'DUAT', {
+    const title = this.add.text(0, -232, 'DUAT', {
       fontFamily: 'Georgia, serif',
-      fontSize: '62px',
+      fontSize: '58px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
       stroke: '#050301',
       strokeThickness: 6,
     }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -136, '古代エジプト落ち物パズル', {
-      fontFamily: 'Georgia, serif',
+    const subtitle = this.add.text(0, -184, '古代エジプト落ち物パズル', {
+      fontFamily: 'Arial, sans-serif',
       fontSize: '22px',
       color: '#f4d77a',
       align: 'center',
     }).setOrigin(0.5);
-    const description = this.add.text(0, -84, '臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。', {
+    const description = this.add.text(0, -142, '臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
       color: '#eadfca',
       align: 'center',
-      wordWrap: { width: 450 },
+      lineSpacing: 4,
+      wordWrap: { width: 500 },
     }).setOrigin(0.5);
     const bestRecords = this.createBestRecordsText();
-    const bestText = this.add.text(0, -52, bestRecords, {
+    const bestText = this.add.text(0, -82, bestRecords, {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: '14px',
       color: '#f4d77a',
       align: 'center',
-      lineSpacing: 4,
+      lineSpacing: 2,
     }).setOrigin(0.5);
-    const controls = this.add.text(0, 58, [
-      '操作方法',
-      '← / →: 移動',
-      '↓: ソフトドロップ',
-      '↑ / Z: 回転',
-      'Space: ハードドロップ / ボム発動',
-      'Enter: ポーズ / 再開',
-      'M: ミュート',
-      '1〜4: ボム選択    Esc: キャンセル',
+    const controls = this.add.text(0, 54, [
+      '← / →：移動',
+      '↓：ソフトドロップ',
+      '↑ / Z：回転',
+      'Space：ハードドロップ / ボム発動',
+      'Enter：ポーズ / 再開',
+      '1〜4：ボム選択',
+      'Esc：キャンセル',
+      'M：ミュート',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
+      fontSize: '15px',
       color: '#d9c8a8',
       align: 'center',
-      lineSpacing: 7,
+      lineSpacing: 5,
     }).setOrigin(0.5);
-    const howToPrompt = this.add.text(0, 172, 'Hで遊び方', {
+    const howToPrompt = this.add.text(0, 184, 'H：遊び方', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 222, 'Enter / Space で開始', {
+    const prompt = this.add.text(0, 234, 'Enter / Space で開始', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
@@ -373,67 +375,132 @@ export class GameScene extends Phaser.Scene {
       .setDepth(45)
       .setVisible(false);
 
-    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.74);
-    const panel = this.add.rectangle(0, 0, 680, 552, 0x100b06, 0.98)
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.78);
+    const panel = this.add.rectangle(0, 0, 700, 560, 0x100b06, 0.98)
       .setStrokeStyle(2, 0xd4af37, 0.88);
-    const innerPanel = this.add.rectangle(0, 0, 640, 510, 0x1b1208, 0.82)
+    const innerPanel = this.add.rectangle(0, 0, 660, 518, 0x1b1208, 0.82)
       .setStrokeStyle(1, 0xf0d27a, 0.36);
-    const title = this.add.text(0, -238, '遊び方', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '34px',
+
+    this.howToPlayTitleText = this.add.text(0, -244, '', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '25px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
       stroke: '#050301',
       strokeThickness: 4,
+      wordWrap: { width: 620 },
     }).setOrigin(0.5);
 
-    const sectionTexts = this.createHowToPlaySectionTexts();
-    const closePrompt = this.add.text(0, 244, 'Escで閉じる / Enter・Spaceでゲーム開始', {
+    this.howToPlayPageIndicatorText = this.add.text(0, -212, '', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: '14px',
+      color: '#bcae90',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.howToPlayBodyText = this.add.text(-300, -188, '', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#eadfca',
+      lineSpacing: 7,
+      wordWrap: { width: 600 },
+    }).setOrigin(0, 0);
+
+    this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '14px',
+      color: '#bcae90',
+      align: 'center',
+      wordWrap: { width: 610 },
+    }).setOrigin(0.5);
+
+    this.howToPlayPreviousButton = this.createHowToPlayButton(-170, 236, 120, '前へ', () => this.showPreviousHelpPage());
+    this.howToPlayNextButton = this.createHowToPlayButton(0, 236, 120, '次へ', () => this.showNextHelpPage());
+    const closeButton = this.createHowToPlayButton(170, 236, 120, '閉じる', () => this.closeHowToPlay());
+
+    this.howToPlayOverlay.add([
+      shade,
+      panel,
+      innerPanel,
+      this.howToPlayTitleText,
+      this.howToPlayPageIndicatorText,
+      this.howToPlayBodyText,
+      this.howToPlayFooterText,
+      this.howToPlayPreviousButton.container,
+      this.howToPlayNextButton.container,
+      closeButton.container,
+    ]);
+    shade.setInteractive();
+    panel.setInteractive();
+    this.updateHowToPlayPage();
+  }
+
+  createHowToPlayButton(x, y, width, label, onPointerDown) {
+    const container = this.add.container(x, y);
+    const background = this.add.rectangle(0, 0, width, 38, 0x332313, 0.98)
+      .setStrokeStyle(2, 0xd4af37, 0.82)
+      .setInteractive({ useHandCursor: true });
+    const text = this.add.text(0, 0, label, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
       color: '#f4d77a',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
 
-    this.howToPlayOverlay.add([shade, panel, innerPanel, title, ...sectionTexts, closePrompt]);
-    shade.setInteractive();
-    panel.setInteractive();
-    closePrompt.setInteractive({ useHandCursor: true });
-    closePrompt.on('pointerdown', () => this.closeHowToPlay());
+    background.on('pointerdown', onPointerDown);
+    text.setInteractive({ useHandCursor: true });
+    text.on('pointerdown', onPointerDown);
+    container.add([background, text]);
+
+    return { container, background, text };
   }
 
-  createHowToPlaySectionTexts() {
-    const columnSettings = [
-      { x: -292, y: -190, width: 285 },
-      { x: 24, y: -190, width: 285 },
-    ];
-    const sectionTexts = [];
-    const nextY = [...columnSettings.map((settings) => settings.y)];
+  updateHowToPlayPage() {
+    const page = HOW_TO_PLAY_PAGES[this.helpPageIndex];
+    this.howToPlayTitleText?.setText(page.title);
+    this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
+    this.howToPlayBodyText?.setText(page.body);
+    this.updateHowToPlayButtonState(this.howToPlayPreviousButton, this.helpPageIndex > 0);
+    this.updateHowToPlayButtonState(this.howToPlayNextButton, this.helpPageIndex < HOW_TO_PLAY_PAGES.length - 1);
+  }
 
-    HOW_TO_PLAY_SECTIONS.forEach((section, index) => {
-      const columnIndex = index < 3 ? 0 : 1;
-      const settings = columnSettings[columnIndex];
-      const heading = this.add.text(settings.x, nextY[columnIndex], section.heading, {
-        fontFamily: 'Georgia, serif',
-        fontSize: '15px',
-        color: '#d4af37',
-        fontStyle: 'bold',
-      }).setOrigin(0, 0);
-      const body = this.add.text(settings.x, nextY[columnIndex] + 22, section.lines.map((line) => `• ${line}`).join('\n'), {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
-        color: '#eadfca',
-        lineSpacing: 4,
-        wordWrap: { width: settings.width },
-      }).setOrigin(0, 0);
+  updateHowToPlayButtonState(button, isEnabled) {
+    if (!button) {
+      return;
+    }
 
-      sectionTexts.push(heading, body);
-      nextY[columnIndex] += heading.height + body.height + 24;
-    });
+    button.background.disableInteractive();
+    button.text.disableInteractive();
+    button.container.setAlpha(isEnabled ? 1 : 0.38);
 
-    return sectionTexts;
+    if (isEnabled) {
+      button.background.setInteractive({ useHandCursor: true });
+      button.text.setInteractive({ useHandCursor: true });
+    }
+  }
+
+  showPreviousHelpPage() {
+    if (!this.isHowToPlayOpen || this.helpPageIndex <= 0) {
+      return;
+    }
+
+    this.helpPageIndex -= 1;
+    this.updateHowToPlayPage();
+  }
+
+  showNextHelpPage() {
+    if (!this.isHowToPlayOpen) {
+      return;
+    }
+
+    if (this.helpPageIndex >= HOW_TO_PLAY_PAGES.length - 1) {
+      return;
+    }
+
+    this.helpPageIndex += 1;
+    this.updateHowToPlayPage();
   }
 
   openHowToPlay() {
@@ -442,6 +509,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.sfx.resume();
+    this.helpPageIndex = 0;
+    this.updateHowToPlayPage();
     this.isHowToPlayOpen = true;
     this.howToPlayOverlay?.setVisible(true);
   }
@@ -461,8 +530,8 @@ export class GameScene extends Phaser.Scene {
     return [
       `ベストスコア: ${records.highScore}`,
       `最大連鎖: ${records.maxChain}`,
-      `最高棺: ${records.maxTier}`,
-      `解放した神: ${records.maxGodsUnlocked}/${TOTAL_GOD_COUNT}`,
+      `最大Tier: ${records.maxTier}`,
+      `解放神: ${records.maxGodsUnlocked}/${TOTAL_GOD_COUNT}`,
     ].join('\n');
   }
 
@@ -619,6 +688,7 @@ export class GameScene extends Phaser.Scene {
   createInput() {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
     this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
@@ -636,12 +706,13 @@ export class GameScene extends Phaser.Scene {
     ];
 
     this.input.keyboard.on('keydown', () => this.sfx.resume());
-    this.cursors.left.on('down', () => this.tryMoveSideways(-1));
-    this.cursors.right.on('down', () => this.tryMoveSideways(1));
+    this.cursors.left.on('down', () => this.handleLeftKey());
+    this.cursors.right.on('down', () => this.handleRightKey());
     this.cursors.up.on('down', () => this.tryRotate());
     this.keyZ.on('down', () => this.tryRotate());
     this.cursors.space.on('down', () => this.handleSpaceKey());
-    this.keyD.on('down', () => this.toggleDebugMode());
+    this.keyA.on('down', () => this.handleLeftKey());
+    this.keyD.on('down', () => this.handleRightOrDebugKey());
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
     this.keyT.on('down', () => this.advanceDebugGod());
     this.keyR.on('down', () => this.handleRestartOrDebugReset());
@@ -699,12 +770,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (action === 'left') {
-      this.tryMoveSideways(-1);
+      this.handleLeftKey();
       return;
     }
 
     if (action === 'right') {
-      this.tryMoveSideways(1);
+      this.handleRightKey();
       return;
     }
 
@@ -760,6 +831,33 @@ export class GameScene extends Phaser.Scene {
     return this.cursors.down.isDown || this.isTouchSoftDropping;
   }
 
+  handleLeftKey() {
+    if (this.isHowToPlayOpen) {
+      this.showPreviousHelpPage();
+      return;
+    }
+
+    this.tryMoveSideways(-1);
+  }
+
+  handleRightKey() {
+    if (this.isHowToPlayOpen) {
+      this.showNextHelpPage();
+      return;
+    }
+
+    this.tryMoveSideways(1);
+  }
+
+  handleRightOrDebugKey() {
+    if (this.isHowToPlayOpen) {
+      this.showNextHelpPage();
+      return;
+    }
+
+    this.toggleDebugMode();
+  }
+
   handleHowToPlayKey() {
     if (this.gameState === GAME_STATES.TITLE) {
       this.openHowToPlay();
@@ -768,6 +866,7 @@ export class GameScene extends Phaser.Scene {
 
   handleEnterKey() {
     if (this.isHowToPlayOpen) {
+      this.showNextHelpPage();
       return;
     }
 
@@ -895,6 +994,7 @@ export class GameScene extends Phaser.Scene {
 
   handleSpaceKey() {
     if (this.isHowToPlayOpen) {
+      this.showNextHelpPage();
       return;
     }
 
