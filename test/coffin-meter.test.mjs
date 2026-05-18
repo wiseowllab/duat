@@ -70,7 +70,7 @@ test('canopic clears convert more score into coffin meter than same-type clears'
   };
 
   assert.equal(scoreSystem.calculateCycleMeterPoints(sameTypeClear, 1), 25);
-  assert.equal(scoreSystem.calculateCycleMeterPoints(canopicClear, 1), 200);
+  assert.equal(scoreSystem.calculateCycleMeterPoints(canopicClear, 1), 225);
 });
 
 test('coffin meter can fill current god for debug unlocks', () => {

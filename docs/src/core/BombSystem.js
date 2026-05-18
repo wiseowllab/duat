@@ -1,31 +1,36 @@
 import { BRAIN_TYPE, CANOPIC_ORGAN_TYPES, HEART_TYPE } from '../data/pieces.js';
+import { BOMB_STOCK, SCORING } from '../data/balance.js';
 
-export const MAX_BOMB_STOCK = 4;
+export const MAX_BOMB_STOCK = BOMB_STOCK.maxStock;
 
 export const TIER_1_BOMBS = {
   vertical_clear: {
     type: 'vertical_clear',
     name: 'Vertical',
     description: 'Clear the target column.',
-    scorePerPiece: 25,
+    scorePerPiece: SCORING.bombs.vertical_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.vertical_clear.bonusScore,
   },
   horizontal_clear: {
     type: 'horizontal_clear',
     name: 'Horizontal',
     description: 'Clear the target row.',
-    scorePerPiece: 25,
+    scorePerPiece: SCORING.bombs.horizontal_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.horizontal_clear.bonusScore,
   },
   cross_clear: {
     type: 'cross_clear',
     name: 'Cross',
     description: 'Clear the target row and column.',
-    scorePerPiece: 25,
+    scorePerPiece: SCORING.bombs.cross_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.cross_clear.bonusScore,
   },
   surround_clear: {
     type: 'surround_clear',
     name: 'Surround',
     description: 'Clear a 3x3 area around the target cell.',
-    scorePerPiece: 25,
+    scorePerPiece: SCORING.bombs.surround_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.surround_clear.bonusScore,
   },
 };
 
@@ -34,25 +39,29 @@ export const TIER_2_BOMBS = {
     type: 'brain_clear',
     name: 'Brain Clear',
     description: 'Clear brain pieces in the target row and column.',
-    scorePerPiece: 50,
+    scorePerPiece: SCORING.bombs.brain_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.brain_clear.bonusScore,
   },
   knowledge_convert: {
     type: 'knowledge_convert',
     name: 'Convert',
     description: 'Convert up to four brain pieces in a 3x3 area into hearts.',
-    scorePerPiece: 25,
+    scorePerPiece: SCORING.bombs.knowledge_convert.scorePerPiece,
+    bonusScore: SCORING.bombs.knowledge_convert.bonusScore,
   },
   protective_clear: {
     type: 'protective_clear',
     name: 'Protect',
     description: 'Clear a 3x3 area, including brain pieces.',
-    scorePerPiece: 35,
+    scorePerPiece: SCORING.bombs.protective_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.protective_clear.bonusScore,
   },
   war_burst: {
     type: 'war_burst',
     name: 'Burst',
     description: 'Clear a 5-cell diamond, including brain pieces.',
-    scorePerPiece: 40,
+    scorePerPiece: SCORING.bombs.war_burst.scorePerPiece,
+    bonusScore: SCORING.bombs.war_burst.bonusScore,
   },
 };
 
@@ -61,25 +70,29 @@ export const TIER_3_BOMBS = {
     type: 'triple_column_clear',
     name: 'Triple Column',
     description: 'Clear the target column and its immediate neighboring columns.',
-    scorePerPiece: 45,
+    scorePerPiece: SCORING.bombs.triple_column_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.triple_column_clear.bonusScore,
   },
   piece_transform: {
     type: 'piece_transform',
     name: 'Transform',
     description: 'Transform brain pieces in a 5x5 area into hearts, or restore nearby organs if no brains are present.',
-    scorePerPiece: 35,
+    scorePerPiece: SCORING.bombs.piece_transform.scorePerPiece,
+    bonusScore: SCORING.bombs.piece_transform.bonusScore,
   },
   half_board_reset: {
     type: 'half_board_reset',
     name: 'Half Reset',
     description: 'Clear the left or right half of the board based on the target column.',
-    scorePerPiece: 30,
+    scorePerPiece: SCORING.bombs.half_board_reset.scorePerPiece,
+    bonusScore: SCORING.bombs.half_board_reset.bonusScore,
   },
   chaos_clear: {
     type: 'chaos_clear',
     name: 'Chaos',
     description: 'Clear up to eight occupied cells near the target using controlled chaos.',
-    scorePerPiece: 50,
+    scorePerPiece: SCORING.bombs.chaos_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.chaos_clear.bonusScore,
   },
 };
 
@@ -88,15 +101,15 @@ export const TIER_4_BOMBS = {
     type: 'full_board_clear',
     name: 'Full Clear',
     description: 'Clear the entire board, including brain pieces.',
-    scorePerPiece: 40,
-    bonusScore: 0,
+    scorePerPiece: SCORING.bombs.full_board_clear.scorePerPiece,
+    bonusScore: SCORING.bombs.full_board_clear.bonusScore,
   },
   maximum_coffin_burst: {
     type: 'maximum_coffin_burst',
     name: 'Max Burst',
     description: 'Clear the entire board, including brain pieces, and award a final-stage bonus.',
-    scorePerPiece: 60,
-    bonusScore: 1000,
+    scorePerPiece: SCORING.bombs.maximum_coffin_burst.scorePerPiece,
+    bonusScore: SCORING.bombs.maximum_coffin_burst.bonusScore,
   },
 };
 

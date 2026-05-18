@@ -1,3 +1,5 @@
+import { PIECE_WEIGHTS } from './balance.js';
+
 export const CANOPIC_ORGAN_TYPES = [
   'liver',
   'lung',
@@ -80,8 +82,25 @@ export function preloadPieceAssets(scene) {
 }
 
 export function randomPieceType() {
-  const index = Math.floor(Math.random() * PIECE_TYPES.length);
-  return PIECE_TYPES[index];
+  const weightedTypes = PIECE_TYPES
+    .map((type) => ({ type, weight: Math.max(0, PIECE_WEIGHTS[type] ?? 0) }))
+    .filter(({ weight }) => weight > 0);
+  const totalWeight = weightedTypes.reduce((total, { weight }) => total + weight, 0);
+
+  if (totalWeight <= 0) {
+    const index = Math.floor(Math.random() * PIECE_TYPES.length);
+    return PIECE_TYPES[index];
+  }
+
+  let roll = Math.random() * totalWeight;
+  for (const { type, weight } of weightedTypes) {
+    roll -= weight;
+    if (roll < 0) {
+      return type;
+    }
+  }
+
+  return weightedTypes[weightedTypes.length - 1].type;
 }
 
 export function createRandomPairTypes() {
