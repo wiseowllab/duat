@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>DUAT — Phase 3 Prototype</title>
+    <title>DUAT — 古代エジプト落ち物パズル</title>
     <style>
       :root {
         color-scheme: dark;
@@ -261,28 +261,28 @@
   <body>
     <main>
       <h1>DUAT</h1>
-      <p>Phase 3 coffin meter, god unlock, canopic set, clear, gravity, chain, and score prototype</p>
+      <p>古代エジプト落ち物パズル：臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。</p>
       <div id="game"></div>
-      <p class="desktop-control-help">Keyboard: ←/→ Move · ↓ Soft Drop · ↑/Z Rotate · Space Drop/Use Bomb · 1–4 Preview Bomb · Esc Cancel · Enter Pause · M Mute</p>
-      <section class="touch-controls" aria-label="DUAT touch controls">
+      <p class="desktop-control-help">キーボード: ←/→ 移動 · ↓ ソフトドロップ · ↑/Z 回転 · Space 落下/ボム発動 · 1〜4 ボム選択 · Esc キャンセル · Enter ポーズ · M ミュート</p>
+      <section class="touch-controls" aria-label="DUAT タッチ操作">
         <div class="touch-controls__top">
           <button class="touch-button touch-button--cancel" type="button" data-duat-action="cancel">ESC</button>
-          <button class="touch-button touch-button--pause" type="button" data-duat-action="pause">PAUSE</button>
+          <button class="touch-button touch-button--pause" type="button" data-duat-action="pause">ポーズ</button>
         </div>
         <div class="touch-controls__main">
-          <div class="touch-cluster" aria-label="Movement controls">
+          <div class="touch-cluster" aria-label="移動操作">
             <div class="touch-row">
-              <button class="touch-button" type="button" data-duat-action="left" aria-label="Left">LEFT</button>
-              <button class="touch-button" type="button" data-duat-action="down" data-duat-hold="true" aria-label="Down">DOWN</button>
-              <button class="touch-button" type="button" data-duat-action="right" aria-label="Right">RIGHT</button>
+              <button class="touch-button" type="button" data-duat-action="left" aria-label="左">←</button>
+              <button class="touch-button" type="button" data-duat-action="down" data-duat-hold="true" aria-label="下">↓</button>
+              <button class="touch-button" type="button" data-duat-action="right" aria-label="右">→</button>
             </div>
           </div>
-          <div class="touch-actions" aria-label="Action controls">
-            <button class="touch-button" type="button" data-duat-action="rotate">ROT</button>
-            <button class="touch-button" type="button" data-duat-action="drop">DROP</button>
+          <div class="touch-actions" aria-label="アクション操作">
+            <button class="touch-button" type="button" data-duat-action="rotate">回転</button>
+            <button class="touch-button" type="button" data-duat-action="drop">落下</button>
           </div>
         </div>
-        <div class="touch-bombs" aria-label="Bomb controls">
+        <div class="touch-bombs" aria-label="ボム操作">
           <button class="touch-button" type="button" data-duat-action="bomb-0">B1</button>
           <button class="touch-button" type="button" data-duat-action="bomb-1">B2</button>
           <button class="touch-button" type="button" data-duat-action="bomb-2">B3</button>
