@@ -17,6 +17,30 @@ const COFFIN_BAR_INSET = 3;
 const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
 const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 
+const COFFIN_TIER_LABELS = {
+  1: '小さな棺',
+  2: '中くらいの棺',
+  3: '大きな棺',
+  4: '最大の棺',
+};
+
+const BOMB_LABELS_JA = {
+  vertical_clear: '縦消し',
+  horizontal_clear: '横消し',
+  cross_clear: '十字消し',
+  surround_clear: '周囲消し',
+  brain_clear: '脳消し',
+  knowledge_convert: '変換',
+  protective_clear: '守護消し',
+  war_burst: '爆裂',
+  triple_column_clear: '3列消し',
+  piece_transform: '変化',
+  half_board_reset: '半面整理',
+  chaos_clear: '混沌',
+  full_board_clear: '全消し',
+  maximum_coffin_burst: '最大爆発',
+};
+
 export class Hud {
   constructor(scene, x, y) {
     this.scene = scene;
@@ -46,7 +70,7 @@ export class Hud {
       letterSpacing: 2,
     });
 
-    this.debugText = this.scene.add.text(this.x + 248, this.y + 16, 'DEBUG ON', {
+    this.debugText = this.scene.add.text(this.x + 248, this.y + 16, 'デバッグ中', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '10px',
       color: '#ffdf6e',
@@ -55,21 +79,21 @@ export class Hud {
       padding: { x: 3, y: 2 },
     }).setVisible(false);
 
-    this.scene.add.text(this.x + 18, this.y + 62, 'SCORE', this.headingStyle(15));
-    this.scoreText = this.createLabel(18, 90, 'Score: 0', 18);
-    this.chainText = this.createLabel(18, 116, 'Chain: 0', 15);
-    this.bestScoreText = this.createLabel(18, 139, 'Best: 0', 13);
-    this.levelText = this.createLabel(18, 158, 'Level: 1', 12);
-    this.soundText = this.createLabel(96, 158, 'Sound: ON', 11);
+    this.scene.add.text(this.x + 18, this.y + 62, 'スコア', this.headingStyle(15));
+    this.scoreText = this.createLabel(18, 90, 'スコア: 0', 18);
+    this.chainText = this.createLabel(18, 116, '連鎖: 0', 15);
+    this.bestScoreText = this.createLabel(18, 139, 'ベスト: 0', 13);
+    this.levelText = this.createLabel(18, 158, 'レベル: 1', 12);
+    this.soundText = this.createLabel(96, 158, 'サウンド: ON', 11);
     this.soundText.setColor('#9fdfe8');
 
     this.scene.add.text(this.x + 196, this.y + 62, 'NEXT', this.headingStyle(15));
 
-    this.scene.add.text(this.x + 18, this.y + 198, 'CURRENT COFFIN', this.headingStyle(17));
-    this.tierText = this.createLabel(22, 225, 'Tier 1 — Small Coffin', 14);
-    this.godText = this.createLabel(22, 249, 'God: Imsety', 14);
+    this.scene.add.text(this.x + 18, this.y + 198, '現在の棺', this.headingStyle(17));
+    this.tierText = this.createLabel(22, 225, '棺 1 — 小さな棺', 14);
+    this.godText = this.createLabel(22, 249, '神: Imsety', 14);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinText = this.createLabel(22, 412, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
+    this.coffinText = this.createLabel(22, 412, `メーター: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
     this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72);
@@ -90,11 +114,11 @@ export class Hud {
       0.58,
     ).setOrigin(0, 0.5);
     this.updateCoffinBar(0);
-    this.unlockedText = this.createLabel(22, 451, 'Unlocked: 0 / 14', 12);
+    this.unlockedText = this.createLabel(22, 451, '解放: 0 / 14', 12);
 
-    this.scene.add.text(this.x + 18, this.y + 487, 'BOMB STOCK', this.headingStyle(14));
-    this.bombStockText = this.createLabel(18, 509, '1: Empty\n2: Empty\n3: Empty\n4: Empty', 10, 0);
-    this.selectedBombText = this.createLabel(174, 509, 'Selected: None', 10, 0);
+    this.scene.add.text(this.x + 18, this.y + 487, 'ボムストック', this.headingStyle(14));
+    this.bombStockText = this.createLabel(18, 509, '1: 空\n2: 空\n3: 空\n4: 空', 10, 0);
+    this.selectedBombText = this.createLabel(174, 509, '選択中: なし', 10, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
     this.feedbackText = this.createLabel(198, 196, '', 15);
@@ -159,23 +183,23 @@ export class Hud {
   }
 
   updateScore(score) {
-    this.scoreText.setText(`Score: ${score}`);
+    this.scoreText.setText(`スコア: ${score}`);
   }
 
   updateChain(chainCount) {
-    this.chainText.setText(`Chain: ${chainCount}`);
+    this.chainText.setText(`連鎖: ${chainCount}`);
   }
 
   updateBestScore(highScore) {
-    this.bestScoreText.setText(`Best: ${highScore}`);
+    this.bestScoreText.setText(`ベスト: ${highScore}`);
   }
 
   updateLevel(level) {
-    this.levelText.setText(`Level: ${level}`);
+    this.levelText.setText(`レベル: ${level}`);
   }
 
   updateSoundStatus(isSoundOn) {
-    this.soundText.setText(`Sound: ${isSoundOn ? 'ON' : 'OFF'}`);
+    this.soundText.setText(`サウンド: ${isSoundOn ? 'ON' : 'OFF'}`);
     this.soundText.setColor(isSoundOn ? '#9fdfe8' : '#c2b39c');
   }
 
@@ -190,7 +214,7 @@ export class Hud {
       const bomb = stock[index];
       const marker = index === selectedSlot ? '▶' : ' ';
       if (!bomb) {
-        return `${marker}${index + 1}: Empty`;
+        return `${marker}${index + 1}: 空`;
       }
 
       return `${marker}${index + 1}: ${this.compactBombName(bomb)}`;
@@ -199,37 +223,45 @@ export class Hud {
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`Sel: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDrop/Space use\nEsc cancel`);
+      this.selectedBombText.setText(`選択中: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDROP / Space: 発動\nEsc: キャンセル`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
 
-    this.selectedBombText.setText('Sel: None\n1-4/B1-B4 preview');
+    this.selectedBombText.setText('選択中: なし\n1〜4/B1〜B4: 選択');
     this.selectedBombText.setColor('#9fdfe8');
   }
 
   compactBombName(bomb) {
-    const label = `${bomb.godName} / ${bomb.name}`;
+    const label = `${bomb.godName} / ${this.getBombLabel(bomb)}`;
     const maxLength = 18;
     return label.length > maxLength ? `${label.slice(0, maxLength - 1)}…` : label;
+  }
+
+  getBombLabel(bomb) {
+    return BOMB_LABELS_JA[bomb.type] ?? bomb.name;
+  }
+
+  getCoffinTierLabel(currentTier) {
+    return COFFIN_TIER_LABELS[currentTier.tier] ?? currentTier.tierName;
   }
 
   updateCoffin(state) {
     const { currentGod, currentTier, progress, unlockedCount, totalGods, isComplete } = state;
 
     if (isComplete) {
-      this.tierText.setText('Tier 4 — Duat Complete');
-      this.godText.setText('God: All Awakened');
-      this.coffinText.setText('Meter: Complete');
+      this.tierText.setText('棺 4 — DUAT COMPLETE');
+      this.godText.setText('神: すべて覚醒');
+      this.coffinText.setText('メーター: 完了');
       this.drawCoffinVisual(currentTier);
     } else {
-      this.tierText.setText(`Tier ${currentTier.tier} — ${currentTier.tierName}`);
-      this.godText.setText(`God: ${currentGod.name}`);
-      this.coffinText.setText(`Meter: ${progress.value} / ${progress.required}`);
+      this.tierText.setText(`棺 ${currentTier.tier} — ${this.getCoffinTierLabel(currentTier)}`);
+      this.godText.setText(`神: ${currentGod.name}`);
+      this.coffinText.setText(`メーター: ${progress.value} / ${progress.required}`);
       this.drawCoffinVisual(currentTier);
     }
 
-    this.unlockedText.setText(`Unlocked: ${unlockedCount} / ${totalGods}`);
+    this.unlockedText.setText(`解放: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
     this.pulseCoffinBarOnGain(currentGod, progress);
   }
@@ -454,15 +486,15 @@ export class Hud {
     const messages = [];
 
     if (clearedSameType) {
-      messages.push('CLEAR!');
+      messages.push('クリア!');
     }
 
     if (clearedCanopicSet) {
-      messages.push('CANOPIC SET!');
+      messages.push('カノプスセット!');
     }
 
     if (chainCount >= 2) {
-      messages.push(`CHAIN x${chainCount}`);
+      messages.push(`${chainCount}連鎖`);
     }
 
     this.showFeedback(messages.join('\n'), 1400);
@@ -470,18 +502,18 @@ export class Hud {
 
   showBombUsed(bomb, affectedCount) {
     if (bomb.type === 'maximum_coffin_burst') {
-      this.showFeedback(`AMUN-RA AWAKENED!\nDUAT COMPLETE!\n${affectedCount} affected`, 2200);
+      this.showFeedback(`AMUN-RA 覚醒!\nDUAT COMPLETE!\n${affectedCount}個に影響`, 2200);
       return;
     }
 
-    this.showFeedback(`BOMB! ${bomb.name}\n${affectedCount} affected`, 1200);
+    this.showFeedback(`ボム! ${this.getBombLabel(bomb)}\n${affectedCount}個に影響`, 1200);
   }
 
   showGodUnlocked(unlockEvents) {
     const latestUnlock = unlockEvents[unlockEvents.length - 1];
     const suffix = latestUnlock.isComplete ? '\nDUAT COMPLETE' : '';
     this.flashCoffin();
-    this.showFeedback(`GOD UNLOCKED!\n${latestUnlock.god.name}${suffix}`, 2200);
+    this.showFeedback(`神が目覚めた!\n${latestUnlock.god.name}${suffix}`, 2200);
   }
 
   showFeedback(message, durationMs) {
@@ -511,7 +543,7 @@ export class Hud {
   }
 
   showGameOver() {
-    this.statusText.setText('Game Over — Enter/Space Restart');
+    this.statusText.setText('ゲームオーバー — Enter/Space でリスタート');
     this.statusText.setColor('#ff7b7b');
   }
 

@@ -59,55 +59,78 @@ const GAME_STATES = {
   GAME_OVER: 'gameOver',
 };
 
+const BOMB_LABELS_JA = {
+  vertical_clear: '縦消し',
+  horizontal_clear: '横消し',
+  cross_clear: '十字消し',
+  surround_clear: '周囲消し',
+  brain_clear: '脳消し',
+  knowledge_convert: '変換',
+  protective_clear: '守護消し',
+  war_burst: '爆裂',
+  triple_column_clear: '3列消し',
+  piece_transform: '変化',
+  half_board_reset: '半面整理',
+  chaos_clear: '混沌',
+  full_board_clear: '全消し',
+  maximum_coffin_burst: '最大爆発',
+};
+
 const HOW_TO_PLAY_SECTIONS = [
   {
-    heading: 'Basic Rule',
+    heading: 'A. 基本ルール',
     lines: [
-      'Move falling pairs.',
-      'Connect 4+ of the same organ to clear them.',
+      '落ちてくる2つ組のピースを動かします。',
+      '同じ臓器ピースを4つ以上つなげると消えます。',
     ],
   },
   {
-    heading: 'Canopic Set',
+    heading: 'B. カノプスセット',
     lines: [
-      'Connect liver, lung, stomach, and intestine in one group.',
-      'A heart can substitute for one missing organ.',
-      'Canopic sets give higher rewards.',
+      '肝臓・肺・胃・腸を、ひとつのつながったグループにそろえると成立します。',
+      '心臓は足りない臓器1種類の代わりになります。',
+      'カノプスセットは高得点で、棺メーターもたまりやすくなります。',
     ],
   },
   {
-    heading: 'Brain Piece',
+    heading: 'C. 脳ピース',
     lines: [
-      'Brain is an obstacle.',
-      'It does not clear by matching 4 or connect canopic sets.',
-      'A canopic set can clear up to one adjacent brain.',
-      'Stronger bombs can clear brain.',
+      '脳は障害ピースです。',
+      '脳は同じものを4つそろえても消えません。',
+      '脳はカノプスセットのつながりにも使えません。',
+      'カノプスセット成立時、隣接する脳を最大1つ巻き込んで消せます。',
+      '強力なボムでも脳を消せます。',
     ],
   },
   {
-    heading: 'Coffin Meter and Gods',
+    heading: 'D. 棺メーターと神々',
     lines: [
-      'Clears fill the coffin meter.',
-      'When the meter fills, a god awakens.',
-      'Awakened gods grant bombs.',
+      'ピースを消すと棺メーターがたまります。',
+      '棺メーターが満タンになると神が目覚めます。',
+      '目覚めた神はボムを授けてくれます。',
     ],
   },
   {
-    heading: 'Bombs',
+    heading: 'E. ボム',
     lines: [
-      'Press 1-4 or tap B1-B4 to select a bomb.',
-      'Preview the area.',
-      'Press the same number, Enter, Space, or DROP to use it.',
-      'Esc cancels selection.',
+      '1〜4キー、またはB1〜B4ボタンでボムを選択します。',
+      '範囲を確認してから発動できます。',
+      '同じ数字をもう一度押す、Enter、Space、またはDROPで発動します。',
+      'Escでキャンセルできます。',
     ],
   },
   {
-    heading: 'Controls',
+    heading: 'F. 操作方法',
     lines: [
-      'Keyboard: ←/→ move, ↓ soft drop, ↑/Z rotate.',
-      'Space: hard drop or confirm bomb. Enter: pause/resume.',
-      'M: mute. 1-4: bombs.',
-      'Touch: use on-screen buttons.',
+      'キーボード:',
+      '← / →: 移動',
+      '↓: ソフトドロップ',
+      '↑ / Z: 回転',
+      'Space: ハードドロップ / ボム発動',
+      'Enter: ポーズ / 再開',
+      'M: ミュート',
+      '1〜4: ボム選択',
+      'タッチ: 画面下のボタンで操作できます。',
     ],
   },
 ];
@@ -285,13 +308,13 @@ export class GameScene extends Phaser.Scene {
       stroke: '#050301',
       strokeThickness: 6,
     }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -136, 'Ancient Egyptian Falling Puzzle', {
+    const subtitle = this.add.text(0, -136, '古代エジプト落ち物パズル', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
       align: 'center',
     }).setOrigin(0.5);
-    const description = this.add.text(0, -84, 'Collect organs, complete canopic sets, awaken the gods.', {
+    const description = this.add.text(0, -84, '臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
       color: '#eadfca',
@@ -307,14 +330,14 @@ export class GameScene extends Phaser.Scene {
       lineSpacing: 4,
     }).setOrigin(0.5);
     const controls = this.add.text(0, 58, [
-      'Controls',
-      '← / →  Move pair',
-      '↓  Soft drop',
-      '↑ / Z  Rotate',
-      'Space  Hard drop / Confirm bomb',
-      'Enter  Pause / Resume',
-      'M  Sound On/Off',
-      '1-4  Select bomb    Esc  Cancel',
+      '操作方法',
+      '← / →: 移動',
+      '↓: ソフトドロップ',
+      '↑ / Z: 回転',
+      'Space: ハードドロップ / ボム発動',
+      'Enter: ポーズ / 再開',
+      'M: ミュート',
+      '1〜4: ボム選択    Esc: キャンセル',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
@@ -322,14 +345,14 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 7,
     }).setOrigin(0.5);
-    const howToPrompt = this.add.text(0, 172, 'Press H or Tap for How To Play', {
+    const howToPrompt = this.add.text(0, 172, 'Hで遊び方', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 222, 'Press Enter, Space, or Tap to Start', {
+    const prompt = this.add.text(0, 222, 'Enter / Space で開始', {
       fontFamily: 'Georgia, serif',
       fontSize: '22px',
       color: '#f4d77a',
@@ -355,7 +378,7 @@ export class GameScene extends Phaser.Scene {
       .setStrokeStyle(2, 0xd4af37, 0.88);
     const innerPanel = this.add.rectangle(0, 0, 640, 510, 0x1b1208, 0.82)
       .setStrokeStyle(1, 0xf0d27a, 0.36);
-    const title = this.add.text(0, -238, 'HOW TO PLAY', {
+    const title = this.add.text(0, -238, '遊び方', {
       fontFamily: 'Georgia, serif',
       fontSize: '34px',
       color: '#d4af37',
@@ -366,7 +389,7 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const sectionTexts = this.createHowToPlaySectionTexts();
-    const closePrompt = this.add.text(0, 244, 'Esc or Tap Back to Return', {
+    const closePrompt = this.add.text(0, 244, 'Escで閉じる / Enter・Spaceでゲーム開始', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#f4d77a',
@@ -392,7 +415,7 @@ export class GameScene extends Phaser.Scene {
     HOW_TO_PLAY_SECTIONS.forEach((section, index) => {
       const columnIndex = index < 3 ? 0 : 1;
       const settings = columnSettings[columnIndex];
-      const heading = this.add.text(settings.x, nextY[columnIndex], section.heading.toUpperCase(), {
+      const heading = this.add.text(settings.x, nextY[columnIndex], section.heading, {
         fontFamily: 'Georgia, serif',
         fontSize: '15px',
         color: '#d4af37',
@@ -436,10 +459,10 @@ export class GameScene extends Phaser.Scene {
     const records = this.highScoreRecords ?? this.highScoreManager?.getRecords();
 
     return [
-      `BEST SCORE: ${records.highScore}`,
-      `MAX CHAIN: ${records.maxChain}`,
-      `MAX TIER: ${records.maxTier}`,
-      `GODS: ${records.maxGodsUnlocked}/${TOTAL_GOD_COUNT}`,
+      `ベストスコア: ${records.highScore}`,
+      `最大連鎖: ${records.maxChain}`,
+      `最高棺: ${records.maxTier}`,
+      `解放した神: ${records.maxGodsUnlocked}/${TOTAL_GOD_COUNT}`,
     ].join('\n');
   }
 
@@ -448,14 +471,14 @@ export class GameScene extends Phaser.Scene {
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.62);
     const panel = this.add.rectangle(0, 0, 330, 180, 0x100b06, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.82);
-    const title = this.add.text(0, -32, 'PAUSED', {
+    const title = this.add.text(0, -32, 'ポーズ中', {
       fontFamily: 'Georgia, serif',
       fontSize: '38px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 34, 'Press Enter, Space, or Tap to Resume', {
+    const prompt = this.add.text(0, 34, 'Enter / Space で再開', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '18px',
       color: '#eadfca',
@@ -1498,7 +1521,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.safeUpdateBgmForGameState();
-    this.boardFeedbackText.setText('DEBUG PROGRESSION RESET');
+    this.boardFeedbackText.setText('デバッグ進行リセット');
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
@@ -1702,11 +1725,11 @@ export class GameScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
     const recordText = this.add.text(0, 0, [
-      `Final Score: ${this.score}`,
-      `Best Score: ${highScoreResult.records.highScore}`,
-      highScoreResult.isNewHighScore ? 'New Record!' : '',
-      `Max Chain: ${this.bestChainThisRun}`,
-      `Gods Unlocked: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+      `最終スコア: ${this.score}`,
+      `ベストスコア: ${highScoreResult.records.highScore}`,
+      highScoreResult.isNewHighScore ? '新記録!' : '',
+      `最大連鎖: ${this.bestChainThisRun}`,
+      `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
     ].filter(Boolean).join('\n'), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
@@ -1718,7 +1741,7 @@ export class GameScene extends Phaser.Scene {
       recordText.setColor('#f4d77a');
       recordText.setFontStyle('bold');
     }
-    const prompt = this.add.text(0, 90, 'Press Enter, Space, or Tap to Restart', {
+    const prompt = this.add.text(0, 90, 'Enter / Space でリスタート', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
       color: '#eadfca',
@@ -1798,8 +1821,8 @@ export class GameScene extends Phaser.Scene {
 
   showGodUnlockFeedback(unlockEvent) {
     const message = unlockEvent.isComplete
-      ? `GOD UNLOCKED!\n${unlockEvent.god.name}\nDUAT COMPLETE`
-      : `GOD UNLOCKED!\n${unlockEvent.god.name}`;
+      ? `神が目覚めた!\n${unlockEvent.god.name}\nDUAT COMPLETE`
+      : `神が目覚めた!\n${unlockEvent.god.name}`;
 
     this.boardFeedbackText.setText(message);
     this.boardFeedbackText.setAlpha(1);
@@ -1814,9 +1837,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   showBombFeedback(bomb, affectedCount) {
+    const bombName = BOMB_LABELS_JA[bomb.type] ?? bomb.name;
     const message = this.bombSystem.isFinalStageBomb(bomb.type)
-      ? `AMUN-RA AWAKENED!\nDUAT COMPLETE!\n${affectedCount} affected`
-      : `BOMB!\n${bomb.godName} ${bomb.name}\n${affectedCount} affected`;
+      ? `AMUN-RA 覚醒!\nDUAT COMPLETE!\n${affectedCount}個に影響`
+      : `ボム!\n${bomb.godName} ${bombName}\n${affectedCount}個に影響`;
 
     this.boardFeedbackText.setText(message);
     this.boardFeedbackText.setAlpha(1);
@@ -1834,15 +1858,15 @@ export class GameScene extends Phaser.Scene {
     const messages = [];
 
     if (clearedSameType) {
-      messages.push('CLEAR!');
+      messages.push('クリア!');
     }
 
     if (clearedCanopicSet) {
-      messages.push('CANOPIC SET!');
+      messages.push('カノプスセット!');
     }
 
     if (chainCount >= 2) {
-      messages.push(`CHAIN x${chainCount}`);
+      messages.push(`${chainCount}連鎖`);
     }
 
     this.boardFeedbackText.setText(messages.join('\n'));

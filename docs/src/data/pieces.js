@@ -29,12 +29,12 @@ export const PIECE_COLORS = {
 };
 
 export const PIECE_LABELS = {
-  liver: 'Liver',
-  lung: 'Lung',
-  stomach: 'Stomach',
-  intestine: 'Intestine',
-  heart: 'Heart',
-  brain: 'Brain',
+  liver: '肝臓',
+  lung: '肺',
+  stomach: '胃',
+  intestine: '腸',
+  heart: '心臓',
+  brain: '脳',
 };
 
 export const PIECE_ASSETS = {

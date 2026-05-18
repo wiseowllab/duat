@@ -29,10 +29,10 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 - The page opens on a **DUAT** title screen before pieces begin falling.
 - **Enter**, **Space**, or tapping the title prompt starts a fresh game from the title screen.
-- **H** opens the title-screen **How To Play** overlay, and **Esc** closes it back to the title screen without starting gameplay.
+- **H** opens the title-screen Japanese **遊び方** overlay, and **Esc** closes it back to the title screen without starting gameplay.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
-- Game over shows final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
+- Game over shows Japanese labels for final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
@@ -56,7 +56,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Clear highlights before cells are removed:
   - Pale gold for same-type clears.
   - Sacred cyan/gold for canopic set clears.
-- Basic score display, chain display, and browser-local high score display.
+- Japanese score, chain, and browser-local high score display labels.
 
 ### Canopic and Brain Rules
 
@@ -114,10 +114,10 @@ Keyboard controls still work on desktop and on mobile devices with hardware keyb
 ### Title Screen
 
 - **Enter / Space**: start the game. Pieces do not spawn or fall until one of these keys is pressed.
-- **H**: open the in-game **How To Play** overlay. It summarizes basic matching, canopic sets, heart substitution, brain obstacle rules, coffin meter/god unlocks, bombs, keyboard controls, and touch controls.
-- **Esc**: close the **How To Play** overlay and return to the title screen.
+- **H**: open the in-game Japanese **遊び方** overlay. It summarizes basic matching, canopic sets, heart substitution, brain obstacle rules, coffin meter/god unlocks, bombs, keyboard controls, and touch controls.
+- **Esc**: close the **遊び方** overlay and return to the title screen.
 - **Tap the title start prompt**: start the game and unlock/resume browser audio for SFX and BGM.
-- **Tap the How To Play prompt**: open the title-screen tutorial overlay; tap its Back prompt to return.
+- **Tap the 遊び方 prompt**: open the title-screen tutorial overlay; tap its close prompt to return.
 
 ### Normal Play
 
@@ -158,15 +158,15 @@ Bombs target the current active pair position. The preview shows the bomb's affe
 
 ### Mobile Touch Controls
 
-The touch controls appear on touch devices and narrow viewports below the game canvas. On narrow screens they are arranged as a compact two-row panel: ESC, PAUSE, B1-B4 on the first row, and Left, Down, Right, ROT, DROP on the second row. They use the same game actions as the keyboard controls:
+The touch controls appear on touch devices and narrow viewports below the game canvas. On narrow screens they are arranged as a compact two-row panel: ESC, ポーズ, B1-B4 on the first row, and arrow buttons, 回転, 落下 on the second row. They use the same game actions as the keyboard controls:
 
-- **LEFT / RIGHT**: move the active pair horizontally.
-- **DOWN**: hold for soft drop; tapping/pressing also steps the pair down once when possible.
-- **ROT**: rotate the active pair.
-- **DROP**: hard drop when no bomb is selected; confirm/use the selected bomb when a bomb is selected.
+- **← / →**: move the active pair horizontally.
+- **↓**: hold for soft drop; tapping/pressing also steps the pair down once when possible.
+- **回転**: rotate the active pair.
+- **落下**: hard drop when no bomb is selected; confirm/use the selected bomb when a bomb is selected.
 - **B1-B4**: select and preview bomb slots 1-4. Tap the same bomb button again to confirm/use it; tap a different bomb button to switch selection.
 - **ESC**: cancel the current bomb selection; while paused, it resumes just like the keyboard Esc behavior.
-- **PAUSE**: pause active gameplay or resume from pause.
+- **ポーズ**: pause active gameplay or resume from pause.
 
 The page uses responsive CSS, canvas scaling, compact touch-control rows, and `touch-action: none` on the game/touch-control areas to reduce accidental browser scrolling during play. This is a prototype mobile layout, so button placement and sizing are functional placeholders rather than final mobile UI art.
 
@@ -290,7 +290,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
 - Only locked board cells affect danger music; the currently falling pair is ignored.
 - BGM default volume is intentionally low relative to SFX, and pause fades the current BGM even lower. Resume fades it back up, game over fades/stops it, and restart starts the correct current Tier 1 normal loop.
 - Major SFX events briefly duck the current BGM so clears, canopic sets, bomb use, god unlocks, and game-over cues stand out before the music returns to its current gameplay or paused level.
-- **M** toggles both generated sound effects and BGM between Sound: ON and Sound: OFF. Unmuting during gameplay restores the correct tier/danger BGM.
+- **M** toggles both generated sound effects and BGM between サウンド: ON and サウンド: OFF. Unmuting during gameplay restores the correct tier/danger BGM.
 
 ## Current Asset Locations
 
@@ -341,7 +341,7 @@ The current prototype uses four tier-based coffin images, not one coffin image p
 
 - If BGM does not play, confirm the MP3 files in `docs/assets/audio/bgm/` use the exact expected filenames listed in the Current Audio section. The preload keys are derived from those names.
 - If BGM switching fails because an audio asset is missing, invalid, destroyed, or rejected by the browser/Phaser sound system, gameplay should continue. Check the browser console for a `BGM ... failed; gameplay will continue.` warning.
-- **M** toggles both generated sound effects and BGM. If the HUD shows `Sound: OFF`, press **M** again to unmute both SFX and BGM.
+- **M** toggles both generated sound effects and BGM. If the HUD shows `サウンド: OFF`, press **M** again to unmute both SFX and BGM.
 
 ## Known Limitations
 
