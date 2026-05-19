@@ -397,7 +397,7 @@ export class Hud {
     graphics.lineBetween(halfW + 4, height * 0.08, halfW + 12, height * 0.08);
   }
 
-  flashCoffin() {
+  flashCoffin(intensityTier = 1) {
     if (!this.coffinGlow || !this.coffinContainer) {
       return;
     }
@@ -406,14 +406,19 @@ export class Hud {
       this.coffinGlowTween.stop();
     }
 
-    this.coffinGlow.setAlpha(0.62);
-    this.coffinContainer.setScale(1.08);
+    const tier = Phaser.Math.Clamp(intensityTier, 1, 4);
+    const glowStart = 0.52 + tier * 0.08;
+    const scaleStart = 1.05 + tier * 0.015;
+    const duration = Math.max(520, 860 - tier * 50);
+
+    this.coffinGlow.setAlpha(glowStart);
+    this.coffinContainer.setScale(scaleStart);
     this.coffinGlowTween = this.scene.tweens.add({
       targets: [this.coffinGlow],
-      alpha: { from: 0.62, to: 0.08 },
-      scaleX: { from: 1.2, to: 1 },
-      scaleY: { from: 1.2, to: 1 },
-      duration: 820,
+      alpha: { from: glowStart, to: 0.08 },
+      scaleX: { from: 1.14 + tier * 0.04, to: 1 },
+      scaleY: { from: 1.14 + tier * 0.04, to: 1 },
+      duration,
       ease: 'Sine.easeOut',
       onComplete: () => {
         this.coffinContainer.setScale(1);
@@ -512,7 +517,7 @@ export class Hud {
   showGodUnlocked(unlockEvents) {
     const latestUnlock = unlockEvents[unlockEvents.length - 1];
     const suffix = latestUnlock.isComplete ? '\nDUAT COMPLETE' : '';
-    this.flashCoffin();
+    this.flashCoffin(latestUnlock.god?.tier ?? 1);
     this.showFeedback(`神が目覚めた!\n${latestUnlock.god.name}${suffix}`, 2200);
   }
 
