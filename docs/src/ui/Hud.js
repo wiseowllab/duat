@@ -16,6 +16,9 @@ const COFFIN_BAR_HEIGHT = 18;
 const COFFIN_BAR_INSET = 3;
 const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
 const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
+const HUD_LAYER_BASE = 10;
+const HUD_LAYER_COFFIN = 12;
+const HUD_LAYER_UNLOCK_FEEDBACK = 30;
 
 const COFFIN_TIER_LABELS = {
   1: '小さな棺',
@@ -54,6 +57,7 @@ export class Hud {
     this.coffinBarPulseTween = null;
     this.coffinPanelFlashTween = null;
     this.currentCoffinSize = null;
+    this.feedbackFadeTween = null;
     this.previousCoffinMeterValue = null;
     this.previousCoffinGodId = null;
 
@@ -122,10 +126,15 @@ export class Hud {
     this.selectedBombText = this.createLabel(174, 509, '選択中: なし', 10, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
+    this.feedbackBackdrop = this.scene.add.rectangle(this.x + 258, this.y + 290, 136, 84, 0x050402, 0.66)
+      .setStrokeStyle(1, 0xd4af37, 0.38)
+      .setVisible(false)
+      .setDepth(HUD_LAYER_UNLOCK_FEEDBACK);
     this.feedbackText = this.createLabel(188, 236, '', 14);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
     this.feedbackText.setWordWrapWidth(140);
+    this.feedbackText.setDepth(HUD_LAYER_UNLOCK_FEEDBACK + 1);
 
     this.statusText = this.createLabel(184, 30, '', 11);
     this.statusText.setColor('#eadfca');
@@ -133,7 +142,8 @@ export class Hud {
 
   createPanels() {
     this.scene.add.rectangle(this.x + HUD_WIDTH / 2, this.y + 300, HUD_WIDTH, 568, 0x100b06, 0.9)
-      .setStrokeStyle(2, PANEL_STROKE, 0.58);
+      .setStrokeStyle(2, PANEL_STROKE, 0.58)
+      .setDepth(HUD_LAYER_BASE);
 
     this.createPanel(12, 52, 160, 126, '');
     this.createPanel(184, 52, 150, 126, '');
@@ -146,10 +156,12 @@ export class Hud {
   createPanel(offsetX, offsetY, width, height) {
     const panel = this.scene.add.rectangle(this.x + offsetX, this.y + offsetY, width, height, PANEL_FILL, 0.84)
       .setOrigin(0, 0)
-      .setStrokeStyle(1, PANEL_STROKE, 0.38);
+      .setStrokeStyle(1, PANEL_STROKE, 0.38)
+      .setDepth(HUD_LAYER_BASE + 1);
     this.scene.add.rectangle(this.x + offsetX + 4, this.y + offsetY + 4, width - 8, height - 8, PANEL_STONE, 0.22)
       .setOrigin(0, 0)
-      .setStrokeStyle(1, 0xf0d27a, 0.08);
+      .setStrokeStyle(1, 0xf0d27a, 0.08)
+      .setDepth(HUD_LAYER_BASE + 1);
     return panel;
   }
 
@@ -286,7 +298,7 @@ export class Hud {
     const asset = getCoffinAsset(nextCoffinSize);
     const centerX = this.x + HUD_WIDTH / 2;
     const centerY = this.y + 336;
-    const container = this.scene.add.container(centerX, centerY);
+    const container = this.scene.add.container(centerX, centerY).setDepth(HUD_LAYER_COFFIN);
     const glowSize = Math.max(COFFIN_MAX_DISPLAY_WIDTH, COFFIN_MAX_DISPLAY_HEIGHT) + 26;
 
     const backplate = this.scene.add.rectangle(0, 0, COFFIN_BACKPLATE_WIDTH, COFFIN_BACKPLATE_HEIGHT, 0x0b0906, 0.64)
@@ -563,18 +575,46 @@ export class Hud {
 
   showFeedback(message, durationMs) {
     this.feedbackText.setText(message);
+    this.feedbackText.setAlpha(1);
+    this.feedbackBackdrop.setVisible(Boolean(message));
+    this.feedbackBackdrop.setAlpha(0.66);
+
+    if (this.feedbackFadeTween) {
+      this.feedbackFadeTween.stop();
+      this.feedbackFadeTween = null;
+    }
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
     }
 
     this.feedbackTimer = this.scene.time.delayedCall(durationMs, () => {
-      this.feedbackText.setText('');
+      this.feedbackFadeTween = this.scene.tweens.add({
+        targets: [this.feedbackText, this.feedbackBackdrop],
+        alpha: 0,
+        duration: 230,
+        ease: 'Sine.easeOut',
+        onComplete: () => {
+          this.feedbackText.setText('');
+          this.feedbackText.setAlpha(1);
+          this.feedbackBackdrop.setVisible(false);
+          this.feedbackBackdrop.setAlpha(0.66);
+          this.feedbackFadeTween = null;
+        },
+      });
     });
   }
 
   clearFeedback() {
     this.feedbackText.setText('');
+    this.feedbackText.setAlpha(1);
+    this.feedbackBackdrop.setVisible(false);
+    this.feedbackBackdrop.setAlpha(0.66);
+
+    if (this.feedbackFadeTween) {
+      this.feedbackFadeTween.stop();
+      this.feedbackFadeTween = null;
+    }
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
