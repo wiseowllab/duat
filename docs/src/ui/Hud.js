@@ -565,9 +565,7 @@ export class Hud {
     const god = latestUnlock.god;
     const tier = god?.tier ?? 1;
     const bombName = BOMB_LABELS_JA[god?.bombType] ?? god?.bombType ?? 'なし';
-    const badgeMessage = latestUnlock.isComplete
-      ? `神、目覚める\n${god?.name}\nドゥアト踏破`
-      : `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
+    const badgeMessage = `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
 
     this.flashCoffin(tier);
     this.flashCoffinPanel(tier);
@@ -626,12 +624,17 @@ export class Hud {
     const strokeColor = tier >= 4 ? 0xffef9a : 0xf6d77a;
     this.coffinPanel.setStrokeStyle(2, strokeColor, strokeAlpha);
 
-    this.coffinPanelFlashTween = this.scene.tweens.add({
-      targets: this.coffinPanel,
-      alpha: { from: 0.96, to: 1 },
+    this.coffinPanelFlashTween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
       yoyo: true,
       repeat: 2 + clampedIndex,
       duration: 120,
+      onUpdate: (tween) => {
+        const progress = tween.getValue();
+        const pulseAlpha = strokeAlpha + (1 - strokeAlpha) * progress;
+        this.coffinPanel.setStrokeStyle(2, strokeColor, pulseAlpha);
+      },
       onComplete: () => {
         this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, 0.38);
         this.coffinPanelFlashTween = null;
