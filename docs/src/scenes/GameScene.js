@@ -339,39 +339,77 @@ export class GameScene extends Phaser.Scene {
       '← / →：移動',
       '↓：ソフトドロップ',
       '↑ / Z：回転',
-      'Space：ハードドロップ / ボム発動',
+      'Space：ハードドロップ',
       'Enter：ポーズ / 再開',
       '1〜4：ボム選択',
       'Esc：キャンセル',
       'M：ミュート',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '15px',
+      fontSize: '14px',
       color: '#d9c8a8',
       align: 'center',
-      lineSpacing: 5,
+      lineSpacing: 4,
     }).setOrigin(0.5);
-    const howToPrompt = this.add.text(0, 184, 'H：遊び方', {
+    const keyboardPrompt = this.add.text(0, 176, 'Enter / Space：開始　H：遊び方', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: '17px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const prompt = this.add.text(0, 234, 'Enter / Space で開始', {
+    const startButton = this.createTitleButton(0, 226, 320, 72, 'ゲーム開始');
+    const howToButton = this.createTitleButton(0, 306, 320, 64, '遊び方');
+    const tapHint = this.add.text(0, 348, 'タップでも開始できます', {
       fontFamily: 'Georgia, serif',
-      fontSize: '22px',
+      fontSize: '15px',
+      color: '#bcae90',
+      align: 'center',
+    }).setOrigin(0.5);
+
+    this.titleOverlay.add([
+      panel,
+      innerPanel,
+      title,
+      subtitle,
+      description,
+      bestText,
+      controls,
+      keyboardPrompt,
+      startButton.container,
+      howToButton.container,
+      tapHint,
+    ]);
+    panel.setInteractive({ useHandCursor: true });
+    panel.on('pointerdown', () => {
+      if (!this.isHowToPlayOpen) {
+        this.startGame();
+      }
+    });
+    startButton.background.on('pointerdown', () => this.startGame());
+    startButton.text.on('pointerdown', () => this.startGame());
+    howToButton.background.on('pointerdown', () => this.openHowToPlay());
+    howToButton.text.on('pointerdown', () => this.openHowToPlay());
+    this.createHowToPlayOverlay();
+  }
+
+  createTitleButton(x, y, width, height, label) {
+    const container = this.add.container(x, y);
+    const background = this.add.rectangle(0, 0, width, height, 0x2b1c0d, 0.98)
+      .setStrokeStyle(2, 0xd4af37, 0.94)
+      .setInteractive({ useHandCursor: true });
+    const highlight = this.add.rectangle(0, -height * 0.18, width - 12, Math.max(10, height * 0.24), 0xf4d77a, 0.12);
+    const text = this.add.text(0, 0, label, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: label === 'ゲーム開始' ? '33px' : '28px',
       color: '#f4d77a',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
 
-    this.titleOverlay.add([panel, innerPanel, title, subtitle, description, bestText, controls, howToPrompt, prompt]);
-    howToPrompt.setInteractive({ useHandCursor: true });
-    prompt.setInteractive({ useHandCursor: true });
-    howToPrompt.on('pointerdown', () => this.openHowToPlay());
-    prompt.on('pointerdown', () => this.startGame());
-    this.createHowToPlayOverlay();
+    text.setInteractive({ useHandCursor: true });
+    container.add([background, highlight, text]);
+    return { container, background, text };
   }
 
   createHowToPlayOverlay() {
