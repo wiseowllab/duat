@@ -18,7 +18,7 @@ const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
 const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 const HUD_LAYER_BASE = 10;
 const HUD_LAYER_COFFIN = 12;
-const HUD_LAYER_UNLOCK_FEEDBACK = 30;
+const HUD_LAYER_UNLOCK_FEEDBACK = 16;
 
 const COFFIN_TIER_LABELS = {
   1: '小さな棺',
@@ -126,15 +126,20 @@ export class Hud {
     this.selectedBombText = this.createLabel(174, 509, '選択中: なし', 10, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
-    this.feedbackBackdrop = this.scene.add.rectangle(this.x + 258, this.y + 290, 136, 84, 0x050402, 0.66)
-      .setStrokeStyle(1, 0xd4af37, 0.38)
-      .setVisible(false)
+    this.feedbackContainer = this.scene.add.container(this.x + 254, this.y + 332)
       .setDepth(HUD_LAYER_UNLOCK_FEEDBACK);
-    this.feedbackText = this.createLabel(188, 236, '', 14);
-    this.feedbackText.setColor('#f4d77a');
-    this.feedbackText.setFontStyle('bold');
-    this.feedbackText.setWordWrapWidth(140);
-    this.feedbackText.setDepth(HUD_LAYER_UNLOCK_FEEDBACK + 1);
+    this.feedbackBackdrop = this.scene.add.rectangle(0, 0, 122, 74, 0x050402, 0.72)
+      .setStrokeStyle(1, 0xd4af37, 0.44)
+      .setVisible(false);
+    this.feedbackText = this.scene.add.text(-52, -27, '', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '13px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      lineSpacing: 6,
+      wordWrap: { width: 104 },
+    }).setAlpha(1);
+    this.feedbackContainer.add([this.feedbackBackdrop, this.feedbackText]);
 
     this.statusText = this.createLabel(184, 30, '', 11);
     this.statusText.setColor('#eadfca');
