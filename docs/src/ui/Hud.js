@@ -34,16 +34,16 @@ const BOMB_LABELS_JA = {
   horizontal_clear: '横消し',
   cross_clear: '十字消し',
   surround_clear: '周囲消し',
-  brain_clear: '脳消し',
+  brain_clear: '脳消去',
   knowledge_convert: '変換',
   protective_clear: '守護消し',
-  war_burst: '爆裂',
-  triple_column_clear: '3列消し',
-  piece_transform: '変化',
-  half_board_reset: '半面整理',
-  chaos_clear: '混沌',
+  war_burst: '戦火',
+  triple_column_clear: '三列消し',
+  piece_transform: '変換',
+  half_board_reset: '半面リセット',
+  chaos_clear: '混沌消し',
   full_board_clear: '全消し',
-  maximum_coffin_burst: '最大爆発',
+  maximum_coffin_burst: '最大棺バースト',
 };
 
 export class Hud {
@@ -565,12 +565,29 @@ export class Hud {
     const latestUnlock = unlockEvents[unlockEvents.length - 1];
     const god = latestUnlock.god;
     const tier = god?.tier ?? 1;
-    const bombName = BOMB_LABELS_JA[god?.bombType] ?? god?.bombType ?? 'なし';
+    const bombName = this.getUnlockGrantedBombLabel(latestUnlock);
     const badgeMessage = `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
 
     this.flashCoffin(tier);
     this.flashCoffinPanel(tier);
     this.showUnlockBadge(badgeMessage, 1900);
+  }
+
+  getUnlockGrantedBombLabel(unlockEvent) {
+    const grantedBombType = unlockEvent?.grantedBomb?.type;
+    if (grantedBombType) {
+      return BOMB_LABELS_JA[grantedBombType] ?? grantedBombType;
+    }
+
+    if (unlockEvent?.grantStatus === 'stock_full') {
+      return 'ストック満杯';
+    }
+
+    if (unlockEvent?.grantStatus === 'unsupported') {
+      return '未対応';
+    }
+
+    return 'なし';
   }
 
   showUnlockBadge(message, durationMs) {

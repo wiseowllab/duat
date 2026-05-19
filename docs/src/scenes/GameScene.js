@@ -300,9 +300,9 @@ export class GameScene extends Phaser.Scene {
   createTitleOverlay() {
     this.titleOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2).setDepth(30);
 
-    const panel = this.add.rectangle(0, 0, 600, 552, 0x100b06, 0.94)
+    const panel = this.add.rectangle(0, 0, 600, 592, 0x100b06, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.85);
-    const innerPanel = this.add.rectangle(0, 0, 560, 510, 0x1b1208, 0.72)
+    const innerPanel = this.add.rectangle(0, 0, 560, 548, 0x1b1208, 0.72)
       .setStrokeStyle(1, 0xf0d27a, 0.34);
     const title = this.add.text(0, -232, 'DUAT', {
       fontFamily: 'Georgia, serif',
@@ -335,32 +335,31 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 2,
     }).setOrigin(0.5);
-    const controls = this.add.text(0, 54, [
+    const controls = this.add.text(0, 44, [
       '← / →：移動',
       '↓：ソフトドロップ',
       '↑ / Z：回転',
       'Space：ハードドロップ',
-      'Enter：ポーズ / 再開',
-      '1〜4：ボム選択',
-      'Esc：キャンセル',
-      'M：ミュート',
+      'Enter：ポーズ',
+      '1〜4：ボム',
+      'Esc：取消 / M：ミュート',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#d9c8a8',
       align: 'center',
-      lineSpacing: 4,
+      lineSpacing: 3,
     }).setOrigin(0.5);
-    const keyboardPrompt = this.add.text(0, 176, 'Enter / Space：開始　H：遊び方', {
+    const keyboardPrompt = this.add.text(0, 156, 'Enter / Space：開始　H：遊び方', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
     }).setOrigin(0.5);
-    const startButton = this.createTitleButton(0, 226, 320, 72, 'ゲーム開始');
-    const howToButton = this.createTitleButton(0, 306, 320, 64, '遊び方');
-    const tapHint = this.add.text(0, 348, 'タップでも開始できます', {
+    const startButton = this.createTitleButton(-128, 214, 240, 72, 'ゲーム開始');
+    const howToButton = this.createTitleButton(128, 214, 240, 72, '遊び方');
+    const tapHint = this.add.text(0, 268, 'タップでも開始できます', {
       fontFamily: 'Georgia, serif',
       fontSize: '15px',
       color: '#bcae90',
@@ -1692,16 +1691,33 @@ export class GameScene extends Phaser.Scene {
 
     this.bgm.duck(800, 0.4);
     this.sfx.playGodUnlock();
-    this.addBombsForUnlockEvents(unlockEvents);
-    this.hud.showGodUnlocked(unlockEvents);
+    const unlockEventsWithBombInfo = this.addBombsForUnlockEvents(unlockEvents);
+    this.hud.showGodUnlocked(unlockEventsWithBombInfo);
   }
 
   addBombsForUnlockEvents(unlockEvents) {
-    unlockEvents.forEach((unlockEvent) => {
-      this.bombSystem.addBombForGod(unlockEvent.god);
+    const unlockEventsWithBombInfo = unlockEvents.map((unlockEvent) => {
+      const god = unlockEvent.god;
+      const wasFullBeforeAdd = this.bombSystem.isFull();
+      const grantedBomb = this.bombSystem.addBombForGod(god);
+
+      return {
+        ...unlockEvent,
+        grantedBomb,
+        grantStatus: grantedBomb
+          ? 'granted'
+          : wasFullBeforeAdd
+            ? 'stock_full'
+            : this.bombSystem.isSupportedBombType(god?.futureBombType)
+              ? 'none'
+              : god?.futureBombType
+                ? 'unsupported'
+                : 'none',
+      };
     });
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.validateBombSelection();
+    return unlockEventsWithBombInfo;
   }
 
   findClearResult() {
