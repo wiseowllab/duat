@@ -19,6 +19,7 @@ const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 const HUD_LAYER_BASE = 10;
 const HUD_LAYER_COFFIN = 12;
 const HUD_LAYER_UNLOCK_FEEDBACK = 16;
+const HUD_LAYER_UNLOCK_BADGE = 17;
 
 const COFFIN_TIER_LABELS = {
   1: '小さな棺',
@@ -58,6 +59,9 @@ export class Hud {
     this.coffinPanelFlashTween = null;
     this.currentCoffinSize = null;
     this.feedbackFadeTween = null;
+    this.unlockBadgeContainer = null;
+    this.unlockBadgeFadeTween = null;
+    this.unlockBadgeTimer = null;
     this.previousCoffinMeterValue = null;
     this.previousCoffinGodId = null;
 
@@ -141,8 +145,32 @@ export class Hud {
     }).setAlpha(1);
     this.feedbackContainer.add([this.feedbackBackdrop, this.feedbackText]);
 
+    this.createUnlockBadge();
+
     this.statusText = this.createLabel(184, 30, '', 11);
     this.statusText.setColor('#eadfca');
+  }
+
+  createUnlockBadge() {
+    const badgeX = this.x + 268;
+    const badgeY = this.y + 286;
+    this.unlockBadgeContainer = this.scene.add.container(badgeX, badgeY)
+      .setDepth(HUD_LAYER_UNLOCK_BADGE)
+      .setVisible(false)
+      .setAlpha(0);
+    const badgeBackground = this.scene.add.rectangle(0, 0, 122, 68, 0x040302, 0.82)
+      .setOrigin(0.5)
+      .setStrokeStyle(1, 0xd4af37, 0.9);
+    const badgeText = this.scene.add.text(-53, -26, '', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '12px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      lineSpacing: 5,
+      wordWrap: { width: 106 },
+    });
+    this.unlockBadgeText = badgeText;
+    this.unlockBadgeContainer.add([badgeBackground, badgeText]);
   }
 
   createPanels() {
@@ -537,16 +565,49 @@ export class Hud {
     const god = latestUnlock.god;
     const tier = god?.tier ?? 1;
     const bombName = BOMB_LABELS_JA[god?.bombType] ?? god?.bombType ?? 'なし';
-    const isCompact = this.scene.scale.width <= 700;
-    const fullMessage = latestUnlock.isComplete
+    const badgeMessage = latestUnlock.isComplete
       ? `神、目覚める\n${god?.name}\nドゥアト踏破`
       : `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
-    const compactMessage = latestUnlock.isComplete
-      ? `神、目覚める\n${god?.name}\nドゥアト踏破`
-      : `GOD AWAKENED\n${god?.name}`;
+
     this.flashCoffin(tier);
     this.flashCoffinPanel(tier);
-    this.showFeedback(isCompact ? compactMessage : fullMessage, 1900);
+    this.showUnlockBadge(badgeMessage, 1900);
+  }
+
+  showUnlockBadge(message, durationMs) {
+    if (!this.unlockBadgeContainer || !this.unlockBadgeText) {
+      return;
+    }
+
+    this.unlockBadgeText.setText(message);
+    this.unlockBadgeContainer.setVisible(Boolean(message));
+    this.unlockBadgeContainer.setAlpha(1);
+
+    if (this.unlockBadgeFadeTween) {
+      this.unlockBadgeFadeTween.stop();
+      this.unlockBadgeFadeTween = null;
+    }
+
+    if (this.unlockBadgeTimer) {
+      this.unlockBadgeTimer.remove(false);
+      this.unlockBadgeTimer = null;
+    }
+
+    this.unlockBadgeTimer = this.scene.time.delayedCall(durationMs, () => {
+      this.unlockBadgeFadeTween = this.scene.tweens.add({
+        targets: this.unlockBadgeContainer,
+        alpha: 0,
+        duration: 220,
+        ease: 'Sine.easeOut',
+        onComplete: () => {
+          this.unlockBadgeContainer.setVisible(false);
+          this.unlockBadgeContainer.setAlpha(0);
+          this.unlockBadgeText.setText('');
+          this.unlockBadgeFadeTween = null;
+        },
+      });
+      this.unlockBadgeTimer = null;
+    });
   }
 
   flashCoffinPanel(tier) {
