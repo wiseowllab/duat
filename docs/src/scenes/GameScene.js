@@ -732,12 +732,20 @@ export class GameScene extends Phaser.Scene {
   registerTouchControls() {
     this.touchActionHandler = (event) => this.handleTouchAction(event.detail);
     window.addEventListener('duat-touch-action', this.touchActionHandler);
+    this.emitTouchControlState();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       if (this.touchActionHandler) {
         window.removeEventListener('duat-touch-action', this.touchActionHandler);
         this.touchActionHandler = null;
       }
+      window.dispatchEvent(new CustomEvent('duat-touch-state', { detail: { hasBombSelected: false } }));
     });
+  }
+
+  emitTouchControlState() {
+    window.dispatchEvent(new CustomEvent('duat-touch-state', {
+      detail: { hasBombSelected: this.selectedBombSlot !== null },
+    }));
   }
 
   handleTouchAction(detail = {}) {
@@ -1143,6 +1151,7 @@ export class GameScene extends Phaser.Scene {
     this.selectedBombSlot = slotIndex;
     this.sfx.playBombSelect();
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.emitTouchControlState();
     this.updateBombPreview();
   }
 
@@ -1154,6 +1163,7 @@ export class GameScene extends Phaser.Scene {
     this.selectedBombSlot = null;
     this.clearBombPreview();
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.emitTouchControlState();
   }
 
   confirmSelectedBomb() {
@@ -1169,6 +1179,7 @@ export class GameScene extends Phaser.Scene {
     this.selectedBombSlot = null;
     this.clearBombPreview();
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
+    this.emitTouchControlState();
     this.useBombSlot(slotIndex);
   }
 
