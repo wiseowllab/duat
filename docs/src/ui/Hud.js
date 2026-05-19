@@ -52,6 +52,7 @@ export class Hud {
     this.coffinGlow = null;
     this.coffinGlowTween = null;
     this.coffinBarPulseTween = null;
+    this.coffinPanelFlashTween = null;
     this.currentCoffinSize = null;
     this.previousCoffinMeterValue = null;
     this.previousCoffinGodId = null;
@@ -121,10 +122,10 @@ export class Hud {
     this.selectedBombText = this.createLabel(174, 509, '選択中: なし', 10, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
-    this.feedbackText = this.createLabel(198, 196, '', 15);
+    this.feedbackText = this.createLabel(188, 236, '', 14);
     this.feedbackText.setColor('#f4d77a');
     this.feedbackText.setFontStyle('bold');
-    this.feedbackText.setWordWrapWidth(130);
+    this.feedbackText.setWordWrapWidth(140);
 
     this.statusText = this.createLabel(184, 30, '', 11);
     this.statusText.setColor('#eadfca');
@@ -136,7 +137,7 @@ export class Hud {
 
     this.createPanel(12, 52, 160, 126, '');
     this.createPanel(184, 52, 150, 126, '');
-    this.createPanel(12, 190, 322, 280, '');
+    this.coffinPanel = this.createPanel(12, 190, 322, 280, '');
     this.createPanel(12, 476, 322, 92, '');
 
     this.drawEgyptianAccents();
@@ -516,9 +517,48 @@ export class Hud {
 
   showGodUnlocked(unlockEvents) {
     const latestUnlock = unlockEvents[unlockEvents.length - 1];
-    const suffix = latestUnlock.isComplete ? '\nDUAT COMPLETE' : '';
-    this.flashCoffin(latestUnlock.god?.tier ?? 1);
-    this.showFeedback(`神が目覚めた!\n${latestUnlock.god.name}${suffix}`, 2200);
+    const god = latestUnlock.god;
+    const tier = god?.tier ?? 1;
+    const bombName = BOMB_LABELS_JA[god?.bombType] ?? god?.bombType ?? 'なし';
+    const isCompact = this.scene.scale.width <= 700;
+    const fullMessage = latestUnlock.isComplete
+      ? `神、目覚める\n${god?.name}\nドゥアト踏破`
+      : `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
+    const compactMessage = latestUnlock.isComplete
+      ? `神、目覚める\n${god?.name}\nドゥアト踏破`
+      : `GOD AWAKENED\n${god?.name}`;
+    this.flashCoffin(tier);
+    this.flashCoffinPanel(tier);
+    this.showFeedback(isCompact ? compactMessage : fullMessage, 1900);
+  }
+
+  flashCoffinPanel(tier) {
+    if (!this.coffinPanel) {
+      return;
+    }
+
+    if (this.coffinPanelFlashTween) {
+      this.coffinPanelFlashTween.stop();
+      this.coffinPanelFlashTween = null;
+    }
+
+    const clampedIndex = Math.max(0, Math.min(3, tier - 1));
+    const strokeAlphaByTier = [0.55, 0.72, 0.84, 0.96];
+    const strokeAlpha = strokeAlphaByTier[clampedIndex];
+    const strokeColor = tier >= 4 ? 0xffef9a : 0xf6d77a;
+    this.coffinPanel.setStrokeStyle(2, strokeColor, strokeAlpha);
+
+    this.coffinPanelFlashTween = this.scene.tweens.add({
+      targets: this.coffinPanel,
+      alpha: { from: 0.96, to: 1 },
+      yoyo: true,
+      repeat: 2 + clampedIndex,
+      duration: 120,
+      onComplete: () => {
+        this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, 0.38);
+        this.coffinPanelFlashTween = null;
+      },
+    });
   }
 
   showFeedback(message, durationMs) {

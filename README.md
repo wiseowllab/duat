@@ -85,7 +85,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Amun-Ra as the final god unlock.
 - Bomb stock generated from god unlocks.
 - Tier-based coffin PNGs for the HUD, displayed prominently in the current coffin panel so tier changes are easier to see.
-- Centered god awakening overlay on unlock with tier-strength visual pulses (Tier 1-4), Ra/Amun-Ra special awakening text, and DUAT COMPLETE callout for final completion.
+- God unlock feedback shown in the right-side Current Coffin panel (with tier-strength coffin/panel glow) so the play board remains fully visible.
 - Debug mode for testing meter progress, god unlocks, coffin tier changes, bomb stock, and reset behavior.
 
 
@@ -108,7 +108,7 @@ To tune piece frequency later, adjust the relative `PIECE_WEIGHTS` numbers: high
 
 The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses the existing tier-based coffin PNGs at a larger display size so Tier 1-4 changes are visibly distinct.
 
-God unlock presentation now includes a temporary centered awakening overlay (dark translucent panel + gold accents + fade/pulse), while final god illustration cinematics are still not implemented in this prototype.
+God unlock presentation now appears in the right-side Current Coffin HUD panel (temporary awakening text + tier-based glow/pulse) so progression feedback does not cover the falling puzzle board, while final god illustration cinematics are still not implemented in this prototype.
 
 ## Current Controls
 
