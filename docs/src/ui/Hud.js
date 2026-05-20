@@ -719,6 +719,24 @@ export class Hud {
     this.statusText.setColor('#ff7b7b');
   }
 
+  setGameOverAtmosphere(isGameOver) {
+    const isDimmed = Boolean(isGameOver);
+
+    if (this.coffinGlow) {
+      this.coffinGlow.setAlpha(isDimmed ? 0.02 : 0.08);
+    }
+
+    if (this.coffinContainer) {
+      this.coffinContainer.setScale(1);
+      this.coffinContainer.setAlpha(isDimmed ? 0.84 : 1);
+    }
+
+    if (this.coffinPanel) {
+      this.coffinPanel.setFillStyle(PANEL_FILL, isDimmed ? 0.68 : 0.84);
+      this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, isDimmed ? 0.24 : 0.38);
+    }
+  }
+
   drawNext(types) {
     this.clearNext();
 
