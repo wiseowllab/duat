@@ -167,6 +167,8 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.isDebugMode = false;
     this.feedbackTimer = null;
+    this.chainPopupText = null;
+    this.chainPopupTween = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
     this.bombPreviewSprites = [];
@@ -277,6 +279,15 @@ export class GameScene extends Phaser.Scene {
       stroke: '#1a1006',
       strokeThickness: 4,
     }).setOrigin(0.5, 0).setDepth(10);
+    this.chainPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y - 22, '', {
+      fontFamily: 'Arial Black, Arial',
+      fontSize: '24px',
+      color: '#f6d978',
+      stroke: '#4f3b11',
+      strokeThickness: 5,
+      align: 'center',
+      shadow: { offsetX: 0, offsetY: 0, color: '#f0c14f', blur: 14, fill: true },
+    }).setOrigin(0.5, 1).setDepth(24).setAlpha(0);
 
     this.createGameOverAtmosphere();
   }
@@ -680,6 +691,7 @@ export class GameScene extends Phaser.Scene {
     this.clearBombAreaFlash();
     this.clearClearHighlights();
     this.boardFeedbackText.setText('');
+    this.clearChainPopup();
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
@@ -1697,6 +1709,7 @@ export class GameScene extends Phaser.Scene {
 
     this.feedbackTimer = this.time.delayedCall(1200, () => {
       this.boardFeedbackText.setText('');
+    this.clearChainPopup();
     });
   }
 
@@ -2080,6 +2093,7 @@ export class GameScene extends Phaser.Scene {
 
     this.feedbackTimer = this.time.delayedCall(this.bombSystem.isFinalStageBomb(bomb.type) ? 2200 : 1000, () => {
       this.boardFeedbackText.setText('');
+    this.clearChainPopup();
     });
   }
 
@@ -2094,9 +2108,7 @@ export class GameScene extends Phaser.Scene {
       messages.push('カノプスセット!');
     }
 
-    if (chainCount >= 2) {
-      messages.push(`${chainCount}連鎖`);
-    }
+    this.showChainPopup(chainCount);
 
     this.boardFeedbackText.setText(messages.join('\n'));
     this.boardFeedbackText.setAlpha(1);
@@ -2107,7 +2119,68 @@ export class GameScene extends Phaser.Scene {
 
     this.feedbackTimer = this.time.delayedCall(1200, () => {
       this.boardFeedbackText.setText('');
+    this.clearChainPopup();
     });
+  }
+
+
+
+  showChainPopup(chainCount) {
+    if (!this.chainPopupText || chainCount < 2) {
+      return;
+    }
+
+    const visualTier = Math.min(chainCount, 4);
+    const fontSizeByTier = { 2: 26, 3: 30, 4: 34 };
+    const glowByTier = { 2: 12, 3: 20, 4: 28 };
+    const alphaByTier = { 2: 0.9, 3: 1, 4: 1 };
+    const pulseScaleByTier = { 2: 1.05, 3: 1.1, 4: 1.16 };
+    const targetScale = pulseScaleByTier[visualTier] ?? 1.05;
+
+    if (this.chainPopupTween) {
+      this.chainPopupTween.stop();
+      this.chainPopupTween = null;
+    }
+
+    this.chainPopupText.setText(`${chainCount} CHAIN`);
+    this.chainPopupText.setFontSize(fontSizeByTier[visualTier] ?? 26);
+    this.chainPopupText.setShadow(0, 0, '#f0c14f', glowByTier[visualTier] ?? 14, true, true);
+    this.chainPopupText.setAlpha(0);
+    this.chainPopupText.setScale(0.88);
+    this.chainPopupText.setY(BOARD_ORIGIN_Y - 18);
+
+    this.chainPopupTween = this.tweens.add({
+      targets: this.chainPopupText,
+      alpha: { from: 0, to: alphaByTier[visualTier] ?? 0.9 },
+      y: { from: BOARD_ORIGIN_Y - 12, to: BOARD_ORIGIN_Y - 34 },
+      scale: { from: 0.88, to: targetScale },
+      ease: 'Sine.easeOut',
+      duration: 220,
+      yoyo: true,
+      hold: 280,
+      onComplete: () => {
+        this.chainPopupText.setAlpha(0);
+        this.chainPopupText.setScale(1);
+        this.chainPopupText.setY(BOARD_ORIGIN_Y - 22);
+        this.chainPopupTween = null;
+      },
+    });
+  }
+
+  clearChainPopup() {
+    if (!this.chainPopupText) {
+      return;
+    }
+
+    if (this.chainPopupTween) {
+      this.chainPopupTween.stop();
+      this.chainPopupTween = null;
+    }
+
+    this.chainPopupText.setAlpha(0);
+    this.chainPopupText.setScale(1);
+    this.chainPopupText.setText('');
+    this.chainPopupText.setY(BOARD_ORIGIN_Y - 22);
   }
 
   clearBlockSprites() {
