@@ -197,6 +197,7 @@ The page uses responsive CSS, canvas scaling, compact touch-control rows, and `t
 - **liver**, **lung**, **stomach**, and **intestine** are normal organ pieces.
 - **heart** can substitute for one missing organ in canopic sets.
 - **brain** is an obstacle piece.
+- Brain appears as an occasional obstacle in falling pairs (separate chance-based spawn), not as a normal weighted organ candidate.
 - Brain does not clear by same-type matching.
 - Brain does not connect canopic sets.
 - Canopic set clears can remove up to one adjacent brain piece using the priority rule:
