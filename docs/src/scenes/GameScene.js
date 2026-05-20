@@ -186,6 +186,7 @@ export class GameScene extends Phaser.Scene {
     this.isHowToPlayOpen = false;
     this.pauseOverlay = null;
     this.gameOverOverlay = null;
+    this.gameOverAtmosphere = null;
     this.godAwakenOverlay = null;
     this.godAwakenHideTimer = null;
     this.godAwakenTween = null;
@@ -276,6 +277,20 @@ export class GameScene extends Phaser.Scene {
       stroke: '#1a1006',
       strokeThickness: 4,
     }).setOrigin(0.5, 0).setDepth(10);
+
+    this.createGameOverAtmosphere();
+  }
+
+  createGameOverAtmosphere() {
+    const boardCenterX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
+    const boardCenterY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
+    const boardWidth = BOARD_COLUMNS * CELL_SIZE;
+    const boardHeight = BOARD_ROWS * CELL_SIZE;
+    const shade = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 40, boardHeight + 40, 0x050301, 0)
+      .setDepth(22);
+    const sand = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x8a6738, 0)
+      .setDepth(22);
+    this.gameOverAtmosphere = { shade, sand };
   }
 
   drawBoardCornerAccents(centerX, centerY, width, height) {
@@ -655,6 +670,7 @@ export class GameScene extends Phaser.Scene {
     this.lastBgmDebugState = null;
     this.bgm.stop();
     this.clearTransientVisuals();
+    this.resetGameOverAtmosphere();
     this.updateHudForReset();
     this.renderBoard();
   }
@@ -1846,7 +1862,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   endGame() {
-    this.bgm.duck(800, 0.4);
+    this.bgm.duck(900, 0.3);
     this.sfx.playGameOver();
     this.bgm.stop();
     this.gameState = GAME_STATES.GAME_OVER;
@@ -1857,7 +1873,41 @@ export class GameScene extends Phaser.Scene {
     const highScoreResult = this.recordHighScoreForCurrentRun();
     this.hud.updateBestScore(highScoreResult.records.highScore);
     this.hud.showGameOver();
+    this.playGameOverAtmosphere();
     this.showGameOverOverlay(highScoreResult);
+  }
+
+  playGameOverAtmosphere() {
+    if (!this.gameOverAtmosphere) {
+      return;
+    }
+
+    this.hud.setGameOverAtmosphere(true);
+    const { shade, sand } = this.gameOverAtmosphere;
+    shade.setAlpha(0);
+    sand.setAlpha(0);
+    this.tweens.add({
+      targets: shade,
+      alpha: 0.52,
+      duration: 720,
+      ease: 'Sine.easeOut',
+    });
+    this.tweens.add({
+      targets: sand,
+      alpha: 0.16,
+      duration: 920,
+      ease: 'Sine.easeOut',
+    });
+  }
+
+  resetGameOverAtmosphere() {
+    if (!this.gameOverAtmosphere) {
+      return;
+    }
+
+    this.hud.setGameOverAtmosphere(false);
+    this.gameOverAtmosphere.shade.setAlpha(0);
+    this.gameOverAtmosphere.sand.setAlpha(0);
   }
 
   recordHighScoreForCurrentRun() {
@@ -1880,43 +1930,71 @@ export class GameScene extends Phaser.Scene {
 
     const centerX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
     const centerY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
-    this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25);
-    const panel = this.add.rectangle(0, 0, 286, 238, 0x120806, 0.94)
+    const panelWidth = Math.min(332, GAME_WIDTH - 56);
+    const panelHeight = 290;
+    this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x120806, 0.94)
       .setStrokeStyle(2, 0xd4af37, 0.82);
-    const title = this.add.text(0, -88, 'GAME OVER', {
+    const title = this.add.text(0, -108, 'GAME OVER', {
       fontFamily: 'Georgia, serif',
-      fontSize: '30px',
+      fontSize: '34px',
       color: '#d4af37',
       fontStyle: 'bold',
       align: 'center',
       stroke: '#1a1006',
       strokeThickness: 4,
     }).setOrigin(0.5);
-    const recordText = this.add.text(0, 0, [
+    const subtitle = this.add.text(0, -70, '魂は冥界へ沈んだ…', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '16px',
+      color: '#cdb98b',
+      align: 'center',
+      fontStyle: 'italic',
+    }).setOrigin(0.5);
+    const recordText = this.add.text(0, 8, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
       highScoreResult.isNewHighScore ? '新記録!' : '',
       `最大連鎖: ${this.bestChainThisRun}`,
+      `到達Tier: ${this.maxTierThisRun}`,
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
     ].filter(Boolean).join('\n'), {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '17px',
+      fontSize: '16px',
       color: '#eadfca',
       align: 'center',
-      lineSpacing: 6,
+      lineSpacing: 5,
+      wordWrap: { width: panelWidth - 36 },
     }).setOrigin(0.5);
     if (highScoreResult.isNewHighScore) {
       recordText.setColor('#f4d77a');
       recordText.setFontStyle('bold');
     }
-    const prompt = this.add.text(0, 90, 'Enter / Space でリスタート', {
+    const prompt = this.add.text(0, 112, 'Enter / Space で再挑戦', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
-      color: '#eadfca',
+      color: '#f2d783',
       align: 'center',
+      fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.gameOverOverlay.add([panel, title, recordText, prompt]);
+    this.gameOverOverlay.add([panel, title, subtitle, recordText, prompt]);
+    this.tweens.add({
+      targets: this.gameOverOverlay,
+      alpha: 1,
+      y: centerY - 6,
+      duration: 650,
+      ease: 'Sine.easeOut',
+    });
+    this.tweens.add({
+      targets: panel,
+      scaleX: { from: 0.98, to: 1.01 },
+      scaleY: { from: 0.98, to: 1.01 },
+      yoyo: true,
+      repeat: -1,
+      duration: 2400,
+      ease: 'Sine.easeInOut',
+    });
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => this.restartGame());

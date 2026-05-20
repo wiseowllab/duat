@@ -32,7 +32,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **H** opens the title-screen Japanese paged **遊び方** overlay. **Left/Right** or **A/D** changes pages, **Enter** or **Space** advances to the next page, and **Esc** closes it back to the title screen without starting gameplay.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
-- Game over shows Japanese labels for final score, saved best score, run max chain, run god unlock count, and a restart prompt. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
+- Game over now uses an atmospheric DUAT presentation: board darkening, a subtle sand-toned fade, reduced coffin glow, and a calm centered panel showing final score, best score, max chain, reached Tier, awakened gods, and restart guidance. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
