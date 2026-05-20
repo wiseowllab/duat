@@ -1,4 +1,4 @@
-import { PIECE_WEIGHTS } from './balance.js';
+import { BRAIN_OBSTACLE_CHANCE, PIECE_WEIGHTS } from './balance.js';
 
 export const CANOPIC_ORGAN_TYPES = [
   'liver',
@@ -17,6 +17,11 @@ export const PIECE_TYPES = [
   'intestine',
   'heart',
   'brain',
+];
+
+const NORMAL_PAIR_TYPES = [
+  ...CANOPIC_ORGAN_TYPES,
+  HEART_TYPE,
 ];
 
 export const PIECE_COLORS = {
@@ -82,14 +87,14 @@ export function preloadPieceAssets(scene) {
 }
 
 export function randomPieceType() {
-  const weightedTypes = PIECE_TYPES
+  const weightedTypes = NORMAL_PAIR_TYPES
     .map((type) => ({ type, weight: Math.max(0, PIECE_WEIGHTS[type] ?? 0) }))
     .filter(({ weight }) => weight > 0);
   const totalWeight = weightedTypes.reduce((total, { weight }) => total + weight, 0);
 
   if (totalWeight <= 0) {
-    const index = Math.floor(Math.random() * PIECE_TYPES.length);
-    return PIECE_TYPES[index];
+    const index = Math.floor(Math.random() * NORMAL_PAIR_TYPES.length);
+    return NORMAL_PAIR_TYPES[index];
   }
 
   let roll = Math.random() * totalWeight;
@@ -104,5 +109,12 @@ export function randomPieceType() {
 }
 
 export function createRandomPairTypes() {
-  return [randomPieceType(), randomPieceType()];
+  const pair = [randomPieceType(), randomPieceType()];
+
+  if (Math.random() < BRAIN_OBSTACLE_CHANCE) {
+    const replaceIndex = Math.random() < 0.5 ? 0 : 1;
+    pair[replaceIndex] = BRAIN_TYPE;
+  }
+
+  return pair;
 }

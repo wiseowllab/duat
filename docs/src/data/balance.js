@@ -3,13 +3,19 @@
 // scoring, unlock speed, and danger pressure without digging through gameplay systems.
 
 export const PIECE_WEIGHTS = {
-  liver: 18,
-  lung: 18,
-  stomach: 18,
-  intestine: 18,
-  heart: 10,
-  brain: 18,
+  liver: 20,
+  lung: 20,
+  stomach: 20,
+  intestine: 20,
+  heart: 8,
+  // brain is no longer generated from the normal weighted organ pool.
+  // keep this at 0 (or omit brain entirely) so regular pair generation stays organ/heart-focused.
+  brain: 0,
 };
+
+// brain now appears as an occasional falling obstacle rather than a normal pool candidate.
+// tune this value to raise/lower board pressure from obstacle spawns.
+export const BRAIN_OBSTACLE_CHANCE = 0.08;
 
 export const FALL_SPEED = {
   normalMs: 700,
