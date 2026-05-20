@@ -53,6 +53,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Same-type 4+ connected clear using orthogonal adjacency.
 - Stepwise post-lock gravity after pieces lock and after clears resolve.
 - Chain resolution when gravity creates additional clears.
+- Chain popup presentation for 2+ chains (`2 CHAIN`, `3 CHAIN`, etc.) with tiered DUAT-style gold glow/pulse above the board, tuned to stay readable without covering active falling pieces.
 - Clear highlights before cells are removed:
   - Pale gold for same-type clears.
   - Sacred cyan/gold for canopic set clears.
