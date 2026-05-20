@@ -21,6 +21,22 @@ A local server is recommended because the prototype uses JavaScript modules.
 
 To test on a phone or tablet, run the same server on your development machine, make sure the phone is on the same network, then open `http://<your-computer-LAN-IP>:8000/docs/` in the mobile browser. You can also use browser devtools device emulation or a narrow desktop viewport for a quick layout check.
 
+
+## Version / Build Label
+
+DUAT displays a small version/build label on the title screen and in the gameplay HUD so you can confirm deployed updates.
+
+- Source of truth: `docs/src/data/version.js`
+- Update `BUILD_LABEL` whenever you verify a new deployment.
+- Recommended `BUILD_LABEL` formats:
+  - `YYYY-MM-DD-HHMM`
+  - `YYYY-MM-DD-HHMMSS`
+
+Example:
+
+- `GAME_VERSION = '0.1.0-dev'`
+- `BUILD_LABEL = '2026-05-19-0045'`
+
 ## Current Playable State
 
 DUAT is currently a single-scene falling puzzle prototype with a basic title, pause, and game-over flow plus these implemented systems:
