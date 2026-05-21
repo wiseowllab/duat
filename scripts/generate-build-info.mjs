@@ -40,6 +40,11 @@ function buildTimestamp(date = new Date()) {
 }
 
 function getCommitSha() {
+  const githubSha = process.env.GITHUB_SHA;
+  if (typeof githubSha === 'string' && githubSha.trim()) {
+    return githubSha.trim().slice(0, 7);
+  }
+
   try {
     return execSync('git rev-parse --short HEAD', {
       cwd: repoRoot,
