@@ -2,7 +2,7 @@ import { CELL_SIZE } from '../data/constants.js';
 import { getCoffinAsset } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
-import { GAME_VERSION, BUILD_LABEL } from '../data/version.js';
+import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 
 const HUD_WIDTH = 346;
 const PANEL_FILL = 0x17100a;
@@ -151,7 +151,7 @@ export class Hud {
 
     this.statusText = this.createLabel(184, 30, '', 11);
     this.statusText.setColor('#eadfca');
-    this.buildText = this.createLabel(18, 550, `v${GAME_VERSION} / ${BUILD_LABEL}`, 9, 0);
+    this.buildText = this.createLabel(18, 550, `v${GAME_VERSION} / ${BUILD_LABEL} / ${COMMIT_SHA}`, 9, 0);
     this.buildText.setColor('#bcae90');
   }
 
