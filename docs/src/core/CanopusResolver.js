@@ -97,6 +97,10 @@ export class CanopusResolver {
   }
 
   findConnectedCanopicGroup(startCol, startRow, visited) {
+    // NOTE: A "canopic group" is built from every orthogonally connected
+    // canopic-eligible cell (liver/lung/stomach/intestine/heart). If this
+    // connected group satisfies canopic completion, the current clear pipeline
+    // clears the entire group (not only a minimal 4-cell subset).
     const group = [];
     const queue = [{ col: startCol, row: startRow }];
     visited[startRow][startCol] = true;
