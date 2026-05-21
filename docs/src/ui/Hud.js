@@ -8,11 +8,14 @@ const HUD_WIDTH = 346;
 const PANEL_FILL = 0x17100a;
 const PANEL_STROKE = 0xd4af37;
 const PANEL_STONE = 0x2a1c10;
-const COFFIN_MAX_DISPLAY_WIDTH = 164;
-const COFFIN_MAX_DISPLAY_HEIGHT = 146;
-const COFFIN_BACKPLATE_WIDTH = 190;
-const COFFIN_BACKPLATE_HEIGHT = 146;
-const COFFIN_BAR_WIDTH = 282;
+const COFFIN_PANEL_X = 12;
+const COFFIN_PANEL_Y = 190;
+const COFFIN_PANEL_WIDTH = 322;
+const COFFIN_PANEL_HEIGHT = 280;
+const COFFIN_PANEL_MARGIN = 10;
+const COFFIN_IMAGE_AREA_WIDTH = COFFIN_PANEL_WIDTH - COFFIN_PANEL_MARGIN * 2;
+const COFFIN_IMAGE_AREA_HEIGHT = COFFIN_PANEL_HEIGHT - COFFIN_PANEL_MARGIN * 2;
+const COFFIN_BAR_WIDTH = COFFIN_IMAGE_AREA_WIDTH - 18;
 const COFFIN_BAR_HEIGHT = 18;
 const COFFIN_BAR_INSET = 3;
 const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
@@ -103,32 +106,45 @@ export class Hud {
 
     this.scene.add.text(this.x + 196, this.y + 62, 'NEXT', this.headingStyle(15)).setDepth(HUD_LAYER_TEXT);
 
-    this.scene.add.text(this.x + 18, this.y + 198, '現在の棺', this.headingStyle(17)).setDepth(HUD_LAYER_TEXT);
-    this.tierText = this.createLabel(22, 225, '棺 1 — 小さな棺', 14);
-    this.godText = this.createLabel(22, 249, '神: Imsety', 14);
+    this.scene.add.text(this.x + 24, this.y + 204, '現在の棺', this.headingStyle(17))
+      .setDepth(HUD_LAYER_TEXT)
+      .setStroke('#120d06', 4)
+      .setShadow(0, 1, '#000000', 2, true, true);
+    this.coffinTopTextBackplate = this.scene.add.rectangle(this.x + 100, this.y + 248, 164, 56, 0x060402, 0.6)
+      .setStrokeStyle(1, 0xd4af37, 0.22)
+      .setDepth(HUD_LAYER_TEXT - 1);
+    this.tierText = this.createLabel(30, 232, '棺 1 — 小さな棺', 14);
+    this.godText = this.createLabel(30, 254, '神: Imsety', 14);
+    this.tierText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
+    this.godText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinText = this.createLabel(22, 412, `メーター: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 22, this.y + 436, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
+    this.coffinBottomTextBackplate = this.scene.add.rectangle(this.x + 171, this.y + 431, 292, 62, 0x060402, 0.68)
+      .setStrokeStyle(1, 0xd4af37, 0.22)
+      .setDepth(HUD_LAYER_TEXT - 1);
+    this.coffinText = this.createLabel(30, 404, `メーター: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
+    this.coffinText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 30, this.y + 432, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72);
     this.coffinBarFill = this.scene.add.rectangle(
-      this.x + 22 + COFFIN_BAR_INSET,
-      this.y + 436,
+      this.x + 30 + COFFIN_BAR_INSET,
+      this.y + 432,
       COFFIN_BAR_INNER_WIDTH,
       COFFIN_BAR_FILL_HEIGHT,
       0xffd84d,
       0.96,
     ).setOrigin(0, 0.5);
     this.coffinBarHighlight = this.scene.add.rectangle(
-      this.x + 22 + COFFIN_BAR_INSET,
-      this.y + 432,
+      this.x + 30 + COFFIN_BAR_INSET,
+      this.y + 428,
       COFFIN_BAR_INNER_WIDTH,
       2,
       0xffffb8,
       0.58,
     ).setOrigin(0, 0.5);
     this.updateCoffinBar(0);
-    this.unlockedText = this.createLabel(22, 451, '解放: 0 / 14', 12);
+    this.unlockedText = this.createLabel(30, 442, '解放: 0 / 14', 12);
+    this.unlockedText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
 
     this.scene.add.text(this.x + 18, this.y + 487, 'ボムストック', this.headingStyle(14)).setDepth(HUD_LAYER_TEXT);
     this.bombStockText = this.createLabel(18, 509, '1: 空\n2: 空\n3: 空\n4: 空', 10, 0);
@@ -238,7 +254,7 @@ export class Hud {
 
     this.createPanel(12, 52, 160, 126, '');
     this.createPanel(184, 52, 150, 126, '');
-    this.coffinPanel = this.createPanel(12, 190, 322, 280, '');
+    this.coffinPanel = this.createPanel(COFFIN_PANEL_X, COFFIN_PANEL_Y, COFFIN_PANEL_WIDTH, COFFIN_PANEL_HEIGHT, '');
     this.createPanel(12, 476, 322, 92, '');
 
     this.drawEgyptianAccents();
@@ -387,12 +403,12 @@ export class Hud {
     }
 
     const asset = getCoffinAsset(nextCoffinSize);
-    const centerX = this.x + HUD_WIDTH / 2;
-    const centerY = this.y + 336;
+    const centerX = this.x + COFFIN_PANEL_X + (COFFIN_PANEL_WIDTH / 2);
+    const centerY = this.y + COFFIN_PANEL_Y + (COFFIN_PANEL_HEIGHT / 2);
     const container = this.scene.add.container(centerX, centerY).setDepth(HUD_LAYER_COFFIN);
-    const glowSize = Math.max(COFFIN_MAX_DISPLAY_WIDTH, COFFIN_MAX_DISPLAY_HEIGHT) + 26;
+    const glowSize = Math.max(COFFIN_IMAGE_AREA_WIDTH, COFFIN_IMAGE_AREA_HEIGHT) + 18;
 
-    const backplate = this.scene.add.rectangle(0, 0, COFFIN_BACKPLATE_WIDTH, COFFIN_BACKPLATE_HEIGHT, 0x0b0906, 0.64)
+    const backplate = this.scene.add.rectangle(0, 0, COFFIN_IMAGE_AREA_WIDTH, COFFIN_IMAGE_AREA_HEIGHT, 0x0b0906, 0.38)
       .setStrokeStyle(1, 0xd4af37, 0.24);
     this.coffinGlow = this.scene.add.ellipse(0, 0, glowSize, glowSize, 0xd4af37, 0.08)
       .setStrokeStyle(2, 0xf4d77a, 0.16);
@@ -414,8 +430,8 @@ export class Hud {
 
     const source = this.scene.textures.get(asset.key).getSourceImage();
     const scale = Math.min(
-      COFFIN_MAX_DISPLAY_WIDTH / source.width,
-      COFFIN_MAX_DISPLAY_HEIGHT / source.height,
+      COFFIN_IMAGE_AREA_WIDTH / source.width,
+      COFFIN_IMAGE_AREA_HEIGHT / source.height,
     );
 
     return this.scene.add.image(0, 0, asset.key)
