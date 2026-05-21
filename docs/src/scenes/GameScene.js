@@ -262,6 +262,15 @@ export class GameScene extends Phaser.Scene {
     const boardCenterY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
     const boardWidth = BOARD_COLUMNS * CELL_SIZE;
     const boardHeight = BOARD_ROWS * CELL_SIZE;
+    const gameplayTop = 20;
+    const gameplayBottom = GAME_HEIGHT - 20;
+    const gameplayHeight = gameplayBottom - gameplayTop;
+    const boardPanelCenterY = gameplayTop + (gameplayHeight / 2);
+
+    this.add.rectangle(BOARD_ORIGIN_X + (boardWidth / 2), boardPanelCenterY, boardWidth + 40, gameplayHeight, 0x23180f, 0.84)
+      .setStrokeStyle(2, 0x6e5525, 0.42);
+    this.add.rectangle(BOARD_ORIGIN_X + (boardWidth / 2), boardPanelCenterY, boardWidth + 24, gameplayHeight - 14, 0x161009, 0.84)
+      .setStrokeStyle(1, 0xd4af37, 0.22);
 
     this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 28, boardHeight + 28, 0x332313, 0.95)
       .setStrokeStyle(2, 0xd4af37, 0.82);
