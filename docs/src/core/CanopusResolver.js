@@ -36,6 +36,20 @@ export class CanopusResolver {
     return selectedSets;
   }
 
+  isPureCanopicSet(cells) {
+    return this.validateCanopicFourCellSet(cells).isPure;
+  }
+
+  countPureCanopicSets(canopicSets) {
+    if (!canopicSets || canopicSets.length === 0) {
+      return 0;
+    }
+
+    return canopicSets.reduce((count, cells) => (
+      count + (this.isPureCanopicSet(cells) ? 1 : 0)
+    ), 0);
+  }
+
   collectConnectedFourCellCandidates() {
     const unique = new Map();
 

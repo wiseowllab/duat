@@ -22,6 +22,7 @@ const HUD_LAYER_COFFIN = 12;
 const HUD_LAYER_TEXT = 13;
 const HUD_LAYER_UNLOCK_FEEDBACK = 14;
 const HUD_LAYER_UNLOCK_BADGE = 17;
+const REVIVED_ICON_VISIBLE_MAX = 12;
 
 const COFFIN_TIER_LABELS = {
   1: '小さな棺',
@@ -66,6 +67,8 @@ export class Hud {
     this.unlockBadgeTimer = null;
     this.previousCoffinMeterValue = null;
     this.previousCoffinGodId = null;
+    this.revivedCount = 0;
+    this.revivedIcons = [];
 
     this.create();
   }
@@ -153,6 +156,57 @@ export class Hud {
     this.statusText.setColor('#eadfca');
     this.buildText = this.createLabel(18, 550, `v${GAME_VERSION} / ${BUILD_LABEL} / ${COMMIT_SHA}`, 9, 0);
     this.buildText.setColor('#bcae90');
+    this.createRevivedSoulsHud();
+  }
+
+  createRevivedSoulsHud() {
+    const panelX = this.x + 170;
+    const panelY = this.y + 480;
+    this.revivedPanel = this.scene.add.container(panelX, panelY).setDepth(HUD_LAYER_TEXT);
+    const panelBack = this.scene.add.rectangle(0, 0, 158, 62, 0x0d0a06, 0.92)
+      .setStrokeStyle(1, 0xd4af37, 0.45)
+      .setOrigin(0, 0);
+    this.revivedLabelText = this.scene.add.text(8, 6, '復活した死者', {
+      fontFamily: 'Noto Sans JP, Arial, sans-serif',
+      fontSize: '12px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+    });
+    this.revivedCountText = this.scene.add.text(118, 6, '×0', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '12px',
+      color: '#e5d0a0',
+      fontStyle: 'bold',
+    });
+    this.revivedIconsContainer = this.scene.add.container(9, 28);
+    this.revivedPanel.add([panelBack, this.revivedLabelText, this.revivedCountText, this.revivedIconsContainer]);
+  }
+
+  updateRevivedSouls(count) {
+    this.revivedCount = Math.max(0, count);
+    this.revivedCountText.setText(`×${this.revivedCount}`);
+    this.renderRevivedIcons();
+  }
+
+  renderRevivedIcons() {
+    this.revivedIcons.forEach((icon) => icon.destroy());
+    this.revivedIcons = [];
+    this.revivedIconsContainer.removeAll(true);
+
+    const visibleCount = Math.min(this.revivedCount, REVIVED_ICON_VISIBLE_MAX);
+    for (let index = 0; index < visibleCount; index += 1) {
+      const col = index % 6;
+      const row = Math.floor(index / 6);
+      const iconX = col * 22;
+      const iconY = row * 22;
+      const icon = this.scene.add.text(iconX, iconY, '𓀾', {
+        fontFamily: 'Georgia, serif',
+        fontSize: '15px',
+        color: '#d9bb76',
+      }).setShadow(0, 0, '#f0c14f', 4, true, true);
+      this.revivedIcons.push(icon);
+      this.revivedIconsContainer.add(icon);
+    }
   }
 
   createUnlockBadge() {

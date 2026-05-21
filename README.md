@@ -105,6 +105,8 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 - Canopic set clear detection for connected liver, lung, stomach, and intestine groups.
 - Heart substitution for one missing organ in canopic sets.
+- PURE CANOPIC detection: when liver, lung, stomach, and intestine are all used without heart substitution.
+- Each PURE CANOPIC revives one soul/mummy for the current run and increments the in-HUD revival tally.
 - Brain obstacle behavior.
 - Brain pieces are excluded from same-type matching.
 - Brain pieces are excluded from canopic connectivity.
