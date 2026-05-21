@@ -7,33 +7,151 @@ const ORTHOGONAL_DIRECTIONS = [
   { col: -1, row: 0 },
 ];
 
+const REQUIRED_ORGAN_SET = new Set(CANOPIC_ORGAN_TYPES);
+
 export class CanopusResolver {
   constructor(board) {
     this.board = board;
   }
 
   findCanopicSets() {
-    const visited = this.createVisitedGrid();
-    const canopicSets = [];
+    // Canopic clears are selected as connected 4-cell groups only.
+    // Larger connected regions may contain many candidates, but each resolved
+    // set is exactly four orthogonally connected cells.
+    const candidates = this.collectConnectedFourCellCandidates();
+    const selectedSets = [];
+    const usedKeys = new Set();
+
+    candidates.forEach((candidate) => {
+      if (candidate.cells.some((cell) => usedKeys.has(this.createCellKey(cell.col, cell.row)))) {
+        return;
+      }
+
+      candidate.cells.forEach((cell) => {
+        usedKeys.add(this.createCellKey(cell.col, cell.row));
+      });
+      selectedSets.push(candidate.cells);
+    });
+
+    return selectedSets;
+  }
+
+  collectConnectedFourCellCandidates() {
+    const unique = new Map();
 
     for (let row = 0; row < this.board.rows; row += 1) {
       for (let col = 0; col < this.board.columns; col += 1) {
-        if (visited[row][col] || !this.canJoinCanopicGroup(this.board.cells[row][col])) {
+        const type = this.board.getCell(col, row);
+        if (!this.canJoinCanopicGroup(type)) {
           continue;
         }
 
-        const group = this.findConnectedCanopicGroup(col, row, visited);
-        const selectedSet = this.selectCanopicSetCells(group);
-
-        if (selectedSet) {
-          canopicSets.push(selectedSet);
-        }
+        this.enumerateConnectedSubsets([{ col, row, type }], unique);
       }
     }
 
-    return canopicSets;
+    return [...unique.values()].sort((a, b) => (
+      Number(b.isPure) - Number(a.isPure)
+      || b.anchor.row - a.anchor.row
+      || a.anchor.col - b.anchor.col
+      || a.key.localeCompare(b.key)
+    ));
   }
 
+  enumerateConnectedSubsets(subset, unique) {
+    if (subset.length === 4) {
+      const candidate = this.buildCandidate(subset);
+      if (candidate) {
+        unique.set(candidate.key, candidate);
+      }
+      return;
+    }
+
+    const subsetKeys = new Set(subset.map((cell) => this.createCellKey(cell.col, cell.row)));
+    const neighbors = this.collectNeighborCells(subset, subsetKeys);
+
+    neighbors.forEach((neighbor) => {
+      this.enumerateConnectedSubsets([...subset, neighbor], unique);
+    });
+  }
+
+  collectNeighborCells(subset, subsetKeys) {
+    const neighbors = new Map();
+
+    subset.forEach((cell) => {
+      ORTHOGONAL_DIRECTIONS.forEach((direction) => {
+        const nextCol = cell.col + direction.col;
+        const nextRow = cell.row + direction.row;
+
+        if (!this.board.isInsideColumn(nextCol) || !this.board.isVisibleRow(nextRow)) {
+          return;
+        }
+
+        const key = this.createCellKey(nextCol, nextRow);
+        if (subsetKeys.has(key)) {
+          return;
+        }
+
+        const type = this.board.getCell(nextCol, nextRow);
+        if (!this.canJoinCanopicGroup(type)) {
+          return;
+        }
+
+        neighbors.set(key, { col: nextCol, row: nextRow, type });
+      });
+    });
+
+    return [...neighbors.values()];
+  }
+
+  buildCandidate(subset) {
+    const sortedCells = [...subset].sort((a, b) => b.row - a.row || a.col - b.col);
+    const validation = this.validateCanopicFourCellSet(sortedCells);
+
+    if (!validation.isValid) {
+      return null;
+    }
+
+    const key = sortedCells.map((cell) => this.createCellKey(cell.col, cell.row)).join('|');
+
+    return {
+      key,
+      cells: sortedCells,
+      isPure: validation.isPure,
+      anchor: sortedCells[0],
+    };
+  }
+
+  validateCanopicFourCellSet(cells) {
+    if (cells.length !== 4) {
+      return { isValid: false, isPure: false };
+    }
+
+    const types = cells.map((cell) => cell.type);
+    if (types.some((type) => !this.canJoinCanopicGroup(type) || type === BRAIN_TYPE)) {
+      return { isValid: false, isPure: false };
+    }
+
+    const typeCounts = new Map();
+    types.forEach((type) => {
+      typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+    });
+
+    const heartCount = typeCounts.get(HEART_TYPE) ?? 0;
+    const presentOrganTypes = CANOPIC_ORGAN_TYPES.filter((type) => (typeCounts.get(type) ?? 0) > 0);
+    const missingOrganTypes = CANOPIC_ORGAN_TYPES.filter((type) => (typeCounts.get(type) ?? 0) === 0);
+
+    if (heartCount === 0) {
+      const isPure = presentOrganTypes.length === REQUIRED_ORGAN_SET.size;
+      return { isValid: isPure, isPure };
+    }
+
+    const isHeartSubstitutionValid = heartCount === 1
+      && presentOrganTypes.length === 3
+      && missingOrganTypes.length === 1;
+
+    return { isValid: isHeartSubstitutionValid, isPure: false };
+  }
 
   findAdjacentBrainBonusCell(canopicSets) {
     if (!canopicSets || canopicSets.length === 0) {
@@ -94,83 +212,7 @@ export class CanopusResolver {
     return key.split(',').map(Number);
   }
 
-  createVisitedGrid() {
-    return Array.from({ length: this.board.rows }, () => Array(this.board.columns).fill(false));
-  }
-
-  findConnectedCanopicGroup(startCol, startRow, visited) {
-    // A connected canopic group is used only for detection.
-    // When a set is found, only one selected 4-cell set is cleared
-    // (plus optional adjacent-brain bonus handled separately).
-    const group = [];
-    const queue = [{ col: startCol, row: startRow }];
-    visited[startRow][startCol] = true;
-
-    while (queue.length > 0) {
-      const cell = queue.shift();
-      const type = this.board.getCell(cell.col, cell.row);
-      group.push({ ...cell, type });
-
-      ORTHOGONAL_DIRECTIONS.forEach((direction) => {
-        const nextCol = cell.col + direction.col;
-        const nextRow = cell.row + direction.row;
-
-        if (!this.canVisit(nextCol, nextRow, visited)) {
-          return;
-        }
-
-        visited[nextRow][nextCol] = true;
-        queue.push({ col: nextCol, row: nextRow });
-      });
-    }
-
-    return group;
-  }
-
-  canVisit(col, row, visited) {
-    return this.board.isInsideColumn(col)
-      && this.board.isVisibleRow(row)
-      && !visited[row][col]
-      && this.canJoinCanopicGroup(this.board.cells[row][col]);
-  }
-
   canJoinCanopicGroup(type) {
     return CANOPIC_ORGAN_TYPES.includes(type) || type === HEART_TYPE;
-  }
-
-  selectCanopicSetCells(group) {
-    const cellsByType = this.createCellsByType(group);
-    const hasPureSet = CANOPIC_ORGAN_TYPES.every((type) => cellsByType.get(type).length > 0);
-
-    if (hasPureSet) {
-      return CANOPIC_ORGAN_TYPES.map((type) => cellsByType.get(type)[0]);
-    }
-
-    const missingTypes = CANOPIC_ORGAN_TYPES.filter((type) => cellsByType.get(type).length === 0);
-    const canUseHeartSubstitution = missingTypes.length === 1 && cellsByType.get(HEART_TYPE).length > 0;
-
-    if (!canUseHeartSubstitution) {
-      return null;
-    }
-
-    const selected = CANOPIC_ORGAN_TYPES
-      .filter((type) => type !== missingTypes[0])
-      .map((type) => cellsByType.get(type)[0]);
-    selected.push(cellsByType.get(HEART_TYPE)[0]);
-
-    return selected;
-  }
-
-  createCellsByType(group) {
-    const map = new Map([...CANOPIC_ORGAN_TYPES, HEART_TYPE].map((type) => [type, []]));
-    const orderedGroup = [...group].sort((a, b) => b.row - a.row || a.col - b.col);
-
-    orderedGroup.forEach((cell) => {
-      if (map.has(cell.type)) {
-        map.get(cell.type).push(cell);
-      }
-    });
-
-    return map;
   }
 }
