@@ -68,6 +68,7 @@
         display: flex;
         justify-content: center;
         min-width: 0;
+        width: 100%;
         touch-action: none;
       }
 
@@ -175,7 +176,9 @@
         }
 
         #game canvas {
-          height: min(600px, calc((100vw - 0.7rem) * 0.789), calc(100dvh - 8.35rem));
+          width: min(100%, calc((100dvh - 7.35rem) * 1.266));
+          height: auto;
+          max-height: calc(100dvh - 7.35rem);
         }
 
         .desktop-control-help {
@@ -245,6 +248,15 @@
       }
 
       @media (max-width: 420px) {
+        h1 {
+          font-size: clamp(1rem, 5.8vw, 1.25rem);
+        }
+
+        p {
+          margin-bottom: 0.2rem;
+          font-size: clamp(0.64rem, 2.5vw, 0.74rem);
+        }
+
         .touch-controls {
           gap: 0.3rem;
         }
@@ -260,7 +272,8 @@
         }
 
         #game canvas {
-          height: min(600px, calc((100vw - 0.7rem) * 0.789), calc(100dvh - 7.55rem));
+          width: min(100%, calc((100dvh - 6.65rem) * 1.266));
+          max-height: calc(100dvh - 6.65rem);
         }
 
         .touch-controls {
