@@ -393,15 +393,16 @@ export class GameScene extends Phaser.Scene {
       color: '#bcae90',
       align: 'center',
     }).setOrigin(0.5);
-    const versionTextBackground = this.add.rectangle(-270, 252, 236, 68, 0x0f0b06, 0.72)
+    const versionTextBackground = this.add.rectangle(-272, 188, 248, 106, 0x070401, 0.88)
       .setOrigin(0, 1)
-      .setStrokeStyle(1, 0xd4af37, 0.58);
-    const versionText = this.add.text(-260, 244, `v${GAME_VERSION}\nBuild ${BUILD_LABEL}\n${COMMIT_SHA}`, {
+      .setStrokeStyle(2, 0xd4af37, 0.86);
+    const versionText = this.add.text(-260, 178, `DEV BUILD\nv${GAME_VERSION}\nBuild ${BUILD_LABEL}\n${COMMIT_SHA}`, {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '13px',
-      color: '#f1dfb2',
+      fontSize: '15px',
+      color: '#f8e9c4',
       align: 'left',
-      lineSpacing: 3,
+      fontStyle: 'bold',
+      lineSpacing: 4,
     }).setOrigin(0, 1);
 
     this.titleOverlay.add([
