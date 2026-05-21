@@ -159,7 +159,11 @@
 
         main {
           width: 100%;
-          padding: max(0.25rem, env(safe-area-inset-top)) max(0.35rem, env(safe-area-inset-right)) max(0.45rem, env(safe-area-inset-bottom)) max(0.35rem, env(safe-area-inset-left));
+          min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          padding: max(0.25rem, env(safe-area-inset-top)) max(0.35rem, env(safe-area-inset-right)) max(0.2rem, env(safe-area-inset-bottom)) max(0.35rem, env(safe-area-inset-left));
         }
 
         h1 {
@@ -170,15 +174,20 @@
 
         p {
           max-width: 32rem;
-          margin: 0 auto 0.3rem;
+          margin: 0 auto 0.18rem;
           font-size: clamp(0.68rem, 2.7vw, 0.78rem);
           line-height: 1.2;
         }
 
+        #game {
+          flex: 1 1 auto;
+          align-items: flex-start;
+        }
+
         #game canvas {
-          width: min(100%, calc((100dvh - 5.95rem) * 1.266));
+          width: min(100%, calc((100dvh - 4.95rem) * 1.166));
           height: auto;
-          max-height: calc(100dvh - 5.95rem);
+          max-height: calc(100dvh - 4.95rem);
         }
 
         .desktop-control-help {
@@ -190,7 +199,8 @@
           grid-template-columns: repeat(6, minmax(0, 1fr));
           grid-template-rows: repeat(4, minmax(2.1rem, auto));
           gap: 0.4rem;
-          margin-top: 0.25rem;
+          margin-top: 0.1rem;
+          margin-bottom: max(0.1rem, env(safe-area-inset-bottom));
         }
 
         .touch-controls__top,
@@ -272,8 +282,8 @@
         }
 
         #game canvas {
-          width: min(100%, calc((100dvh - 5.8rem) * 1.266));
-          max-height: calc(100dvh - 5.8rem);
+          width: min(100%, calc((100dvh - 4.85rem) * 1.166));
+          max-height: calc(100dvh - 4.85rem);
         }
 
         .touch-controls {
