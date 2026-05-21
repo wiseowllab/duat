@@ -171,7 +171,7 @@ test('extra connected canopic-eligible cells are not included in selected canopi
   assert.deepEqual(canopicSets[0].map((cell) => cell.type).sort(), ['intestine', 'liver', 'lung', 'stomach']);
 });
 
-test('canopic cell selection is deterministic: lower row first, then left-to-right', () => {
+test('canopic set selection is deterministic: pure set first, then lower-row anchor, then left-to-right', () => {
   const board = new Board(6, 12);
   const canopusResolver = new CanopusResolver(board);
 
@@ -179,15 +179,39 @@ test('canopic cell selection is deterministic: lower row first, then left-to-rig
     { col: 0, row: 10, type: 'liver' },
     { col: 1, row: 10, type: 'lung' },
     { col: 2, row: 10, type: 'stomach' },
-    { col: 3, row: 10, type: 'intestine' },
-    { col: 4, row: 10, type: 'liver' },
+    { col: 3, row: 10, type: 'heart' },
+    { col: 4, row: 10, type: 'intestine' },
     { col: 0, row: 11, type: 'liver' },
+    { col: 1, row: 11, type: 'lung' },
+    { col: 2, row: 11, type: 'stomach' },
+    { col: 3, row: 11, type: 'intestine' },
   ]);
 
   const [selectedSet] = canopusResolver.findCanopicSets();
-  const selectedLiver = selectedSet.find((cell) => cell.type === 'liver');
+  const selectedTypes = selectedSet.map((cell) => cell.type).sort();
+  const anchor = [...selectedSet].sort((a, b) => b.row - a.row || a.col - b.col)[0];
 
-  assert.deepEqual(selectedLiver, { col: 0, row: 11, type: 'liver' });
+  assert.deepEqual(selectedTypes, ['intestine', 'liver', 'lung', 'stomach']);
+  assert.deepEqual(anchor, { col: 0, row: 11, type: 'liver' });
+});
+
+test('scattered required organs are not pulled into a canopic set from far away cells', () => {
+  const board = new Board(6, 12);
+  const canopusResolver = new CanopusResolver(board);
+
+  setCells(board, [
+    { col: 0, row: 10, type: 'liver' },
+    { col: 1, row: 10, type: 'heart' },
+    { col: 2, row: 10, type: 'heart' },
+    { col: 3, row: 10, type: 'lung' },
+    { col: 4, row: 10, type: 'heart' },
+    { col: 5, row: 10, type: 'stomach' },
+    { col: 5, row: 11, type: 'intestine' },
+  ]);
+
+  const [selectedSet] = canopusResolver.findCanopicSets();
+  assert.equal(selectedSet.length, 4);
+  assert.equal(selectedSet.some((cell) => cell.col === 0 && cell.row === 10 && cell.type === 'liver'), false);
 });
 
 test('canopic set with multiple adjacent brain candidates selects only the highest-priority brain', () => {
