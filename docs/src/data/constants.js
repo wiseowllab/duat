@@ -2,9 +2,12 @@ import { FALL_SPEED } from './balance.js';
 
 export const BOARD_COLUMNS = 6;
 export const BOARD_ROWS = 12;
-export const CELL_SIZE = 40;
-export const BOARD_ORIGIN_X = 96;
-export const BOARD_ORIGIN_Y = 48;
+export const CELL_SIZE = 44;
+export const BOARD_ORIGIN_X = 63;
+export const BOARD_ORIGIN_Y = 36;
+
+export const HUD_ORIGIN_X = 376;
+export const HUD_ORIGIN_Y = 16;
 
 export const GAME_WIDTH = 760;
 export const GAME_HEIGHT = 600;

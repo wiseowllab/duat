@@ -6,6 +6,8 @@ import {
   CELL_SIZE,
   GAME_HEIGHT,
   GAME_WIDTH,
+  HUD_ORIGIN_X,
+  HUD_ORIGIN_Y,
   INITIAL_LEVEL,
   INITIAL_SCORE,
   LOCK_DELAY_MS,
@@ -212,7 +214,7 @@ export class GameScene extends Phaser.Scene {
 
     this.createBackground();
     this.createInput();
-    this.hud = new Hud(this, 390, 16);
+    this.hud = new Hud(this, HUD_ORIGIN_X, HUD_ORIGIN_Y);
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateBestScore(this.highScoreRecords.highScore);
