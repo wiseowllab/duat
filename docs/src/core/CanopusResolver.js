@@ -23,8 +23,10 @@ export class CanopusResolver {
         }
 
         const group = this.findConnectedCanopicGroup(col, row, visited);
-        if (this.isCompleteCanopicSet(group)) {
-          canopicSets.push(group);
+        const selectedSet = this.selectCanopicSetCells(group);
+
+        if (selectedSet) {
+          canopicSets.push(selectedSet);
         }
       }
     }
@@ -97,10 +99,9 @@ export class CanopusResolver {
   }
 
   findConnectedCanopicGroup(startCol, startRow, visited) {
-    // NOTE: A "canopic group" is built from every orthogonally connected
-    // canopic-eligible cell (liver/lung/stomach/intestine/heart). If this
-    // connected group satisfies canopic completion, the current clear pipeline
-    // clears the entire group (not only a minimal 4-cell subset).
+    // A connected canopic group is used only for detection.
+    // When a set is found, only one selected 4-cell set is cleared
+    // (plus optional adjacent-brain bonus handled separately).
     const group = [];
     const queue = [{ col: startCol, row: startRow }];
     visited[startRow][startCol] = true;
@@ -137,15 +138,39 @@ export class CanopusResolver {
     return CANOPIC_ORGAN_TYPES.includes(type) || type === HEART_TYPE;
   }
 
-  isCompleteCanopicSet(group) {
-    const presentOrgans = new Set(
-      group
-        .filter((cell) => CANOPIC_ORGAN_TYPES.includes(cell.type))
-        .map((cell) => cell.type),
-    );
-    const missingOrganCount = CANOPIC_ORGAN_TYPES.length - presentOrgans.size;
-    const hasHeart = group.some((cell) => cell.type === HEART_TYPE);
+  selectCanopicSetCells(group) {
+    const cellsByType = this.createCellsByType(group);
+    const hasPureSet = CANOPIC_ORGAN_TYPES.every((type) => cellsByType.get(type).length > 0);
 
-    return missingOrganCount === 0 || (missingOrganCount === 1 && hasHeart);
+    if (hasPureSet) {
+      return CANOPIC_ORGAN_TYPES.map((type) => cellsByType.get(type)[0]);
+    }
+
+    const missingTypes = CANOPIC_ORGAN_TYPES.filter((type) => cellsByType.get(type).length === 0);
+    const canUseHeartSubstitution = missingTypes.length === 1 && cellsByType.get(HEART_TYPE).length > 0;
+
+    if (!canUseHeartSubstitution) {
+      return null;
+    }
+
+    const selected = CANOPIC_ORGAN_TYPES
+      .filter((type) => type !== missingTypes[0])
+      .map((type) => cellsByType.get(type)[0]);
+    selected.push(cellsByType.get(HEART_TYPE)[0]);
+
+    return selected;
+  }
+
+  createCellsByType(group) {
+    const map = new Map([...CANOPIC_ORGAN_TYPES, HEART_TYPE].map((type) => [type, []]));
+    const orderedGroup = [...group].sort((a, b) => b.row - a.row || a.col - b.col);
+
+    orderedGroup.forEach((cell) => {
+      if (map.has(cell.type)) {
+        map.get(cell.type).push(cell);
+      }
+    });
+
+    return map;
   }
 }
