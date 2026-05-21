@@ -4,13 +4,13 @@ import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 
-const HUD_WIDTH = 200;
+const HUD_WIDTH = 166;
 const PANEL_FILL = 0x17100a;
 const PANEL_STROKE = 0xd4af37;
 const PANEL_STONE = 0x2a1c10;
 const COFFIN_PANEL_X = 8;
 const COFFIN_PANEL_Y = 200;
-const COFFIN_PANEL_WIDTH = 184;
+const COFFIN_PANEL_WIDTH = 150;
 const COFFIN_PANEL_HEIGHT = 176;
 const COFFIN_PANEL_MARGIN = 8;
 const COFFIN_IMAGE_AREA_WIDTH = COFFIN_PANEL_WIDTH - COFFIN_PANEL_MARGIN * 2;
@@ -32,13 +32,13 @@ const HUD_LAYER_UNLOCK_FEEDBACK = 14;
 const HUD_LAYER_UNLOCK_BADGE = 17;
 const REVIVED_ICON_VISIBLE_MAX = 8;
 const NEXT_ICON_SIZE = 22;
-const HUD_TOP_HEIGHT = 96;
-const HUD_NEXT_HEIGHT = 96;
+const HUD_TOP_HEIGHT = 90;
+const HUD_NEXT_HEIGHT = 90;
 const HUD_COFFIN_HEIGHT = 176;
-const HUD_BOMB_HEIGHT = 108;
-const HUD_REVIVED_HEIGHT = 80;
+const HUD_BOMB_HEIGHT = 98;
+const HUD_REVIVED_HEIGHT = 76;
 const HUD_SECTION_GAP = 8;
-const HUD_PANEL_INSET = 8;
+const HUD_PANEL_INSET = 6;
 const HUD_STACK_START_Y = 40;
 
 const COFFIN_TIER_LABELS = {
@@ -93,15 +93,15 @@ export class Hud {
   create() {
     this.createPanels();
 
-    this.scene.add.text(this.x + 12, this.y + 8, 'DUAT', {
+    this.scene.add.text(this.x + 10, this.y + 8, 'DUAT', {
       fontFamily: 'Georgia, serif',
-      fontSize: '30px',
+      fontSize: '24px',
       color: '#d4af37',
       fontStyle: 'bold',
       letterSpacing: 2,
     }).setDepth(HUD_LAYER_TEXT);
 
-    this.debugText = this.scene.add.text(this.x + 126, this.y + 12, 'デバッグ中', {
+    this.debugText = this.scene.add.text(this.x + 100, this.y + 12, 'DBG', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '10px',
       color: '#ffdf6e',
@@ -116,37 +116,37 @@ export class Hud {
     const bombSectionY = coffinSectionY + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP;
     const revivedSectionY = bombSectionY + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
 
-    this.scene.add.text(this.x + 14, scoreSectionY + 6, 'SCORE', this.headingStyle(12)).setDepth(HUD_LAYER_TEXT);
-    this.scoreText = this.createLabel(14, scoreSectionY + 26 - this.y, 'スコア: 0', 13, 1);
-    this.chainText = this.createLabel(14, scoreSectionY + 44 - this.y, '連鎖: 0', 11, 1);
-    this.bestScoreText = this.createLabel(14, scoreSectionY + 60 - this.y, 'ベスト: 0', 10, 1);
-    this.levelText = this.createLabel(14, scoreSectionY + 75 - this.y, 'レベル: 1', 10, 1);
-    this.soundText = this.createLabel(14, scoreSectionY + 90 - this.y, 'サウンド: ON', 10, 1);
+    this.scene.add.text(this.x + 12, scoreSectionY + 6, 'SCORE', this.headingStyle(11)).setDepth(HUD_LAYER_TEXT);
+    this.scoreText = this.createLabel(12, scoreSectionY + 25 - this.y, 'Score: 0', 11, 1);
+    this.chainText = this.createLabel(12, scoreSectionY + 41 - this.y, 'Chain: 0', 10, 1);
+    this.bestScoreText = this.createLabel(12, scoreSectionY + 56 - this.y, 'Best: 0', 9, 1);
+    this.levelText = this.createLabel(12, scoreSectionY + 70 - this.y, 'Lv: 1', 9, 1);
+    this.soundText = this.createLabel(12, scoreSectionY + 84 - this.y, 'SND: ON', 9, 1);
     this.soundText.setColor('#9fdfe8');
 
-    this.scene.add.text(this.x + 14, nextSectionY + 6, 'NEXT', this.headingStyle(12)).setDepth(HUD_LAYER_TEXT);
+    this.scene.add.text(this.x + 12, nextSectionY + 6, 'NEXT', this.headingStyle(11)).setDepth(HUD_LAYER_TEXT);
 
-    this.scene.add.text(this.x + 14, coffinSectionY + 6, '現在の棺', this.headingStyle(12))
+    this.scene.add.text(this.x + 12, coffinSectionY + 6, 'CURRENT COFFIN', this.headingStyle(10))
       .setDepth(HUD_LAYER_TEXT)
       .setStroke('#120d06', 4)
       .setShadow(0, 1, '#000000', 2, true, true);
-    this.coffinTopTextBackplate = this.scene.add.rectangle(this.x + 100, coffinSectionY + 33, 168, 34, 0x060402, 0.56)
+    this.coffinTopTextBackplate = this.scene.add.rectangle(this.x + 83, coffinSectionY + 31, 136, 30, 0x060402, 0.56)
       .setStrokeStyle(1, 0xd4af37, 0.22)
       .setDepth(HUD_LAYER_COFFIN_BACKPLATE);
-    this.tierText = this.createLabel(18, coffinSectionY + 20 - this.y, '棺 1', 10, 1);
-    this.godText = this.createLabel(18, coffinSectionY + 34 - this.y, '神: Imsety', 9, 1);
+    this.tierText = this.createLabel(14, coffinSectionY + 19 - this.y, 'Tier 1', 9, 1);
+    this.godText = this.createLabel(14, coffinSectionY + 31 - this.y, 'God: Imsety', 8, 1);
     this.tierText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
     this.godText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
     this.tierText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
     this.godText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinBottomTextBackplate = this.scene.add.rectangle(this.x + 100, coffinSectionY + 142, 172, 46, 0x060402, 0.62)
+    this.coffinBottomTextBackplate = this.scene.add.rectangle(this.x + 83, coffinSectionY + 141, 140, 42, 0x060402, 0.62)
       .setStrokeStyle(1, 0xd4af37, 0.22)
       .setDepth(HUD_LAYER_COFFIN_BACKPLATE);
-    this.coffinText = this.createLabel(18, coffinSectionY + 146 - this.y, `メーター: 0 / ${COFFIN_METER.requiredByTier[1]}`, 9, 1);
+    this.coffinText = this.createLabel(14, coffinSectionY + 145 - this.y, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 8, 1);
     this.coffinText.setDepth(HUD_LAYER_COFFIN_METER);
     this.coffinText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 18, coffinSectionY + 131, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 14, coffinSectionY + 131, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72)
       .setDepth(HUD_LAYER_COFFIN_BAR_BG);
@@ -167,13 +167,13 @@ export class Hud {
       0.58,
     ).setOrigin(0, 0.5).setDepth(HUD_LAYER_COFFIN_BAR_FILL);
     this.updateCoffinBar(0);
-    this.unlockedText = this.createLabel(18, coffinSectionY + 159 - this.y, '解放: 0 / 14', 9, 1);
+    this.unlockedText = this.createLabel(14, coffinSectionY + 157 - this.y, 'Awake: 0 / 14', 8, 1);
     this.unlockedText.setDepth(HUD_LAYER_COFFIN_METER);
     this.unlockedText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
 
-    this.scene.add.text(this.x + 14, bombSectionY + 6, 'BOMB STOCK', this.headingStyle(11)).setDepth(HUD_LAYER_TEXT);
-    this.bombStockText = this.createLabel(14, bombSectionY + 24 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 9, 0);
-    this.selectedBombText = this.createLabel(14, bombSectionY + 78 - this.y, '選択中: なし', 8, 0);
+    this.scene.add.text(this.x + 12, bombSectionY + 6, 'BOMB STOCK', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
+    this.bombStockText = this.createLabel(12, bombSectionY + 24 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 8, 0);
+    this.selectedBombText = this.createLabel(12, bombSectionY + 76 - this.y, '選択: なし', 8, 0);
     this.selectedBombText.setColor('#9fdfe8');
 
     this.feedbackContainer = this.scene.add.container(this.x + 100, coffinSectionY + 86)
@@ -204,22 +204,22 @@ export class Hud {
     const panelX = this.x + 8;
     const panelY = this.y + HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP + HUD_NEXT_HEIGHT + HUD_SECTION_GAP + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
     this.revivedPanel = this.scene.add.container(panelX, panelY).setDepth(HUD_LAYER_TEXT);
-    const panelBack = this.scene.add.rectangle(0, 0, 184, HUD_REVIVED_HEIGHT, 0x0d0a06, 0.92)
+    const panelBack = this.scene.add.rectangle(0, 0, 150, HUD_REVIVED_HEIGHT, 0x0d0a06, 0.92)
       .setStrokeStyle(1, 0xd4af37, 0.45)
       .setOrigin(0, 0);
-    this.revivedLabelText = this.scene.add.text(8, 6, '復活した死者', {
+    this.revivedLabelText = this.scene.add.text(8, 6, 'REVIVED SOULS', {
       fontFamily: 'Noto Sans JP, Arial, sans-serif',
-      fontSize: '11px',
+      fontSize: '9px',
       color: '#f4d77a',
       fontStyle: 'bold',
     });
-    this.revivedCountText = this.scene.add.text(148, 6, '×0', {
+    this.revivedCountText = this.scene.add.text(118, 6, '×0', {
       fontFamily: 'Georgia, serif',
-      fontSize: '11px',
+      fontSize: '10px',
       color: '#e5d0a0',
       fontStyle: 'bold',
     });
-    this.revivedIconsContainer = this.scene.add.container(10, 26);
+    this.revivedIconsContainer = this.scene.add.container(10, 24);
     this.revivedPanel.add([panelBack, this.revivedLabelText, this.revivedCountText, this.revivedIconsContainer]);
   }
 
@@ -238,11 +238,11 @@ export class Hud {
     for (let index = 0; index < visibleCount; index += 1) {
       const col = index % 4;
       const row = Math.floor(index / 4);
-      const iconX = col * 40;
-      const iconY = row * 20;
+      const iconX = col * 30;
+      const iconY = row * 18;
       const icon = this.scene.add.text(iconX, iconY, '𓀾', {
         fontFamily: 'Georgia, serif',
-        fontSize: '15px',
+        fontSize: '13px',
         color: '#d9bb76',
       }).setShadow(0, 0, '#f0c14f', 4, true, true);
       this.revivedIcons.push(icon);
@@ -278,11 +278,11 @@ export class Hud {
       .setStrokeStyle(2, PANEL_STROKE, 0.58)
       .setDepth(HUD_LAYER_BASE);
 
-    this.createPanel(8, HUD_STACK_START_Y, 184, HUD_TOP_HEIGHT, '');
-    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP, 184, HUD_NEXT_HEIGHT, '');
+    this.createPanel(8, HUD_STACK_START_Y, 150, HUD_TOP_HEIGHT, '');
+    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP, 150, HUD_NEXT_HEIGHT, '');
     this.coffinPanel = this.createPanel(COFFIN_PANEL_X, COFFIN_PANEL_Y, COFFIN_PANEL_WIDTH, COFFIN_PANEL_HEIGHT, '');
-    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP + HUD_NEXT_HEIGHT + HUD_SECTION_GAP + HUD_COFFIN_HEIGHT, 184, HUD_BOMB_HEIGHT, '');
-    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP + HUD_NEXT_HEIGHT + HUD_SECTION_GAP + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP + HUD_BOMB_HEIGHT, 184, HUD_REVIVED_HEIGHT, '');
+    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP + HUD_NEXT_HEIGHT + HUD_SECTION_GAP + HUD_COFFIN_HEIGHT, 150, HUD_BOMB_HEIGHT, '');
+    this.createPanel(8, HUD_STACK_START_Y + HUD_TOP_HEIGHT + HUD_SECTION_GAP + HUD_NEXT_HEIGHT + HUD_SECTION_GAP + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP + HUD_BOMB_HEIGHT, 150, HUD_REVIVED_HEIGHT, '');
 
     this.drawEgyptianAccents();
   }
@@ -307,7 +307,7 @@ export class Hud {
       graphics.lineBetween(this.x + 132, this.y + offsetY, this.x + 178, this.y + offsetY);
     });
     graphics.fillStyle(0xd4af37, 0.36);
-    graphics.fillTriangle(this.x + 176, this.y + 24, this.x + 184, this.y + 38, this.x + 168, this.y + 38);
+    graphics.fillTriangle(this.x + 142, this.y + 24, this.x + 150, this.y + 38, this.x + 134, this.y + 38);
     graphics.fillTriangle(this.x + 26, this.y + 24, this.x + 34, this.y + 38, this.x + 18, this.y + 38);
   }
 
@@ -330,23 +330,23 @@ export class Hud {
   }
 
   updateScore(score) {
-    this.scoreText.setText(`スコア: ${score}`);
+    this.scoreText.setText(`Score: ${score}`);
   }
 
   updateChain(chainCount) {
-    this.chainText.setText(`連鎖: ${chainCount}`);
+    this.chainText.setText(`Chain: ${chainCount}`);
   }
 
   updateBestScore(highScore) {
-    this.bestScoreText.setText(`ベスト: ${highScore}`);
+    this.bestScoreText.setText(`Best: ${highScore}`);
   }
 
   updateLevel(level) {
-    this.levelText.setText(`レベル: ${level}`);
+    this.levelText.setText(`Lv: ${level}`);
   }
 
   updateSoundStatus(isSoundOn) {
-    this.soundText.setText(`サウンド: ${isSoundOn ? 'ON' : 'OFF'}`);
+    this.soundText.setText(`SND: ${isSoundOn ? 'ON' : 'OFF'}`);
     this.soundText.setColor(isSoundOn ? '#9fdfe8' : '#c2b39c');
   }
 
@@ -370,12 +370,12 @@ export class Hud {
     this.bombStockText.setText(lines.join('\n'));
 
     if (selectedBomb) {
-      this.selectedBombText.setText(`選択中: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDROP / Space: 発動\nEsc: キャンセル`);
+      this.selectedBombText.setText(`選択: ${selectedSlot + 1} ${this.compactBombName(selectedBomb)}\nDROP/Space: 発動\nEsc: 取消`);
       this.selectedBombText.setColor('#9ff8ff');
       return;
     }
 
-    this.selectedBombText.setText('選択中: なし\n1〜4/B1〜B4: 選択');
+    this.selectedBombText.setText('選択: なし\n1〜4/B1〜B4');
     this.selectedBombText.setColor('#9fdfe8');
   }
 
@@ -399,16 +399,16 @@ export class Hud {
     if (isComplete) {
       this.tierText.setText('棺 4 — DUAT COMPLETE');
       this.godText.setText('神: すべて覚醒');
-      this.coffinText.setText('メーター: 完了');
+      this.coffinText.setText('Meter: 完了');
       this.drawCoffinVisual(currentTier);
     } else {
       this.tierText.setText(`Tier ${currentTier.tier} / ${this.getCoffinTierLabel(currentTier)}`);
-      this.godText.setText(`神: ${currentGod.name}`);
-      this.coffinText.setText(`メーター: ${progress.value} / ${progress.required}`);
+      this.godText.setText(`God: ${currentGod.name}`);
+      this.coffinText.setText(`Meter: ${progress.value} / ${progress.required}`);
       this.drawCoffinVisual(currentTier);
     }
 
-    this.unlockedText.setText(`解放: ${unlockedCount} / ${totalGods}`);
+    this.unlockedText.setText(`Awake: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
     this.pulseCoffinBarOnGain(currentGod, progress);
   }
@@ -840,15 +840,15 @@ export class Hud {
   drawNext(types) {
     this.clearNext();
 
-    const startX = this.x + 28;
-    const startY = this.y + 176;
+    const startX = this.x + 18;
+    const startY = this.y + 172;
 
     types.forEach((type, index) => {
-      const y = startY + index * 26;
+      const y = startY + index * 24;
       const block = this.drawNextBlock(startX, y, type);
-      const label = this.scene.add.text(startX + 28, y - 7, PIECE_LABELS[type], {
+      const label = this.scene.add.text(startX + 24, y - 6, PIECE_LABELS[type], {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '11px',
+        fontSize: '9px',
         color: '#eadfca',
       }).setDepth(HUD_LAYER_TEXT);
 
