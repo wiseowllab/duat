@@ -375,7 +375,8 @@ export class GameScene extends Phaser.Scene {
       'Space：ハードドロップ',
       'Enter：ポーズ',
       '1〜4：ボム',
-      'Esc：取消 / M：ミュート',
+      'Esc：取消',
+      'M：ミュート',
     ].join('\n'), {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
