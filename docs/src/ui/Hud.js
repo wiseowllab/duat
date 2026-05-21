@@ -22,6 +22,11 @@ const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
 const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 const HUD_LAYER_BASE = 10;
 const HUD_LAYER_COFFIN = 12;
+const HUD_LAYER_COFFIN_BACKPLATE = 12.5;
+const HUD_LAYER_COFFIN_OVERLAY_TEXT = 13;
+const HUD_LAYER_COFFIN_METER = 13.5;
+const HUD_LAYER_COFFIN_BAR_BG = 13.6;
+const HUD_LAYER_COFFIN_BAR_FILL = 13.7;
 const HUD_LAYER_TEXT = 13;
 const HUD_LAYER_UNLOCK_FEEDBACK = 14;
 const HUD_LAYER_UNLOCK_BADGE = 17;
@@ -112,20 +117,24 @@ export class Hud {
       .setShadow(0, 1, '#000000', 2, true, true);
     this.coffinTopTextBackplate = this.scene.add.rectangle(this.x + 100, this.y + 248, 164, 56, 0x060402, 0.6)
       .setStrokeStyle(1, 0xd4af37, 0.22)
-      .setDepth(HUD_LAYER_TEXT - 1);
+      .setDepth(HUD_LAYER_COFFIN_BACKPLATE);
     this.tierText = this.createLabel(30, 232, '棺 1 — 小さな棺', 14);
     this.godText = this.createLabel(30, 254, '神: Imsety', 14);
+    this.tierText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
+    this.godText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
     this.tierText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
     this.godText.setStroke('#120d06', 4).setShadow(0, 1, '#000000', 2, true, true);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
     this.coffinBottomTextBackplate = this.scene.add.rectangle(this.x + 171, this.y + 431, 292, 62, 0x060402, 0.68)
       .setStrokeStyle(1, 0xd4af37, 0.22)
-      .setDepth(HUD_LAYER_TEXT - 1);
+      .setDepth(HUD_LAYER_COFFIN_BACKPLATE);
     this.coffinText = this.createLabel(30, 404, `メーター: 0 / ${COFFIN_METER.requiredByTier[1]}`, 13);
+    this.coffinText.setDepth(HUD_LAYER_COFFIN_METER);
     this.coffinText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
     this.coffinBarBack = this.scene.add.rectangle(this.x + 30, this.y + 432, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
-      .setStrokeStyle(2, 0xd4af37, 0.72);
+      .setStrokeStyle(2, 0xd4af37, 0.72)
+      .setDepth(HUD_LAYER_COFFIN_BAR_BG);
     this.coffinBarFill = this.scene.add.rectangle(
       this.x + 30 + COFFIN_BAR_INSET,
       this.y + 432,
@@ -133,7 +142,7 @@ export class Hud {
       COFFIN_BAR_FILL_HEIGHT,
       0xffd84d,
       0.96,
-    ).setOrigin(0, 0.5);
+    ).setOrigin(0, 0.5).setDepth(HUD_LAYER_COFFIN_BAR_FILL);
     this.coffinBarHighlight = this.scene.add.rectangle(
       this.x + 30 + COFFIN_BAR_INSET,
       this.y + 428,
@@ -141,9 +150,10 @@ export class Hud {
       2,
       0xffffb8,
       0.58,
-    ).setOrigin(0, 0.5);
+    ).setOrigin(0, 0.5).setDepth(HUD_LAYER_COFFIN_BAR_FILL);
     this.updateCoffinBar(0);
     this.unlockedText = this.createLabel(30, 442, '解放: 0 / 14', 12);
+    this.unlockedText.setDepth(HUD_LAYER_COFFIN_METER);
     this.unlockedText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
 
     this.scene.add.text(this.x + 18, this.y + 487, 'ボムストック', this.headingStyle(14)).setDepth(HUD_LAYER_TEXT);
@@ -404,7 +414,7 @@ export class Hud {
 
     const asset = getCoffinAsset(nextCoffinSize);
     const centerX = this.x + COFFIN_PANEL_X + (COFFIN_PANEL_WIDTH / 2);
-    const centerY = this.y + COFFIN_PANEL_Y + (COFFIN_PANEL_HEIGHT / 2);
+    const centerY = this.y + COFFIN_PANEL_Y + (COFFIN_PANEL_HEIGHT / 2) - 12;
     const container = this.scene.add.container(centerX, centerY).setDepth(HUD_LAYER_COFFIN);
     const glowSize = Math.max(COFFIN_IMAGE_AREA_WIDTH, COFFIN_IMAGE_AREA_HEIGHT) + 18;
 
