@@ -46,6 +46,23 @@ The game displays:
 
 To confirm a deployment, open the title screen and compare the shown build label + commit SHA to the expected deployment commit.
 
+
+### GitHub Pages Deployment Source (Important)
+
+For automatic build metadata updates, GitHub Pages must be configured to deploy from **GitHub Actions** (not directly from the `main` branch `docs/` folder).
+
+- The Pages workflow runs `npm run build:info` during deployment and generates `docs/src/data/buildInfo.js` in the workflow workspace.
+- The generated file is included in the uploaded Pages artifact for that deployment.
+- If Pages is still configured as "Deploy from a branch" (`main` / `docs`), the workflow-generated build metadata will not be used.
+
+### Post-Deploy Verification / Cache
+
+After deployment completes, hard refresh the site (for example **Ctrl+Shift+R** or **Cmd+Shift+R**) to avoid stale cached JavaScript. Then verify on the title screen DEV BUILD panel:
+
+- `Build:` shows a new timestamp for the deployment run.
+- `Commit:` shows the deployed commit short SHA.
+- The shown short SHA should match the deployed commit hash from GitHub.
+
 ## Current Playable State
 
 DUAT is currently a single-scene falling puzzle prototype with a basic title, pause, and game-over flow plus these implemented systems:
