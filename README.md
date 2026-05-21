@@ -26,16 +26,25 @@ To test on a phone or tablet, run the same server on your development machine, m
 
 DUAT displays a small version/build label on the title screen and in the gameplay HUD so you can confirm deployed updates.
 
-- Source of truth: `docs/src/data/version.js`
-- Update `BUILD_LABEL` whenever you verify a new deployment.
-- Recommended `BUILD_LABEL` formats:
-  - `YYYY-MM-DD-HHMM`
-  - `YYYY-MM-DD-HHMMSS`
+- Source of truth: `docs/src/data/buildInfo.js` (generated file).
+- `GAME_VERSION` is manually controlled (default fallback in `scripts/generate-build-info.mjs`; if `package.json` has a `version`, that value is used).
+- `BUILD_LABEL` is generated automatically as `YYYY-MM-DD-HHmmss`.
+- `COMMIT_SHA` is generated automatically from the current git short SHA.
+- If git metadata is unavailable, `COMMIT_SHA` falls back to `local`.
 
-Example:
+Generate build metadata locally:
 
-- `GAME_VERSION = '0.1.0-dev'`
-- `BUILD_LABEL = '2026-05-19-0045'`
+```bash
+npm run build:info
+```
+
+The game displays:
+
+- `v{GAME_VERSION}`
+- `Build: {BUILD_LABEL}`
+- `Commit: {COMMIT_SHA}`
+
+To confirm a deployment, open the title screen and compare the shown build label + commit SHA to the expected deployment commit.
 
 ## Current Playable State
 

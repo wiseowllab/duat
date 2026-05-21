@@ -28,7 +28,7 @@ import { SoundManager } from '../audio/SoundManager.js';
 import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js';
 import { TOTAL_GOD_COUNT } from '../data/gods.js';
 import { COFFIN_METER, DANGER_BGM } from '../data/balance.js';
-import { GAME_VERSION, BUILD_LABEL } from '../data/version.js';
+import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -393,7 +393,7 @@ export class GameScene extends Phaser.Scene {
       color: '#bcae90',
       align: 'center',
     }).setOrigin(0.5);
-    const versionText = this.add.text(266, 252, `v${GAME_VERSION}\nBuild: ${BUILD_LABEL}`, {
+    const versionText = this.add.text(266, 252, `v${GAME_VERSION}\nBuild: ${BUILD_LABEL}\nCommit: ${COMMIT_SHA}`, {
       fontFamily: 'Arial, sans-serif',
       fontSize: '11px',
       color: '#bcae90',
