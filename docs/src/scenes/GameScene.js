@@ -56,6 +56,7 @@ const CHAIN_POPUP_DEPTH = 46;
 const CHAIN_POPUP_TOP_OFFSET = 26;
 const CHAIN_POPUP_RISE_START_OFFSET = 32;
 const CHAIN_POPUP_RISE_END_OFFSET = 18;
+const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const GAME_STATES = {
@@ -164,6 +165,7 @@ export class GameScene extends Phaser.Scene {
     this.bestChainThisRun = 0;
     this.maxTierThisRun = 1;
     this.maxGodsUnlockedThisRun = 0;
+    this.revivedSoulsCount = 0;
     this.level = INITIAL_LEVEL;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
@@ -176,6 +178,8 @@ export class GameScene extends Phaser.Scene {
     this.feedbackTimer = null;
     this.chainPopupText = null;
     this.chainPopupTween = null;
+    this.pureCanopicPopupText = null;
+    this.pureCanopicPopupTween = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
     this.bombPreviewSprites = [];
@@ -218,6 +222,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
     this.hud.updateSoundStatus(!this.sfx.isMuted);
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.createTitleOverlay();
   }
 
@@ -295,6 +300,15 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       shadow: { offsetX: 0, offsetY: 0, color: '#f0c14f', blur: 14, fill: true },
     }).setOrigin(0.5, 0).setDepth(CHAIN_POPUP_DEPTH).setAlpha(0);
+    this.pureCanopicPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + 56, '', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '20px',
+      color: '#f2d088',
+      stroke: '#4e3917',
+      strokeThickness: 4,
+      align: 'center',
+      shadow: { offsetX: 0, offsetY: 0, color: '#f0c14f', blur: 10, fill: true },
+    }).setOrigin(0.5, 0).setDepth(PURE_CANOPIC_POPUP_DEPTH).setAlpha(0);
 
     this.createGameOverAtmosphere();
   }
@@ -713,6 +727,7 @@ export class GameScene extends Phaser.Scene {
     this.clearClearHighlights();
     this.boardFeedbackText.setText('');
     this.clearChainPopup();
+    this.clearPureCanopicPopup();
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
@@ -737,6 +752,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.clearFeedback();
     this.hud.showReadyStatus();
     this.hud.updateSoundStatus(!this.sfx.isMuted);
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
   }
 
   pauseGame() {
@@ -1181,6 +1197,7 @@ export class GameScene extends Phaser.Scene {
     let resolvedChains = 0;
     let clearedCanopicSet = false;
     let clearedSameType = false;
+    let pureCanopicCount = 0;
     const unlockEvents = [];
 
     while (true) {
@@ -1200,6 +1217,7 @@ export class GameScene extends Phaser.Scene {
       resolvedChains = nextChain;
       clearedCanopicSet = clearedCanopicSet || clearResult.clearTypes.has('canopic');
       clearedSameType = clearedSameType || clearResult.clearTypes.has('sameType');
+      pureCanopicCount += clearResult.pureCanopicCount;
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
       await this.applyBoardGravityStepwise();
@@ -1212,6 +1230,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateCoffin(this.coffinMeter.getState());
+    this.applyPureCanopicRewards(pureCanopicCount);
 
     if (clearedSameType || clearedCanopicSet || this.chainCount >= 2) {
       this.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
@@ -1773,6 +1792,7 @@ export class GameScene extends Phaser.Scene {
   findClearResult() {
     const sameTypeGroups = this.matchResolver.findMatches();
     const canopicSets = this.canopusResolver.findCanopicSets();
+    const pureCanopicCount = this.canopusResolver.countPureCanopicSets(canopicSets);
     const adjacentBrainBonusCell = this.canopusResolver.findAdjacentBrainBonusCell(canopicSets);
     const clearTypes = new Set();
     const cellMap = new Map();
@@ -1797,8 +1817,19 @@ export class GameScene extends Phaser.Scene {
       clearTypes,
       sameTypeGroups,
       canopicSets,
+      pureCanopicCount,
       adjacentBrainBonusCell,
     };
+  }
+
+  applyPureCanopicRewards(pureCanopicCount) {
+    if (pureCanopicCount <= 0) {
+      return;
+    }
+
+    this.revivedSoulsCount += pureCanopicCount;
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.showPureCanopicPopup();
   }
 
   addGroupsToCellMap(groups, cellMap) {
@@ -2206,6 +2237,51 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupText.setScale(1);
     this.chainPopupText.setText('');
     this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
+  }
+
+  showPureCanopicPopup() {
+    if (!this.pureCanopicPopupText) {
+      return;
+    }
+
+    if (this.pureCanopicPopupTween) {
+      this.pureCanopicPopupTween.stop();
+      this.pureCanopicPopupTween = null;
+    }
+
+    this.pureCanopicPopupText.setText('PURE CANOPIC');
+    this.pureCanopicPopupText.setAlpha(0);
+    this.pureCanopicPopupText.setScale(0.96);
+    this.pureCanopicPopupText.setY(BOARD_ORIGIN_Y + 56);
+
+    this.pureCanopicPopupTween = this.tweens.add({
+      targets: this.pureCanopicPopupText,
+      alpha: { from: 0, to: 0.95 },
+      y: { from: BOARD_ORIGIN_Y + 62, to: BOARD_ORIGIN_Y + 52 },
+      scale: { from: 0.96, to: 1.03 },
+      ease: 'Sine.easeInOut',
+      duration: 320,
+      yoyo: true,
+      hold: 360,
+      onComplete: () => {
+        this.clearPureCanopicPopup();
+      },
+    });
+  }
+
+  clearPureCanopicPopup() {
+    if (!this.pureCanopicPopupText) {
+      return;
+    }
+
+    if (this.pureCanopicPopupTween) {
+      this.pureCanopicPopupTween.stop();
+      this.pureCanopicPopupTween = null;
+    }
+
+    this.pureCanopicPopupText.setAlpha(0);
+    this.pureCanopicPopupText.setScale(1);
+    this.pureCanopicPopupText.setText('');
   }
 
   clearBlockSprites() {
