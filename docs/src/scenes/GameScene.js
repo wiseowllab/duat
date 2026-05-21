@@ -51,6 +51,11 @@ const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
 const BOARD_GRAVITY_STEP_MS = 55;
+const BOARD_FEEDBACK_DEPTH = 26;
+const CHAIN_POPUP_DEPTH = 46;
+const CHAIN_POPUP_TOP_OFFSET = 26;
+const CHAIN_POPUP_RISE_START_OFFSET = 32;
+const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const GAME_STATES = {
@@ -280,8 +285,8 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       stroke: '#1a1006',
       strokeThickness: 4,
-    }).setOrigin(0.5, 0).setDepth(10);
-    this.chainPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y - 22, '', {
+    }).setOrigin(0.5, 0).setDepth(BOARD_FEEDBACK_DEPTH);
+    this.chainPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET, '', {
       fontFamily: 'Arial Black, Arial',
       fontSize: '24px',
       color: '#f6d978',
@@ -289,7 +294,7 @@ export class GameScene extends Phaser.Scene {
       strokeThickness: 5,
       align: 'center',
       shadow: { offsetX: 0, offsetY: 0, color: '#f0c14f', blur: 14, fill: true },
-    }).setOrigin(0.5, 1).setDepth(24).setAlpha(0);
+    }).setOrigin(0.5, 0).setDepth(CHAIN_POPUP_DEPTH).setAlpha(0);
 
     this.createGameOverAtmosphere();
   }
@@ -2162,12 +2167,16 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupText.setShadow(0, 0, '#f0c14f', glowByTier[visualTier] ?? 14, true, true);
     this.chainPopupText.setAlpha(0);
     this.chainPopupText.setScale(0.88);
-    this.chainPopupText.setY(BOARD_ORIGIN_Y - 18);
+    this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
+    this.chainPopupText.setDepth(CHAIN_POPUP_DEPTH);
 
     this.chainPopupTween = this.tweens.add({
       targets: this.chainPopupText,
       alpha: { from: 0, to: alphaByTier[visualTier] ?? 0.9 },
-      y: { from: BOARD_ORIGIN_Y - 12, to: BOARD_ORIGIN_Y - 34 },
+      y: {
+        from: BOARD_ORIGIN_Y + CHAIN_POPUP_RISE_START_OFFSET,
+        to: BOARD_ORIGIN_Y + CHAIN_POPUP_RISE_END_OFFSET,
+      },
       scale: { from: 0.88, to: targetScale },
       ease: 'Sine.easeOut',
       duration: 220,
@@ -2176,7 +2185,7 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         this.chainPopupText.setAlpha(0);
         this.chainPopupText.setScale(1);
-        this.chainPopupText.setY(BOARD_ORIGIN_Y - 22);
+        this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
         this.chainPopupTween = null;
       },
     });
@@ -2195,7 +2204,7 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupText.setAlpha(0);
     this.chainPopupText.setScale(1);
     this.chainPopupText.setText('');
-    this.chainPopupText.setY(BOARD_ORIGIN_Y - 22);
+    this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
   }
 
   clearBlockSprites() {
