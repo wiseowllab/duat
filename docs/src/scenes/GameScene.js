@@ -1,12 +1,8 @@
 import {
   BOARD_COLUMNS,
   BOARD_ROWS,
-  BOARD_ORIGIN_X,
-  BOARD_ORIGIN_Y,
-  CELL_SIZE,
   GAME_HEIGHT,
   GAME_WIDTH,
-  HUD_ORIGIN_X,
   HUD_ORIGIN_Y,
   INITIAL_LEVEL,
   INITIAL_SCORE,
@@ -61,6 +57,14 @@ const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
+const PORTRAIT_LAYOUT_CONFIG = {
+  boardWidthRatio: 0.68,
+  hudWidthRatio: 0.32,
+  sidePadding: 16,
+  gap: 14,
+  minCellSize: 50,
+};
+
 const GAME_STATES = {
   TITLE: 'title',
   PLAYING: 'playing',
@@ -212,9 +216,10 @@ export class GameScene extends Phaser.Scene {
     this.isTouchSoftDropping = false;
     this.touchActionHandler = null;
 
+    this.layout = this.computeLayout();
     this.createBackground();
     this.createInput();
-    this.hud = new Hud(this, HUD_ORIGIN_X, HUD_ORIGIN_Y);
+    this.hud = new Hud(this, this.layout.hudX, HUD_ORIGIN_Y);
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateBestScore(this.highScoreRecords.highScore);
@@ -251,6 +256,54 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  computeLayout() {
+    const isPortrait = window.innerHeight > window.innerWidth;
+
+    if (!isPortrait) {
+      return {
+        isPortrait: false,
+        cellSize: 50,
+        boardOriginX: 22,
+        boardOriginY: 34,
+        boardWidth: BOARD_COLUMNS * 50,
+        boardHeight: BOARD_ROWS * 50,
+        boardCenterX: 22 + (BOARD_COLUMNS * 50) / 2,
+        boardCenterY: 34 + (BOARD_ROWS * 50) / 2,
+        hudX: 334,
+        hudWidth: 166,
+      };
+    }
+
+    const usableWidth = GAME_WIDTH - PORTRAIT_LAYOUT_CONFIG.sidePadding * 2;
+    const maxBoardAreaWidth = usableWidth * PORTRAIT_LAYOUT_CONFIG.boardWidthRatio;
+    const maxBoardByHeight = GAME_HEIGHT - 80;
+    const rawCellSize = Math.min(maxBoardAreaWidth / BOARD_COLUMNS, maxBoardByHeight / BOARD_ROWS);
+    const cellSize = Math.max(PORTRAIT_LAYOUT_CONFIG.minCellSize, Math.floor(rawCellSize));
+    const boardWidth = BOARD_COLUMNS * cellSize;
+    const boardHeight = BOARD_ROWS * cellSize;
+    const boardOriginX = PORTRAIT_LAYOUT_CONFIG.sidePadding;
+    const boardOriginY = Math.floor((GAME_HEIGHT - boardHeight) / 2);
+    const hudX = boardOriginX + boardWidth + PORTRAIT_LAYOUT_CONFIG.gap;
+
+    return {
+      isPortrait: true,
+      cellSize,
+      boardOriginX,
+      boardOriginY,
+      boardWidth,
+      boardHeight,
+      boardCenterX: boardOriginX + boardWidth / 2,
+      boardCenterY: boardOriginY + boardHeight / 2,
+      hudX,
+      hudWidth: GAME_WIDTH - PORTRAIT_LAYOUT_CONFIG.sidePadding - hudX,
+    };
+  }
+
+  getCellSize() { return this.layout.cellSize; }
+  getBoardOriginX() { return this.layout.boardOriginX; }
+  getBoardOriginY() { return this.layout.boardOriginY; }
+
+
   createBackground() {
     this.cameras.main.setBackgroundColor('#080704');
 
@@ -258,18 +311,18 @@ export class GameScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH - 40, GAME_HEIGHT - 40, 0x17100a, 0.72)
       .setStrokeStyle(1, 0x6e5525, 0.32);
 
-    const boardCenterX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
-    const boardCenterY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
-    const boardWidth = BOARD_COLUMNS * CELL_SIZE;
-    const boardHeight = BOARD_ROWS * CELL_SIZE;
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
+    const boardHeight = BOARD_ROWS * this.layout.cellSize;
     const gameplayTop = 20;
     const gameplayBottom = GAME_HEIGHT - 20;
     const gameplayHeight = gameplayBottom - gameplayTop;
     const boardPanelCenterY = gameplayTop + (gameplayHeight / 2);
 
-    this.add.rectangle(BOARD_ORIGIN_X + (boardWidth / 2), boardPanelCenterY, boardWidth + 40, gameplayHeight, 0x23180f, 0.84)
+    this.add.rectangle(this.layout.boardOriginX + (boardWidth / 2), boardPanelCenterY, boardWidth + 40, gameplayHeight, 0x23180f, 0.84)
       .setStrokeStyle(2, 0x6e5525, 0.42);
-    this.add.rectangle(BOARD_ORIGIN_X + (boardWidth / 2), boardPanelCenterY, boardWidth + 24, gameplayHeight - 14, 0x161009, 0.84)
+    this.add.rectangle(this.layout.boardOriginX + (boardWidth / 2), boardPanelCenterY, boardWidth + 24, gameplayHeight - 14, 0x161009, 0.84)
       .setStrokeStyle(1, 0xd4af37, 0.22);
 
     this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 28, boardHeight + 28, 0x332313, 0.95)
@@ -284,16 +337,16 @@ export class GameScene extends Phaser.Scene {
     this.gridGraphics.lineStyle(1, 0x8b7446, 0.2);
 
     for (let col = 0; col <= BOARD_COLUMNS; col += 1) {
-      const x = BOARD_ORIGIN_X + col * CELL_SIZE;
-      this.gridGraphics.lineBetween(x, BOARD_ORIGIN_Y, x, BOARD_ORIGIN_Y + boardHeight);
+      const x = this.layout.boardOriginX + col * this.layout.cellSize;
+      this.gridGraphics.lineBetween(x, this.layout.boardOriginY, x, this.layout.boardOriginY + boardHeight);
     }
 
     for (let row = 0; row <= BOARD_ROWS; row += 1) {
-      const y = BOARD_ORIGIN_Y + row * CELL_SIZE;
-      this.gridGraphics.lineBetween(BOARD_ORIGIN_X, y, BOARD_ORIGIN_X + boardWidth, y);
+      const y = this.layout.boardOriginY + row * this.layout.cellSize;
+      this.gridGraphics.lineBetween(this.layout.boardOriginX, y, this.layout.boardOriginX + boardWidth, y);
     }
 
-    this.boardFeedbackText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + 18, '', {
+    this.boardFeedbackText = this.add.text(boardCenterX, this.layout.boardOriginY + 18, '', {
       fontFamily: 'Georgia, serif',
       fontSize: '24px',
       color: '#f4d77a',
@@ -302,7 +355,7 @@ export class GameScene extends Phaser.Scene {
       stroke: '#1a1006',
       strokeThickness: 4,
     }).setOrigin(0.5, 0).setDepth(BOARD_FEEDBACK_DEPTH);
-    this.chainPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET, '', {
+    this.chainPopupText = this.add.text(boardCenterX, this.layout.boardOriginY + CHAIN_POPUP_TOP_OFFSET, '', {
       fontFamily: 'Arial Black, Arial',
       fontSize: '24px',
       color: '#f6d978',
@@ -311,7 +364,7 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       shadow: { offsetX: 0, offsetY: 0, color: '#f0c14f', blur: 14, fill: true },
     }).setOrigin(0.5, 0).setDepth(CHAIN_POPUP_DEPTH).setAlpha(0);
-    this.pureCanopicPopupText = this.add.text(boardCenterX, BOARD_ORIGIN_Y + 56, '', {
+    this.pureCanopicPopupText = this.add.text(boardCenterX, this.layout.boardOriginY + 56, '', {
       fontFamily: 'Georgia, serif',
       fontSize: '20px',
       color: '#f2d088',
@@ -325,10 +378,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   createGameOverAtmosphere() {
-    const boardCenterX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
-    const boardCenterY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
-    const boardWidth = BOARD_COLUMNS * CELL_SIZE;
-    const boardHeight = BOARD_ROWS * CELL_SIZE;
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
+    const boardHeight = BOARD_ROWS * this.layout.cellSize;
     const shade = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 40, boardHeight + 40, 0x050301, 0)
       .setDepth(22);
     const sand = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x8a6738, 0)
@@ -1512,11 +1565,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   createClearHighlight(cell) {
-    const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
-    const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
+    const x = this.layout.boardOriginX + cell.col * this.layout.cellSize + this.layout.cellSize / 2;
+    const y = this.layout.boardOriginY + cell.row * this.layout.cellSize + this.layout.cellSize / 2;
     const highlightStyle = this.getClearHighlightStyle(cell.highlightType);
 
-    return this.add.rectangle(x, y, CELL_SIZE - 4, CELL_SIZE - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
+    return this.add.rectangle(x, y, this.layout.cellSize - 4, this.layout.cellSize - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
       .setStrokeStyle(highlightStyle.strokeWidth, highlightStyle.strokeColor, highlightStyle.strokeAlpha)
       .setDepth(9);
   }
@@ -1578,7 +1631,7 @@ export class GameScene extends Phaser.Scene {
     const style = this.getBombPreviewStyle(bomb.type);
     this.bombPreviewSprites = this.bombSystem.getPreviewCells(bomb.type, target, this.board).map((cell) => {
       const { x, y } = this.getCellCenter(cell.col, cell.row);
-      return this.add.rectangle(x, y, CELL_SIZE - 5, CELL_SIZE - 5, style.fill, style.alpha)
+      return this.add.rectangle(x, y, this.layout.cellSize - 5, this.layout.cellSize - 5, style.fill, style.alpha)
         .setStrokeStyle(style.strokeWidth, style.stroke, style.strokeAlpha)
         .setDepth(6);
     });
@@ -1606,9 +1659,9 @@ export class GameScene extends Phaser.Scene {
     const cells = this.getBombAreaFlashCells(bombType, target);
     const style = this.getBombAreaFlashStyle(bombType);
     this.bombAreaFlashSprites = cells.map((cell) => {
-      const x = BOARD_ORIGIN_X + cell.col * CELL_SIZE + CELL_SIZE / 2;
-      const y = BOARD_ORIGIN_Y + cell.row * CELL_SIZE + CELL_SIZE / 2;
-      return this.add.rectangle(x, y, CELL_SIZE - 3, CELL_SIZE - 3, style.fill, style.alpha)
+      const x = this.layout.boardOriginX + cell.col * this.layout.cellSize + this.layout.cellSize / 2;
+      const y = this.layout.boardOriginY + cell.row * this.layout.cellSize + this.layout.cellSize / 2;
+      return this.add.rectangle(x, y, this.layout.cellSize - 3, this.layout.cellSize - 3, style.fill, style.alpha)
         .setStrokeStyle(style.strokeWidth ?? 2, style.stroke, 0.84)
         .setDepth(8);
     });
@@ -2004,8 +2057,8 @@ export class GameScene extends Phaser.Scene {
       this.gameOverOverlay.destroy(true);
     }
 
-    const centerX = BOARD_ORIGIN_X + (BOARD_COLUMNS * CELL_SIZE) / 2;
-    const centerY = BOARD_ORIGIN_Y + (BOARD_ROWS * CELL_SIZE) / 2;
+    const centerX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const centerY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
     const panelWidth = Math.min(332, GAME_WIDTH - 56);
     const panelHeight = 290;
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
@@ -2108,8 +2161,8 @@ export class GameScene extends Phaser.Scene {
 
   getCellCenter(col, row) {
     return {
-      x: BOARD_ORIGIN_X + col * CELL_SIZE + CELL_SIZE / 2,
-      y: BOARD_ORIGIN_Y + row * CELL_SIZE + CELL_SIZE / 2,
+      x: this.layout.boardOriginX + col * this.layout.cellSize + this.layout.cellSize / 2,
+      y: this.layout.boardOriginY + row * this.layout.cellSize + this.layout.cellSize / 2,
     };
   }
 
@@ -2122,7 +2175,7 @@ export class GameScene extends Phaser.Scene {
 
     if (asset && this.textures.exists(asset.key)) {
       container.add(this.add.image(0, 0, asset.key)
-        .setDisplaySize(CELL_SIZE - 10, CELL_SIZE - 10)
+        .setDisplaySize(this.layout.cellSize - 10, this.layout.cellSize - 10)
         .setAlpha(alpha));
     }
 
@@ -2130,14 +2183,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   createPieceShadow(alpha) {
-    const shadow = this.add.ellipse(2, 4, CELL_SIZE - 8, CELL_SIZE - 8, 0x000000, 0.28 * alpha);
-    const glow = this.add.rectangle(0, 0, CELL_SIZE - 7, CELL_SIZE - 7, 0xf4d77a, 0.08 * alpha);
+    const shadow = this.add.ellipse(2, 4, this.layout.cellSize - 8, this.layout.cellSize - 8, 0x000000, 0.28 * alpha);
+    const glow = this.add.rectangle(0, 0, this.layout.cellSize - 7, this.layout.cellSize - 7, 0xf4d77a, 0.08 * alpha);
 
     return [shadow, glow];
   }
 
   createFallbackBlock(type, alpha) {
-    return this.add.rectangle(0, 0, CELL_SIZE - 8, CELL_SIZE - 8, PIECE_COLORS[type], 0.32 * alpha)
+    return this.add.rectangle(0, 0, this.layout.cellSize - 8, this.layout.cellSize - 8, PIECE_COLORS[type], 0.32 * alpha)
       .setStrokeStyle(1, 0xf6e3a1, 0.32);
   }
 
@@ -2210,15 +2263,15 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupText.setShadow(0, 0, '#f0c14f', glowByTier[visualTier] ?? 14, true, true);
     this.chainPopupText.setAlpha(0);
     this.chainPopupText.setScale(0.88);
-    this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
+    this.chainPopupText.setY(this.layout.boardOriginY + CHAIN_POPUP_TOP_OFFSET);
     this.chainPopupText.setDepth(CHAIN_POPUP_DEPTH);
 
     this.chainPopupTween = this.tweens.add({
       targets: this.chainPopupText,
       alpha: { from: 0, to: alphaByTier[visualTier] ?? 0.9 },
       y: {
-        from: BOARD_ORIGIN_Y + CHAIN_POPUP_RISE_START_OFFSET,
-        to: BOARD_ORIGIN_Y + CHAIN_POPUP_RISE_END_OFFSET,
+        from: this.layout.boardOriginY + CHAIN_POPUP_RISE_START_OFFSET,
+        to: this.layout.boardOriginY + CHAIN_POPUP_RISE_END_OFFSET,
       },
       scale: { from: 0.88, to: targetScale },
       ease: 'Sine.easeOut',
@@ -2228,7 +2281,7 @@ export class GameScene extends Phaser.Scene {
       onComplete: () => {
         this.chainPopupText.setAlpha(0);
         this.chainPopupText.setScale(1);
-        this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
+        this.chainPopupText.setY(this.layout.boardOriginY + CHAIN_POPUP_TOP_OFFSET);
         this.chainPopupTween = null;
       },
     });
@@ -2247,7 +2300,7 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupText.setAlpha(0);
     this.chainPopupText.setScale(1);
     this.chainPopupText.setText('');
-    this.chainPopupText.setY(BOARD_ORIGIN_Y + CHAIN_POPUP_TOP_OFFSET);
+    this.chainPopupText.setY(this.layout.boardOriginY + CHAIN_POPUP_TOP_OFFSET);
   }
 
   showPureCanopicPopup() {
@@ -2263,12 +2316,12 @@ export class GameScene extends Phaser.Scene {
     this.pureCanopicPopupText.setText('PURE CANOPIC');
     this.pureCanopicPopupText.setAlpha(0);
     this.pureCanopicPopupText.setScale(0.96);
-    this.pureCanopicPopupText.setY(BOARD_ORIGIN_Y + 56);
+    this.pureCanopicPopupText.setY(this.layout.boardOriginY + 56);
 
     this.pureCanopicPopupTween = this.tweens.add({
       targets: this.pureCanopicPopupText,
       alpha: { from: 0, to: 0.95 },
-      y: { from: BOARD_ORIGIN_Y + 62, to: BOARD_ORIGIN_Y + 52 },
+      y: { from: this.layout.boardOriginY + 62, to: this.layout.boardOriginY + 52 },
       scale: { from: 0.96, to: 1.03 },
       ease: 'Sine.easeInOut',
       duration: 320,
