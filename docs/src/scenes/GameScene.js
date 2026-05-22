@@ -58,8 +58,8 @@ const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const INTERNAL_LAYOUT_RATIO = {
-  board: 0.63,
-  hud: 0.37,
+  desktop: { board: 0.63, hud: 0.37 },
+  portrait: { board: 0.6, hud: 0.4 },
 };
 
 const LAYOUT_CONFIG = {
@@ -265,8 +265,9 @@ export class GameScene extends Phaser.Scene {
   computeLayout() {
     const isPortrait = window.innerHeight > window.innerWidth;
     const usableWidth = GAME_WIDTH - LAYOUT_CONFIG.sidePadding * 2;
-    const boardAreaWidthTarget = Math.floor(usableWidth * INTERNAL_LAYOUT_RATIO.board);
-    const hudWidthByRatio = Math.floor(usableWidth * INTERNAL_LAYOUT_RATIO.hud);
+    const activeLayoutRatio = isPortrait ? INTERNAL_LAYOUT_RATIO.portrait : INTERNAL_LAYOUT_RATIO.desktop;
+    const boardAreaWidthTarget = Math.floor(usableWidth * activeLayoutRatio.board);
+    const hudWidthByRatio = Math.floor(usableWidth * activeLayoutRatio.hud);
     const hudWidth = Math.max(LAYOUT_CONFIG.minHudWidth, hudWidthByRatio);
     const boardAreaWidth = Math.max(boardAreaWidthTarget, usableWidth - hudWidth - LAYOUT_CONFIG.gap);
     const maxBoardHeight = GAME_HEIGHT - (LAYOUT_CONFIG.boardTopPadding + LAYOUT_CONFIG.boardBottomPadding);
