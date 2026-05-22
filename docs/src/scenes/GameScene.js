@@ -64,6 +64,7 @@ const LAYOUT_CONFIG = {
   gap: 8,
   boardTopPadding: 12,
   boardBottomPadding: 12,
+  portraitMaxCellSize: 50,
 };
 const SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV = true;
 
@@ -267,11 +268,12 @@ export class GameScene extends Phaser.Scene {
     const normalizedBoardRatio = totalRatio > 0 ? BOARD_AREA_RATIO / totalRatio : 0.63;
     const normalizedHudRatio = totalRatio > 0 ? HUD_AREA_RATIO / totalRatio : 0.37;
     const boardAreaWidth = Math.floor(gameplayWidth * normalizedBoardRatio);
-    const hudWidth = Math.floor(gameplayWidth * normalizedHudRatio);
     const maxBoardHeight = GAME_HEIGHT - (LAYOUT_CONFIG.boardTopPadding + LAYOUT_CONFIG.boardBottomPadding);
     const rawCellSize = Math.min(boardAreaWidth / BOARD_COLUMNS, maxBoardHeight / BOARD_ROWS);
-    const cellSize = Math.floor(rawCellSize);
+    const ratioDrivenCellSize = Math.floor(rawCellSize);
+    const cellSize = Math.min(ratioDrivenCellSize, LAYOUT_CONFIG.portraitMaxCellSize);
     const boardWidth = BOARD_COLUMNS * cellSize;
+    const hudWidth = Math.max(0, gameplayWidth - boardWidth);
     const boardHeight = BOARD_ROWS * cellSize;
     const boardOriginX = LAYOUT_CONFIG.sidePadding;
     const boardOriginY = Math.floor((GAME_HEIGHT - boardHeight) / 2);
