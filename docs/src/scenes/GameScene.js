@@ -57,12 +57,18 @@ const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
-const PORTRAIT_LAYOUT_CONFIG = {
-  boardWidthRatio: 0.68,
-  hudWidthRatio: 0.32,
+const INTERNAL_LAYOUT_RATIO = {
+  board: 0.74,
+  hud: 0.26,
+};
+
+const LAYOUT_CONFIG = {
   sidePadding: 16,
-  gap: 14,
-  minCellSize: 50,
+  gap: 10,
+  minCellSize: 40,
+  minHudWidth: 120,
+  boardTopPadding: 16,
+  boardBottomPadding: 16,
 };
 
 const GAME_STATES = {
@@ -219,7 +225,7 @@ export class GameScene extends Phaser.Scene {
     this.layout = this.computeLayout();
     this.createBackground();
     this.createInput();
-    this.hud = new Hud(this, this.layout.hudX, HUD_ORIGIN_Y);
+    this.hud = new Hud(this, this.layout.hudX, HUD_ORIGIN_Y, this.layout.hudWidth);
     this.hud.updateScore(this.score);
     this.hud.updateChain(this.chainCount);
     this.hud.updateBestScore(this.highScoreRecords.highScore);
@@ -258,35 +264,21 @@ export class GameScene extends Phaser.Scene {
 
   computeLayout() {
     const isPortrait = window.innerHeight > window.innerWidth;
-
-    if (!isPortrait) {
-      return {
-        isPortrait: false,
-        cellSize: 50,
-        boardOriginX: 22,
-        boardOriginY: 34,
-        boardWidth: BOARD_COLUMNS * 50,
-        boardHeight: BOARD_ROWS * 50,
-        boardCenterX: 22 + (BOARD_COLUMNS * 50) / 2,
-        boardCenterY: 34 + (BOARD_ROWS * 50) / 2,
-        hudX: 334,
-        hudWidth: 166,
-      };
-    }
-
-    const usableWidth = GAME_WIDTH - PORTRAIT_LAYOUT_CONFIG.sidePadding * 2;
-    const maxBoardAreaWidth = usableWidth * PORTRAIT_LAYOUT_CONFIG.boardWidthRatio;
-    const maxBoardByHeight = GAME_HEIGHT - 80;
-    const rawCellSize = Math.min(maxBoardAreaWidth / BOARD_COLUMNS, maxBoardByHeight / BOARD_ROWS);
-    const cellSize = Math.max(PORTRAIT_LAYOUT_CONFIG.minCellSize, Math.floor(rawCellSize));
+    const usableWidth = GAME_WIDTH - LAYOUT_CONFIG.sidePadding * 2;
+    const hudWidthByRatio = Math.floor(usableWidth * INTERNAL_LAYOUT_RATIO.hud);
+    const hudWidth = Math.max(LAYOUT_CONFIG.minHudWidth, hudWidthByRatio);
+    const boardAreaWidth = usableWidth - hudWidth - LAYOUT_CONFIG.gap;
+    const maxBoardHeight = GAME_HEIGHT - (LAYOUT_CONFIG.boardTopPadding + LAYOUT_CONFIG.boardBottomPadding);
+    const rawCellSize = Math.min(boardAreaWidth / BOARD_COLUMNS, maxBoardHeight / BOARD_ROWS);
+    const cellSize = Math.max(LAYOUT_CONFIG.minCellSize, Math.floor(rawCellSize));
     const boardWidth = BOARD_COLUMNS * cellSize;
     const boardHeight = BOARD_ROWS * cellSize;
-    const boardOriginX = PORTRAIT_LAYOUT_CONFIG.sidePadding;
+    const boardOriginX = LAYOUT_CONFIG.sidePadding;
     const boardOriginY = Math.floor((GAME_HEIGHT - boardHeight) / 2);
-    const hudX = boardOriginX + boardWidth + PORTRAIT_LAYOUT_CONFIG.gap;
+    const hudX = boardOriginX + boardWidth + LAYOUT_CONFIG.gap;
 
     return {
-      isPortrait: true,
+      isPortrait,
       cellSize,
       boardOriginX,
       boardOriginY,
@@ -295,7 +287,7 @@ export class GameScene extends Phaser.Scene {
       boardCenterX: boardOriginX + boardWidth / 2,
       boardCenterY: boardOriginY + boardHeight / 2,
       hudX,
-      hudWidth: GAME_WIDTH - PORTRAIT_LAYOUT_CONFIG.sidePadding - hudX,
+      hudWidth,
     };
   }
 
