@@ -58,15 +58,15 @@ const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const INTERNAL_LAYOUT_RATIO = {
-  board: 0.68,
-  hud: 0.32,
+  board: 0.66,
+  hud: 0.34,
 };
 
 const LAYOUT_CONFIG = {
   sidePadding: 16,
   gap: 8,
   minCellSize: 48,
-  minHudWidth: 140,
+  minHudWidth: 162,
   boardTopPadding: 12,
   boardBottomPadding: 12,
 };
