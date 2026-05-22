@@ -10,15 +10,11 @@ const PANEL_STROKE = 0xd4af37;
 const PANEL_STONE = 0x2a1c10;
 const COFFIN_PANEL_X = 8;
 const COFFIN_PANEL_Y = 200;
-const COFFIN_PANEL_WIDTH = 150;
 const COFFIN_PANEL_HEIGHT = 176;
 const COFFIN_PANEL_MARGIN = 8;
-const COFFIN_IMAGE_AREA_WIDTH = COFFIN_PANEL_WIDTH - COFFIN_PANEL_MARGIN * 2;
 const COFFIN_IMAGE_AREA_HEIGHT = COFFIN_PANEL_HEIGHT - COFFIN_PANEL_MARGIN * 2;
-const COFFIN_BAR_WIDTH = COFFIN_IMAGE_AREA_WIDTH - 18;
 const COFFIN_BAR_HEIGHT = 18;
 const COFFIN_BAR_INSET = 3;
-const COFFIN_BAR_INNER_WIDTH = COFFIN_BAR_WIDTH - COFFIN_BAR_INSET * 2;
 const COFFIN_BAR_FILL_HEIGHT = COFFIN_BAR_HEIGHT - COFFIN_BAR_INSET * 2;
 const HUD_LAYER_BASE = 10;
 const HUD_LAYER_COFFIN = 12;
@@ -73,6 +69,10 @@ export class Hud {
     this.width = Math.max(120, width);
     this.panelWidth = this.width - HUD_INNER_MARGIN * 2;
     this.panelCenterX = this.x + HUD_INNER_MARGIN + this.panelWidth / 2;
+    this.coffinPanelWidth = this.panelWidth;
+    this.coffinImageAreaWidth = this.coffinPanelWidth - COFFIN_PANEL_MARGIN * 2;
+    this.coffinBarWidth = this.coffinImageAreaWidth - 18;
+    this.coffinBarInnerWidth = this.coffinBarWidth - COFFIN_BAR_INSET * 2;
     this.nextBlocks = [];
     this.feedbackTimer = null;
     this.coffinContainer = null;
@@ -149,14 +149,14 @@ export class Hud {
     this.coffinText = this.createLabel(14, coffinSectionY + 145 - this.y, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 8, 1);
     this.coffinText.setDepth(HUD_LAYER_COFFIN_METER);
     this.coffinText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 14, coffinSectionY + 131, COFFIN_BAR_WIDTH, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 14, coffinSectionY + 131, this.coffinBarWidth, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72)
       .setDepth(HUD_LAYER_COFFIN_BAR_BG);
     this.coffinBarFill = this.scene.add.rectangle(
       this.x + 22 + COFFIN_BAR_INSET,
       coffinSectionY + 131,
-      COFFIN_BAR_INNER_WIDTH,
+      this.coffinBarInnerWidth,
       COFFIN_BAR_FILL_HEIGHT,
       0xffd84d,
       0.96,
@@ -164,7 +164,7 @@ export class Hud {
     this.coffinBarHighlight = this.scene.add.rectangle(
       this.x + 22 + COFFIN_BAR_INSET,
       coffinSectionY + 127,
-      COFFIN_BAR_INNER_WIDTH,
+      this.coffinBarInnerWidth,
       2,
       0xffffb8,
       0.58,
@@ -433,12 +433,12 @@ export class Hud {
     }
 
     const asset = getCoffinAsset(nextCoffinSize);
-    const centerX = this.x + COFFIN_PANEL_X + (COFFIN_PANEL_WIDTH / 2);
+    const centerX = this.panelCenterX;
     const centerY = this.y + COFFIN_PANEL_Y + (COFFIN_PANEL_HEIGHT / 2) + 6;
     const container = this.scene.add.container(centerX, centerY).setDepth(HUD_LAYER_COFFIN);
-    const glowSize = Math.max(COFFIN_IMAGE_AREA_WIDTH, COFFIN_IMAGE_AREA_HEIGHT) + 18;
+    const glowSize = Math.max(this.coffinImageAreaWidth, COFFIN_IMAGE_AREA_HEIGHT) + 18;
 
-    const backplate = this.scene.add.rectangle(0, 0, COFFIN_IMAGE_AREA_WIDTH, COFFIN_IMAGE_AREA_HEIGHT, 0x0b0906, 0.38)
+    const backplate = this.scene.add.rectangle(0, 0, this.coffinImageAreaWidth, COFFIN_IMAGE_AREA_HEIGHT, 0x0b0906, 0.38)
       .setStrokeStyle(1, 0xd4af37, 0.24);
     this.coffinGlow = this.scene.add.ellipse(0, 0, glowSize, glowSize, 0xd4af37, 0.08)
       .setStrokeStyle(2, 0xf4d77a, 0.16);
@@ -460,7 +460,7 @@ export class Hud {
 
     const source = this.scene.textures.get(asset.key).getSourceImage();
     const scale = Math.min(
-      COFFIN_IMAGE_AREA_WIDTH / source.width,
+      this.coffinImageAreaWidth / source.width,
       COFFIN_IMAGE_AREA_HEIGHT / source.height,
     );
 
