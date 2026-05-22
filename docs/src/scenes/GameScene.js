@@ -1,8 +1,10 @@
 import {
   BOARD_COLUMNS,
   BOARD_ROWS,
+  BOARD_AREA_RATIO,
   GAME_HEIGHT,
   GAME_WIDTH,
+  HUD_AREA_RATIO,
   HUD_ORIGIN_Y,
   INITIAL_LEVEL,
   INITIAL_SCORE,
@@ -57,16 +59,9 @@ const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
-const INTERNAL_LAYOUT_RATIO = {
-  desktop: { board: 0.63, hud: 0.37 },
-  portrait: { board: 0.6, hud: 0.4 },
-};
-
 const LAYOUT_CONFIG = {
   sidePadding: 16,
   gap: 8,
-  minCellSize: 48,
-  minHudWidth: 208,
   boardTopPadding: 12,
   boardBottomPadding: 12,
 };
@@ -263,24 +258,30 @@ export class GameScene extends Phaser.Scene {
   }
 
   computeLayout() {
-    const isPortrait = window.innerHeight > window.innerWidth;
-    const usableWidth = GAME_WIDTH - LAYOUT_CONFIG.sidePadding * 2;
-    const activeLayoutRatio = isPortrait ? INTERNAL_LAYOUT_RATIO.portrait : INTERNAL_LAYOUT_RATIO.desktop;
-    const boardAreaWidthTarget = Math.floor(usableWidth * activeLayoutRatio.board);
-    const hudWidthByRatio = Math.floor(usableWidth * activeLayoutRatio.hud);
-    const hudWidth = Math.max(LAYOUT_CONFIG.minHudWidth, hudWidthByRatio);
-    const boardAreaWidth = Math.max(boardAreaWidthTarget, usableWidth - hudWidth - LAYOUT_CONFIG.gap);
+    const gameplayWidth = GAME_WIDTH - LAYOUT_CONFIG.sidePadding * 2 - LAYOUT_CONFIG.gap;
+    const totalRatio = BOARD_AREA_RATIO + HUD_AREA_RATIO;
+    const normalizedBoardRatio = totalRatio > 0 ? BOARD_AREA_RATIO / totalRatio : 0.63;
+    const normalizedHudRatio = totalRatio > 0 ? HUD_AREA_RATIO / totalRatio : 0.37;
+    const boardAreaWidth = Math.floor(gameplayWidth * normalizedBoardRatio);
+    const hudWidth = Math.floor(gameplayWidth * normalizedHudRatio);
     const maxBoardHeight = GAME_HEIGHT - (LAYOUT_CONFIG.boardTopPadding + LAYOUT_CONFIG.boardBottomPadding);
     const rawCellSize = Math.min(boardAreaWidth / BOARD_COLUMNS, maxBoardHeight / BOARD_ROWS);
-    const cellSize = Math.max(LAYOUT_CONFIG.minCellSize, Math.floor(rawCellSize));
+    const cellSize = Math.floor(rawCellSize);
     const boardWidth = BOARD_COLUMNS * cellSize;
     const boardHeight = BOARD_ROWS * cellSize;
     const boardOriginX = LAYOUT_CONFIG.sidePadding;
     const boardOriginY = Math.floor((GAME_HEIGHT - boardHeight) / 2);
     const hudX = boardOriginX + boardWidth + LAYOUT_CONFIG.gap;
+    console.log('[LayoutDebug]', {
+      gameplayWidth,
+      boardWidth,
+      hudWidth,
+      cellSize,
+      boardRatio: BOARD_AREA_RATIO,
+      hudRatio: HUD_AREA_RATIO,
+    });
 
     return {
-      isPortrait,
       cellSize,
       boardOriginX,
       boardOriginY,
