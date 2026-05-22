@@ -181,7 +181,7 @@ export class Hud {
 
     this.feedbackContainer = this.scene.add.container(this.panelCenterX + 8, coffinSectionY + 77)
       .setDepth(HUD_LAYER_UNLOCK_FEEDBACK);
-    this.feedbackBackdrop = this.scene.add.rectangle(0, 0, 122, 74, 0x050402, 0.72)
+    this.feedbackBackdrop = this.scene.add.rectangle(0, 0, Math.max(122, this.panelWidth - 22), 74, 0x050402, 0.72)
       .setStrokeStyle(1, 0xd4af37, 0.44)
       .setVisible(false);
     this.feedbackText = this.scene.add.text(-52, -27, '', {
@@ -190,7 +190,7 @@ export class Hud {
       color: '#f4d77a',
       fontStyle: 'bold',
       lineSpacing: 6,
-      wordWrap: { width: 104 },
+      wordWrap: { width: Math.max(104, this.panelWidth - 40) },
     }).setAlpha(1);
     this.feedbackContainer.add([this.feedbackBackdrop, this.feedbackText]);
 
@@ -216,7 +216,7 @@ export class Hud {
       color: '#f4d77a',
       fontStyle: 'bold',
     });
-    this.revivedCountText = this.scene.add.text(this.panelWidth - 32, 6, '×0', {
+    this.revivedCountText = this.scene.add.text(this.panelWidth - 30, 6, '×0', {
       fontFamily: 'Georgia, serif',
       fontSize: '10px',
       color: '#e5d0a0',
