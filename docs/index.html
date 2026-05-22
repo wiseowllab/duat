@@ -158,6 +158,14 @@
         }
 
         main {
+          --mobile-header-height: 4.95rem;
+          --mobile-controls-reserved-height: 8.4rem;
+          --mobile-gameplay-controls-gap: 0.45rem;
+          --mobile-gameplay-bottom-limit: calc(
+            var(--mobile-header-height) +
+            var(--mobile-controls-reserved-height) +
+            var(--mobile-gameplay-controls-gap)
+          );
           width: 100%;
           min-height: 100dvh;
           display: flex;
@@ -185,9 +193,9 @@
         }
 
         #game canvas {
-          width: min(100%, calc((100dvh - 4.95rem) * 1.166));
+          width: min(100%, calc((100dvh - var(--mobile-gameplay-bottom-limit)) * 1.166));
           height: auto;
-          max-height: calc(100dvh - 4.95rem);
+          max-height: calc(100dvh - var(--mobile-gameplay-bottom-limit));
         }
 
         .desktop-control-help {
@@ -274,6 +282,9 @@
 
       @media (hover: none) and (max-height: 620px), (max-width: 760px) and (max-height: 620px) {
         main {
+          --mobile-header-height: 4.85rem;
+          --mobile-controls-reserved-height: 8.25rem;
+          --mobile-gameplay-controls-gap: 0.5rem;
           padding-top: max(0.15rem, env(safe-area-inset-top));
         }
 
@@ -282,8 +293,7 @@
         }
 
         #game canvas {
-          width: min(100%, calc((100dvh - 4.85rem) * 1.166));
-          max-height: calc(100dvh - 4.85rem);
+          max-height: calc(100dvh - var(--mobile-gameplay-bottom-limit));
         }
 
         .touch-controls {
