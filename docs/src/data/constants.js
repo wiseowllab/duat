@@ -11,6 +11,8 @@ export const HUD_ORIGIN_Y = 16;
 
 export const GAME_WIDTH = 560;
 export const GAME_HEIGHT = 780;
+export const BOARD_AREA_RATIO = 0.63;
+export const HUD_AREA_RATIO = 0.37;
 
 export const NORMAL_FALL_MS = FALL_SPEED.normalMs;
 export const SOFT_DROP_FALL_MS = FALL_SPEED.softDropMs;
