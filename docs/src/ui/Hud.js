@@ -1,4 +1,3 @@
-import { CELL_SIZE } from '../data/constants.js';
 import { getCoffinAsset } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
