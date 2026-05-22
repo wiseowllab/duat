@@ -65,6 +65,7 @@ const LAYOUT_CONFIG = {
   boardTopPadding: 12,
   boardBottomPadding: 12,
 };
+const SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV = true;
 
 const GAME_STATES = {
   TITLE: 'title',
@@ -182,6 +183,7 @@ export class GameScene extends Phaser.Scene {
     this.gameState = GAME_STATES.TITLE;
     this.isGameOver = false;
     this.isDebugMode = false;
+    this.layoutDebugText = null;
     this.feedbackTimer = null;
     this.chainPopupText = null;
     this.chainPopupTween = null;
@@ -232,9 +234,11 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.createTitleOverlay();
+    this.createLayoutDebugOverlay();
   }
 
   update(_, delta) {
+    this.updateLayoutDebugOverlay();
     if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
@@ -290,8 +294,56 @@ export class GameScene extends Phaser.Scene {
       boardCenterX: boardOriginX + boardWidth / 2,
       boardCenterY: boardOriginY + boardHeight / 2,
       hudX,
+      hudY: HUD_ORIGIN_Y,
       hudWidth,
+      gameplayWidth,
+      boardAreaWidth,
+      layoutMode: totalRatio > 0 ? 'ratio' : 'fallback',
+      normalizedBoardRatio,
+      normalizedHudRatio,
     };
+  }
+
+  createLayoutDebugOverlay() {
+    this.layoutDebugText = this.add.text(12, 12, '', {
+      fontFamily: 'Consolas, Menlo, monospace',
+      fontSize: '12px',
+      color: '#f7e7a8',
+      backgroundColor: '#140f08cc',
+      padding: { x: 6, y: 4 },
+      lineSpacing: 3,
+    }).setDepth(200).setScrollFactor(0);
+
+    this.updateLayoutDebugOverlay();
+  }
+
+  updateLayoutDebugOverlay() {
+    if (!this.layoutDebugText) {
+      return;
+    }
+
+    const shouldShow = SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV || this.isDebugMode;
+    this.layoutDebugText.setVisible(shouldShow);
+
+    if (!shouldShow) {
+      return;
+    }
+
+    const ratio = this.layout.boardWidth > 0 ? this.layout.hudWidth / this.layout.boardWidth : 0;
+    const lines = [
+      `layout mode: ${this.layout.layoutMode}`,
+      `game: ${GAME_WIDTH} x ${GAME_HEIGHT}`,
+      `play area w: ${this.layout.gameplayWidth}`,
+      `board area w: ${this.layout.boardAreaWidth}`,
+      `hud w: ${this.layout.hudWidth}`,
+      `board/hud ratio: ${ratio.toFixed(3)} (B:${this.layout.normalizedBoardRatio.toFixed(3)} H:${this.layout.normalizedHudRatio.toFixed(3)})`,
+      `cell size: ${this.layout.cellSize}`,
+      `board origin: (${this.layout.boardOriginX}, ${this.layout.boardOriginY})`,
+      `hud origin: (${this.layout.hudX}, ${this.layout.hudY})`,
+      `state: ${this.gameState}`,
+    ];
+
+    this.layoutDebugText.setText(lines.join('\n'));
   }
 
   getCellSize() { return this.layout.cellSize; }
@@ -768,6 +820,7 @@ export class GameScene extends Phaser.Scene {
     this.lockTimer = 0;
     this.isGameOver = false;
     this.isDebugMode = false;
+    this.layoutDebugText = null;
     this.isResolvingClears = false;
     this.isTouchSoftDropping = false;
     this.isDangerState = false;
@@ -1743,6 +1796,7 @@ export class GameScene extends Phaser.Scene {
 
     this.isDebugMode = !this.isDebugMode;
     this.hud.setDebugMode(this.isDebugMode);
+    this.updateLayoutDebugOverlay();
   }
 
   handleDebugMeterKey(event) {
