@@ -58,17 +58,17 @@ const PURE_CANOPIC_POPUP_DEPTH = 47;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const INTERNAL_LAYOUT_RATIO = {
-  board: 0.74,
-  hud: 0.26,
+  board: 0.7,
+  hud: 0.3,
 };
 
 const LAYOUT_CONFIG = {
   sidePadding: 16,
-  gap: 10,
-  minCellSize: 40,
-  minHudWidth: 120,
-  boardTopPadding: 16,
-  boardBottomPadding: 16,
+  gap: 8,
+  minCellSize: 48,
+  minHudWidth: 140,
+  boardTopPadding: 12,
+  boardBottomPadding: 12,
 };
 
 const GAME_STATES = {
@@ -265,9 +265,10 @@ export class GameScene extends Phaser.Scene {
   computeLayout() {
     const isPortrait = window.innerHeight > window.innerWidth;
     const usableWidth = GAME_WIDTH - LAYOUT_CONFIG.sidePadding * 2;
+    const boardAreaWidthTarget = Math.floor(usableWidth * INTERNAL_LAYOUT_RATIO.board);
     const hudWidthByRatio = Math.floor(usableWidth * INTERNAL_LAYOUT_RATIO.hud);
     const hudWidth = Math.max(LAYOUT_CONFIG.minHudWidth, hudWidthByRatio);
-    const boardAreaWidth = usableWidth - hudWidth - LAYOUT_CONFIG.gap;
+    const boardAreaWidth = Math.max(boardAreaWidthTarget, usableWidth - hudWidth - LAYOUT_CONFIG.gap);
     const maxBoardHeight = GAME_HEIGHT - (LAYOUT_CONFIG.boardTopPadding + LAYOUT_CONFIG.boardBottomPadding);
     const rawCellSize = Math.min(boardAreaWidth / BOARD_COLUMNS, maxBoardHeight / BOARD_ROWS);
     const cellSize = Math.max(LAYOUT_CONFIG.minCellSize, Math.floor(rawCellSize));
