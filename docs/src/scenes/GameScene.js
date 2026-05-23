@@ -60,6 +60,13 @@ const CLEAR_PARTICLE_BASE_RADIUS = 2;
 const CLEAR_PARTICLE_RADIUS_SCALE = 0.06;
 const BOARD_GRAVITY_STEP_MS = 55;
 const BOARD_FEEDBACK_DEPTH = 26;
+const CLEAR_HIT_STOP_MIN_MS = 50;
+const CLEAR_HIT_STOP_MAX_MS = 90;
+const CAMERA_SHAKE_DURATION_MS = 80;
+const CAMERA_SHAKE_BASE_INTENSITY = 0.0008;
+const CAMERA_SHAKE_CHAIN_SCALE = 0.0005;
+const PURE_CANOPIC_PULSE_DEPTH = 25;
+const PURE_CANOPIC_PULSE_DURATION_MS = 380;
 const CHAIN_POPUP_DEPTH = 46;
 const CHAIN_POPUP_TOP_OFFSET = 26;
 const CHAIN_POPUP_RISE_START_OFFSET = 32;
@@ -213,6 +220,8 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupTween = null;
     this.pureCanopicPopupText = null;
     this.pureCanopicPopupTween = null;
+    this.pureCanopicPulseOverlay = null;
+    this.pureCanopicPulseTween = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
     this.bombPreviewSprites = [];
@@ -868,6 +877,7 @@ export class GameScene extends Phaser.Scene {
     this.boardFeedbackText.setText('');
     this.clearChainPopup();
     this.clearPureCanopicPopup();
+    this.clearPureCanopicPulse();
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
@@ -1348,6 +1358,7 @@ export class GameScene extends Phaser.Scene {
 
       await this.highlightClearCells(clearResult);
       this.playClearSounds(clearResult, nextChain);
+      await this.applyClearImpactFeedback(clearResult, nextChain);
 
       const earnedScore = this.scoreSystem.calculateCycleScore(clearResult, nextChain);
       const meterGain = this.scoreSystem.calculateCycleMeterPoints(clearResult, nextChain);
@@ -2007,6 +2018,94 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.validateBombSelection();
     return unlockEventsWithBombInfo;
+  }
+
+
+  async applyClearImpactFeedback(clearResult, chainCount) {
+    const profile = this.getClearImpactProfile(clearResult, chainCount);
+
+    if (profile.pureCanopicPulse) {
+      this.playPureCanopicPulse();
+      await this.wait(Math.min(PURE_CANOPIC_PULSE_DURATION_MS * 0.55, profile.hitStopMs));
+      return;
+    }
+
+    this.playBoardMicroShake(profile.shakeIntensity);
+    if (profile.hitStopMs > 0) {
+      await this.wait(profile.hitStopMs);
+    }
+  }
+
+  getClearImpactProfile(clearResult, chainCount) {
+    const clearSize = clearResult.cellsToClear.length;
+    const chainTier = chainCount >= 4 ? 3 : chainCount >= 2 ? 2 : 1;
+    const hasPureCanopic = clearResult.pureCanopicCount > 0;
+
+    const sizeBoost = Phaser.Math.Clamp((clearSize - 4) * 1.8, 0, 16);
+    const chainBoost = chainTier === 3 ? 14 : chainTier === 2 ? 8 : 0;
+    const hitStopMs = Math.round(Phaser.Math.Clamp(CLEAR_HIT_STOP_MIN_MS + sizeBoost + chainBoost, CLEAR_HIT_STOP_MIN_MS, CLEAR_HIT_STOP_MAX_MS));
+
+    const shakeTier = chainTier === 3 ? 1 : chainTier === 2 ? 0.55 : 0.18;
+    const shakeIntensity = hasPureCanopic
+      ? CAMERA_SHAKE_BASE_INTENSITY * 0.2
+      : CAMERA_SHAKE_BASE_INTENSITY + CAMERA_SHAKE_CHAIN_SCALE * shakeTier;
+
+    return {
+      hitStopMs: hasPureCanopic ? Math.round(hitStopMs * 0.8) : hitStopMs,
+      shakeIntensity: Phaser.Math.Clamp(shakeIntensity, 0, 0.0022),
+      pureCanopicPulse: hasPureCanopic,
+    };
+  }
+
+  playBoardMicroShake(intensity) {
+    const camera = this.cameras?.main;
+    if (!camera || intensity <= 0) {
+      return;
+    }
+
+    if (camera.shakeEffect?.isRunning) {
+      camera.stopShake();
+    }
+
+    camera.shake(CAMERA_SHAKE_DURATION_MS, intensity, false);
+  }
+
+  playPureCanopicPulse() {
+    this.clearPureCanopicPulse();
+
+    const overlay = this.add.rectangle(
+      this.layout.boardCenterX,
+      this.layout.boardCenterY,
+      this.layout.boardWidth,
+      this.layout.boardHeight,
+      0x62f4ff,
+      0.06,
+    ).setStrokeStyle(2, 0xf4d77a, 0.38).setDepth(PURE_CANOPIC_PULSE_DEPTH);
+
+    this.pureCanopicPulseOverlay = overlay;
+    this.pureCanopicPulseTween = this.tweens.add({
+      targets: overlay,
+      alpha: { from: 0.06, to: 0 },
+      scaleX: { from: 0.99, to: 1.03 },
+      scaleY: { from: 0.99, to: 1.03 },
+      duration: PURE_CANOPIC_PULSE_DURATION_MS,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.clearPureCanopicPulse(false);
+      },
+    });
+  }
+
+  clearPureCanopicPulse(stopTween = true) {
+    if (stopTween && this.pureCanopicPulseTween) {
+      this.pureCanopicPulseTween.remove();
+      this.pureCanopicPulseTween = null;
+    }
+
+    if (this.pureCanopicPulseOverlay) {
+      this.pureCanopicPulseOverlay.destroy();
+      this.pureCanopicPulseOverlay = null;
+    }
   }
 
   findClearResult() {
@@ -2702,6 +2801,7 @@ export class GameScene extends Phaser.Scene {
     this.pureCanopicPopupText.setAlpha(0);
     this.pureCanopicPopupText.setScale(1);
     this.pureCanopicPopupText.setText('');
+    this.clearPureCanopicPulse();
   }
 
   clearBlockSprites() {
