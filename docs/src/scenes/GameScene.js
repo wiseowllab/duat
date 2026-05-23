@@ -61,10 +61,10 @@ const PIECE_CONNECTOR_DEPTH = 3;
 const PIECE_SPRITE_DEPTH = 4;
 const CONNECTOR_ALPHA = 0.3;
 const CONNECTOR_TINT_DARKEN = 0.5;
+const CONNECTOR_TINT_DARKEN_LARGE_GROUP = 0.58;
 const CONNECTOR_THICKNESS_RATIO = 0.42;
 const CONNECTOR_LENGTH_RATIO = 0.76;
 const CONNECTOR_BULGE_RATIO = 0.18;
-const CONNECTOR_GROUP_THICKEN_MAX = 0.1;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const LAYOUT_CONFIG = {
@@ -2245,6 +2245,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   drawLockedPieceConnections() {
+    const groupSizes = this.buildConnectedGroupSizeMap();
+
     for (let row = 0; row < this.board.rows; row += 1) {
       for (let col = 0; col < this.board.columns; col += 1) {
         const type = this.board.getCell(col, row);
@@ -2252,8 +2254,10 @@ export class GameScene extends Phaser.Scene {
           continue;
         }
 
-        this.tryDrawConnection(col, row, col + 1, row, type);
-        this.tryDrawConnection(col, row, col, row + 1, type);
+        const groupSize = groupSizes.get(`${col},${row}`) ?? 1;
+
+        this.tryDrawConnection(col, row, col + 1, row, type, groupSize);
+        this.tryDrawConnection(col, row, col, row + 1, type, groupSize);
       }
     }
   }
@@ -2262,7 +2266,7 @@ export class GameScene extends Phaser.Scene {
     return Boolean(type) && type !== 'brain';
   }
 
-  tryDrawConnection(fromCol, fromRow, toCol, toRow, type) {
+  tryDrawConnection(fromCol, fromRow, toCol, toRow, type, groupSize) {
     if (!this.board.isInsideColumn(toCol) || !this.board.isVisibleRow(toRow)) {
       return;
     }
@@ -2274,9 +2278,9 @@ export class GameScene extends Phaser.Scene {
     const from = this.getCellCenter(fromCol, fromRow);
     const to = this.getCellCenter(toCol, toRow);
     const isHorizontal = fromRow === toRow;
-    const thickness = this.getConnectorThickness(fromCol, fromRow, toCol, toRow, type);
+    const thickness = this.getConnectorThickness(groupSize);
     const length = this.layout.cellSize * CONNECTOR_LENGTH_RATIO;
-    const connectorColor = this.getConnectorColor(type);
+    const connectorColor = this.getConnectorColor(type, groupSize);
     const connector = this.createOrganicConnector(
       (from.x + to.x) / 2,
       (from.y + to.y) / 2,
@@ -2311,40 +2315,95 @@ export class GameScene extends Phaser.Scene {
     return container;
   }
 
-  getConnectorThickness(fromCol, fromRow, toCol, toRow, type) {
+  getConnectorThickness(groupSize) {
     const baseThickness = this.layout.cellSize * CONNECTOR_THICKNESS_RATIO;
-    const adjacency = this.countOrthogonalMatches(fromCol, fromRow, type)
-      + this.countOrthogonalMatches(toCol, toRow, type);
-    const cappedBoost = Math.min(adjacency, 6) / 6;
-
-    return baseThickness * (1 + cappedBoost * CONNECTOR_GROUP_THICKEN_MAX);
+    return baseThickness * this.getConnectorScaleForGroupSize(groupSize);
   }
 
-  countOrthogonalMatches(col, row, type) {
-    const neighbors = [
-      { col: col - 1, row },
-      { col: col + 1, row },
-      { col, row: row - 1 },
-      { col, row: row + 1 },
-    ];
-
-    return neighbors.reduce((count, neighbor) => {
-      if (!this.board.isInsideColumn(neighbor.col) || !this.board.isVisibleRow(neighbor.row)) {
-        return count;
-      }
-
-      return this.board.getCell(neighbor.col, neighbor.row) === type ? count + 1 : count;
-    }, 0);
+  getConnectorScaleForGroupSize(groupSize) {
+    if (groupSize >= 5) {
+      return 1.3;
+    }
+    if (groupSize >= 3) {
+      return 1.15;
+    }
+    return 1;
   }
 
-  getConnectorColor(type) {
+  getConnectorColor(type, groupSize) {
     const baseColor = PIECE_COLORS[type] ?? 0xd4af37;
+    const tintDarken = groupSize >= 5 ? CONNECTOR_TINT_DARKEN_LARGE_GROUP : CONNECTOR_TINT_DARKEN;
     return Phaser.Display.Color.Interpolate.ColorWithColor(
       Phaser.Display.Color.ValueToColor(baseColor),
       Phaser.Display.Color.ValueToColor(0x1a1207),
       100,
-      Math.round(CONNECTOR_TINT_DARKEN * 100),
+      Math.round(tintDarken * 100),
     ).color;
+  }
+
+  buildConnectedGroupSizeMap() {
+    const visited = new Set();
+    const groupSizes = new Map();
+
+    for (let row = 0; row < this.board.rows; row += 1) {
+      for (let col = 0; col < this.board.columns; col += 1) {
+        const key = `${col},${row}`;
+        if (visited.has(key)) {
+          continue;
+        }
+
+        const type = this.board.getCell(col, row);
+        if (!this.canConnectType(type)) {
+          visited.add(key);
+          continue;
+        }
+
+        const groupCells = this.collectOrthogonalGroup(col, row, type, visited);
+        const groupSize = groupCells.length;
+        groupCells.forEach((cellKey) => groupSizes.set(cellKey, groupSize));
+      }
+    }
+
+    return groupSizes;
+  }
+
+  collectOrthogonalGroup(startCol, startRow, type, visited) {
+    const queue = [{ col: startCol, row: startRow }];
+    const groupCells = [];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      const key = `${current.col},${current.row}`;
+      if (visited.has(key)) {
+        continue;
+      }
+
+      visited.add(key);
+      if (this.board.getCell(current.col, current.row) !== type) {
+        continue;
+      }
+
+      groupCells.push(key);
+      const neighbors = [
+        { col: current.col - 1, row: current.row },
+        { col: current.col + 1, row: current.row },
+        { col: current.col, row: current.row - 1 },
+        { col: current.col, row: current.row + 1 },
+      ];
+
+      neighbors.forEach((neighbor) => {
+        if (!this.board.isInsideColumn(neighbor.col) || !this.board.isVisibleRow(neighbor.row)) {
+          return;
+        }
+
+        const neighborKey = `${neighbor.col},${neighbor.row}`;
+        if (!visited.has(neighborKey)) {
+          queue.push(neighbor);
+        }
+      });
+    }
+
+    return groupCells;
   }
 
   createPieceShadow(alpha) {
