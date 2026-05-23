@@ -45,7 +45,7 @@ const BOMB_AREA_FLASH_STYLES = {
   full_board_clear: { fill: 0xf4d77a, stroke: 0xffffff, alpha: 0.34 },
   maximum_coffin_burst: { fill: 0xfff0a8, stroke: 0xc0392b, alpha: 0.44, strokeWidth: 3 },
 };
-const SAME_TYPE_CLEAR_FLASH_MS = 320;
+const SAME_TYPE_CLEAR_FLASH_MS = 300;
 const CANOPIC_CLEAR_FLASH_MS = 420;
 const ADJACENT_BRAIN_CLEAR_FLASH_MS = 360;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
@@ -1638,16 +1638,17 @@ export class GameScene extends Phaser.Scene {
     this.clearClearHighlights();
     this.clearClearParticles();
 
-    this.clearHighlightSprites = cells.map((cell) => this.createClearHighlight(cell));
+    this.clearHighlightSprites = cells.flatMap((cell) => this.createClearHighlight(cell));
     this.spawnClearParticles(cells);
 
     return new Promise((resolve) => {
       this.clearHighlightTween = this.tweens.add({
         targets: this.clearHighlightSprites,
-        alpha: { from: 0.78, to: 0.18 },
+        alpha: { from: 0.2, to: 0.96 },
+        scale: { from: 0.92, to: 1.08 },
         yoyo: true,
         repeat: 1,
-        duration: duration / 4,
+        duration: Math.max(60, Math.round(duration / 4)),
         ease: 'Sine.easeInOut',
         onComplete: () => {
           this.clearHighlightTween = null;
@@ -1659,13 +1660,26 @@ export class GameScene extends Phaser.Scene {
   }
 
   createClearHighlight(cell) {
-    const x = this.layout.boardOriginX + cell.col * this.layout.cellSize + this.layout.cellSize / 2;
-    const y = this.layout.boardOriginY + cell.row * this.layout.cellSize + this.layout.cellSize / 2;
+    const { x, y } = this.getCellCenter(cell.col, cell.row);
     const highlightStyle = this.getClearHighlightStyle(cell.highlightType);
+    const cellSize = Math.max(10, this.layout.cellSize - 4);
 
-    return this.add.rectangle(x, y, this.layout.cellSize - 4, this.layout.cellSize - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
+    const core = this.add.rectangle(x, y, cellSize, cellSize, highlightStyle.fillColor, highlightStyle.fillAlpha)
       .setStrokeStyle(highlightStyle.strokeWidth, highlightStyle.strokeColor, highlightStyle.strokeAlpha)
-      .setDepth(9);
+      .setDepth(9)
+      .setAlpha(0.2);
+
+    const sprites = [core];
+
+    if (highlightStyle.outerGlowColor) {
+      const outer = this.add.rectangle(x, y, cellSize + 4, cellSize + 4, highlightStyle.outerGlowColor, highlightStyle.outerGlowAlpha)
+        .setStrokeStyle(highlightStyle.outerStrokeWidth, highlightStyle.outerStrokeColor, highlightStyle.outerStrokeAlpha)
+        .setDepth(8)
+        .setAlpha(0.16);
+      sprites.push(outer);
+    }
+
+    return sprites;
   }
 
   getClearHighlightStyle(highlightType) {
@@ -1674,27 +1688,42 @@ export class GameScene extends Phaser.Scene {
         fillColor: CANOPIC_CLEAR_FLASH_COLOR,
         strokeColor: CANOPIC_CLEAR_STROKE_COLOR,
         fillAlpha: 0.34,
-        strokeAlpha: 0.92,
+        strokeAlpha: 0.96,
         strokeWidth: 3,
+        outerGlowColor: CANOPIC_CLEAR_STROKE_COLOR,
+        outerGlowAlpha: 0.2,
+        outerStrokeColor: 0xffffff,
+        outerStrokeAlpha: 0.46,
+        outerStrokeWidth: 1,
       };
     }
 
     if (highlightType === 'adjacentBrain') {
       return {
         fillColor: 0x9b62c9,
-        strokeColor: CANOPIC_CLEAR_STROKE_COLOR,
-        fillAlpha: 0.38,
-        strokeAlpha: 0.95,
+        strokeColor: 0xe0b8ff,
+        fillAlpha: 0.4,
+        strokeAlpha: 0.96,
         strokeWidth: 3,
+        outerGlowColor: 0x6a2f8f,
+        outerGlowAlpha: 0.22,
+        outerStrokeColor: 0xf4d77a,
+        outerStrokeAlpha: 0.34,
+        outerStrokeWidth: 1,
       };
     }
 
     return {
       fillColor: SAME_TYPE_CLEAR_FLASH_COLOR,
-      strokeColor: SAME_TYPE_CLEAR_FLASH_COLOR,
-      fillAlpha: 0.25,
-      strokeAlpha: 0.72,
+      strokeColor: 0xffefb0,
+      fillAlpha: 0.28,
+      strokeAlpha: 0.78,
       strokeWidth: 2,
+      outerGlowColor: 0xe8b94a,
+      outerGlowAlpha: 0.16,
+      outerStrokeColor: 0xfff3c4,
+      outerStrokeAlpha: 0.24,
+      outerStrokeWidth: 1,
     };
   }
 
