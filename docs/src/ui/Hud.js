@@ -82,6 +82,9 @@ export class Hud {
     this.coffinGlowTween = null;
     this.coffinBarPulseTween = null;
     this.coffinPanelFlashTween = null;
+    this.pureCanopicCoffinTween = null;
+    this.pureCanopicTextTween = null;
+    this.pureCanopicTextTimer = null;
     this.currentCoffinSize = null;
     this.feedbackFadeTween = null;
     this.unlockBadgeContainer = null;
@@ -786,6 +789,107 @@ export class Hud {
         this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, 0.38);
         this.coffinPanelFlashTween = null;
       },
+    });
+  }
+
+  showPureCanopicRitual(currentGod) {
+    this.flashCoffinPanel(currentGod?.tier ?? 1);
+    this.pulsePureCanopicCoffin();
+    this.showPureCanopicGodAwakens(currentGod);
+  }
+
+  pulsePureCanopicCoffin() {
+    if (!this.coffinGlow || !this.coffinContainer || !this.coffinBarFill || !this.coffinBarHighlight) {
+      return;
+    }
+
+    if (this.pureCanopicCoffinTween) {
+      this.pureCanopicCoffinTween.stop();
+      this.pureCanopicCoffinTween = null;
+    }
+
+    const baseFillScaleX = this.coffinBarFill.scaleX;
+    this.coffinGlow.setAlpha(0.1);
+    this.coffinContainer.setScale(1);
+    this.coffinBarBack.setStrokeStyle(2, 0xf4d77a, 0.72);
+    this.coffinBarFill.setFillStyle(0xf8e08a, 0.98);
+    this.coffinBarHighlight.setAlpha(0.76);
+
+    this.pureCanopicCoffinTween = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 260,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      onUpdate: (tween) => {
+        const t = tween.getValue();
+        this.coffinGlow.setAlpha(0.1 + t * 0.16);
+        this.coffinContainer.setScale(1 + t * 0.018);
+        this.coffinBarHighlight.setAlpha(0.76 + t * 0.18);
+        this.coffinBarFill.setScale(baseFillScaleX, 1 + t * 0.05);
+      },
+      onComplete: () => {
+        this.coffinGlow.setAlpha(0.08);
+        this.coffinContainer.setScale(1);
+        this.coffinBarFill.setScale(baseFillScaleX, 1);
+        this.coffinBarFill.setFillStyle(0xffd84d, 0.96);
+        this.coffinBarHighlight.setAlpha(0.58);
+        this.coffinBarBack.setStrokeStyle(2, 0xd4af37, 0.72);
+        this.pureCanopicCoffinTween = null;
+      },
+    });
+  }
+
+  showPureCanopicGodAwakens(currentGod) {
+    if (!this.feedbackText || !currentGod?.name) {
+      return;
+    }
+
+    if (this.pureCanopicTextTween) {
+      this.pureCanopicTextTween.stop();
+      this.pureCanopicTextTween = null;
+    }
+
+    if (this.pureCanopicTextTimer) {
+      this.pureCanopicTextTimer.remove(false);
+      this.pureCanopicTextTimer = null;
+    }
+
+    const awakenName = `${currentGod.name.toUpperCase()} AWAKENS`;
+    this.feedbackText.setText(awakenName);
+    this.feedbackText.setColor('#f4e3a6');
+    this.feedbackText.setStroke('#2a1a08', 4);
+    this.feedbackText.setAlpha(0);
+    this.feedbackBackdrop.setVisible(true);
+    this.feedbackBackdrop.setAlpha(0.44);
+
+    this.pureCanopicTextTween = this.scene.tweens.add({
+      targets: this.feedbackText,
+      alpha: { from: 0, to: 0.96 },
+      duration: 150,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.pureCanopicTextTween = null;
+      },
+    });
+
+    this.pureCanopicTextTimer = this.scene.time.delayedCall(520, () => {
+      this.pureCanopicTextTween = this.scene.tweens.add({
+        targets: [this.feedbackText, this.feedbackBackdrop],
+        alpha: 0,
+        duration: 180,
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          this.feedbackText.setText('');
+          this.feedbackText.setAlpha(1);
+          this.feedbackText.setColor('#ffe8ab');
+          this.feedbackText.setStroke('#2a1707', 3);
+          this.feedbackBackdrop.setVisible(false);
+          this.feedbackBackdrop.setAlpha(0.66);
+          this.pureCanopicTextTween = null;
+        },
+      });
+      this.pureCanopicTextTimer = null;
     });
   }
 

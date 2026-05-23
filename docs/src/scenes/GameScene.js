@@ -66,7 +66,8 @@ const CAMERA_SHAKE_DURATION_MS = 80;
 const CAMERA_SHAKE_BASE_INTENSITY = 0.0008;
 const CAMERA_SHAKE_CHAIN_SCALE = 0.0005;
 const PURE_CANOPIC_PULSE_DEPTH = 25;
-const PURE_CANOPIC_PULSE_DURATION_MS = 380;
+const PURE_CANOPIC_PULSE_DURATION_MS = 320;
+const PURE_CANOPIC_HIT_STOP_MS = 210;
 const CHAIN_POPUP_DEPTH = 46;
 const CHAIN_POPUP_TOP_OFFSET = 26;
 const CHAIN_POPUP_RISE_START_OFFSET = 32;
@@ -221,7 +222,9 @@ export class GameScene extends Phaser.Scene {
     this.pureCanopicPopupText = null;
     this.pureCanopicPopupTween = null;
     this.pureCanopicPulseOverlay = null;
+    this.pureCanopicRipple = null;
     this.pureCanopicPulseTween = null;
+    this.pureCanopicRippleTween = null;
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
     this.bombPreviewSprites = [];
@@ -2054,8 +2057,9 @@ export class GameScene extends Phaser.Scene {
     const profile = this.getClearImpactProfile(clearResult, chainCount);
 
     if (profile.pureCanopicPulse) {
-      this.playPureCanopicPulse();
-      await this.wait(Math.min(PURE_CANOPIC_PULSE_DURATION_MS * 0.55, profile.hitStopMs));
+      this.playPureCanopicPulse(clearResult);
+      this.hud.showPureCanopicRitual(this.coffinMeter.getState().currentGod);
+      await this.wait(profile.hitStopMs);
       return;
     }
 
@@ -2080,7 +2084,7 @@ export class GameScene extends Phaser.Scene {
       : CAMERA_SHAKE_BASE_INTENSITY + CAMERA_SHAKE_CHAIN_SCALE * shakeTier;
 
     return {
-      hitStopMs: hasPureCanopic ? Math.round(hitStopMs * 0.8) : hitStopMs,
+      hitStopMs: hasPureCanopic ? PURE_CANOPIC_HIT_STOP_MS : hitStopMs,
       shakeIntensity: Phaser.Math.Clamp(shakeIntensity, 0, 0.0022),
       pureCanopicPulse: hasPureCanopic,
     };
@@ -2099,24 +2103,45 @@ export class GameScene extends Phaser.Scene {
     camera.shake(CAMERA_SHAKE_DURATION_MS, intensity, false);
   }
 
-  playPureCanopicPulse() {
+  playPureCanopicPulse(clearResult) {
     this.clearPureCanopicPulse();
+    const pulseCenter = this.getPureCanopicCenter(clearResult);
 
     const overlay = this.add.rectangle(
-      this.layout.boardCenterX,
-      this.layout.boardCenterY,
+      pulseCenter.x,
+      pulseCenter.y,
       this.layout.boardWidth,
       this.layout.boardHeight,
       0x62f4ff,
-      0.06,
-    ).setStrokeStyle(2, 0xf4d77a, 0.38).setDepth(PURE_CANOPIC_PULSE_DEPTH);
+      0.02,
+    ).setStrokeStyle(2, 0xf4d77a, 0.28).setDepth(PURE_CANOPIC_PULSE_DEPTH);
+    const ripple = this.add.ellipse(
+      pulseCenter.x,
+      pulseCenter.y,
+      this.layout.cellSize * 1.8,
+      this.layout.cellSize * 1.8,
+      0x62f4ff,
+      0.16,
+    ).setStrokeStyle(2, 0xf4d77a, 0.56).setDepth(PURE_CANOPIC_PULSE_DEPTH + 1);
 
     this.pureCanopicPulseOverlay = overlay;
+    this.pureCanopicRipple = ripple;
     this.pureCanopicPulseTween = this.tweens.add({
       targets: overlay,
-      alpha: { from: 0.06, to: 0 },
-      scaleX: { from: 0.99, to: 1.03 },
-      scaleY: { from: 0.99, to: 1.03 },
+      alpha: { from: 0.24, to: 0 },
+      scaleX: { from: 0.97, to: 1.025 },
+      scaleY: { from: 0.97, to: 1.025 },
+      duration: PURE_CANOPIC_PULSE_DURATION_MS,
+      ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.pureCanopicPulseTween = null;
+      },
+    });
+    this.pureCanopicRippleTween = this.tweens.add({
+      targets: ripple,
+      alpha: { from: 0.24, to: 0 },
+      scaleX: { from: 0.4, to: 3.3 },
+      scaleY: { from: 0.4, to: 3.3 },
       duration: PURE_CANOPIC_PULSE_DURATION_MS,
       ease: 'Sine.easeOut',
       onComplete: () => {
@@ -2125,15 +2150,37 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  getPureCanopicCenter(clearResult) {
+    const pureGroups = clearResult.canopicSets.filter((group) => this.canopusResolver.isPureCanopicSet(group));
+    if (pureGroups.length === 0) {
+      return { x: this.layout.boardCenterX, y: this.layout.boardCenterY };
+    }
+
+    const allCells = pureGroups.flat();
+    const sum = allCells.reduce((acc, cell) => {
+      const center = this.getCellCenter(cell.col, cell.row);
+      return { x: acc.x + center.x, y: acc.y + center.y };
+    }, { x: 0, y: 0 });
+    return { x: sum.x / allCells.length, y: sum.y / allCells.length };
+  }
+
   clearPureCanopicPulse(stopTween = true) {
     if (stopTween && this.pureCanopicPulseTween) {
       this.pureCanopicPulseTween.remove();
       this.pureCanopicPulseTween = null;
     }
+    if (stopTween && this.pureCanopicRippleTween) {
+      this.pureCanopicRippleTween.remove();
+      this.pureCanopicRippleTween = null;
+    }
 
     if (this.pureCanopicPulseOverlay) {
       this.pureCanopicPulseOverlay.destroy();
       this.pureCanopicPulseOverlay = null;
+    }
+    if (this.pureCanopicRipple) {
+      this.pureCanopicRipple.destroy();
+      this.pureCanopicRipple = null;
     }
   }
 
