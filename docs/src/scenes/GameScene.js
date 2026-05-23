@@ -60,6 +60,11 @@ const PURE_CANOPIC_POPUP_DEPTH = 47;
 const PIECE_CONNECTOR_DEPTH = 3;
 const PIECE_SPRITE_DEPTH = 4;
 const CONNECTOR_ALPHA = 0.4;
+const CONNECTOR_PULSE_ALPHA_MIN = 0.55;
+const CONNECTOR_PULSE_ALPHA_MAX = 0.8;
+const CONNECTOR_PULSE_DURATION_MS = 1150;
+const CONNECTOR_PULSE_GROUP_ALPHA_BOOST = 0.03;
+const CONNECTOR_PULSE_GROUP_ALPHA_BOOST_MAX = 0.08;
 const CONNECTOR_TINT_DARKEN = 0.4;
 const CONNECTOR_TINT_DARKEN_LARGE_GROUP = 0.48;
 const CONNECTOR_THICKNESS_RATIO = 0.58;
@@ -188,6 +193,7 @@ export class GameScene extends Phaser.Scene {
     this.nextPairTypes = createRandomPairTypes();
     this.blockSprites = [];
     this.connectionSprites = [];
+    this.connectionPulseTweens = [];
     this.fallTimer = 0;
     this.lockTimer = 0;
     this.gameState = GAME_STATES.TITLE;
@@ -2291,6 +2297,7 @@ export class GameScene extends Phaser.Scene {
     ).setDepth(PIECE_CONNECTOR_DEPTH);
 
     this.connectionSprites.push(connector);
+    this.startConnectorPulse(connector, groupSize);
   }
 
   createOrganicConnector(x, y, isHorizontal, length, thickness, color) {
@@ -2313,6 +2320,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     return container;
+  }
+
+  startConnectorPulse(connector, groupSize) {
+    const groupBoost = Math.min(
+      CONNECTOR_PULSE_GROUP_ALPHA_BOOST_MAX,
+      Math.max(0, groupSize - 2) * CONNECTOR_PULSE_GROUP_ALPHA_BOOST,
+    );
+    const alphaMin = CONNECTOR_PULSE_ALPHA_MIN;
+    const alphaMax = Math.min(0.88, CONNECTOR_PULSE_ALPHA_MAX + groupBoost);
+
+    connector.setAlpha(alphaMin);
+
+    const pulseTween = this.tweens.add({
+      targets: connector,
+      alpha: { from: alphaMin, to: alphaMax },
+      duration: CONNECTOR_PULSE_DURATION_MS,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    });
+
+    this.connectionPulseTweens.push(pulseTween);
   }
 
   getConnectorThickness(groupSize) {
@@ -2419,6 +2448,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   clearConnectionSprites() {
+    this.connectionPulseTweens.forEach((tween) => {
+      if (tween?.isPlaying?.()) {
+        tween.stop();
+      }
+      tween?.remove?.();
+    });
+    this.connectionPulseTweens = [];
+
     this.connectionSprites.forEach((sprite) => sprite.destroy());
     this.connectionSprites = [];
   }
