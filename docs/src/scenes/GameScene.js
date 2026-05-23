@@ -50,6 +50,7 @@ const CANOPIC_CLEAR_FLASH_MS = 420;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
+const ADJACENT_BRAIN_FLASH_COLOR = 0x9b62c9;
 const BOARD_GRAVITY_STEP_MS = 55;
 const BOARD_FEEDBACK_DEPTH = 26;
 const CHAIN_POPUP_DEPTH = 46;
@@ -1610,22 +1611,58 @@ export class GameScene extends Phaser.Scene {
   flashCells(cells, { duration }) {
     this.clearClearHighlights();
 
-    this.clearHighlightSprites = cells.map((cell) => this.createClearHighlight(cell));
+    this.clearHighlightSprites = cells.flatMap((cell) => this.createClearHighlight(cell));
+    const pulseTargets = this.clearHighlightSprites.filter((sprite) => sprite?.getData('pulseRole') === 'core');
+    const haloTargets = this.clearHighlightSprites.filter((sprite) => sprite?.getData('pulseRole') === 'halo');
 
     return new Promise((resolve) => {
-      this.clearHighlightTween = this.tweens.add({
-        targets: this.clearHighlightSprites,
-        alpha: { from: 0.78, to: 0.18 },
-        yoyo: true,
-        repeat: 1,
-        duration: duration / 4,
-        ease: 'Sine.easeInOut',
+      this.clearHighlightTween = this.tweens.chain({
+        tweens: [
+          {
+            targets: pulseTargets,
+            alpha: 0.95,
+            scale: 1.07,
+            duration: duration * 0.28,
+            ease: 'Sine.easeOut',
+          },
+          {
+            targets: pulseTargets,
+            alpha: 0.24,
+            scale: 0.96,
+            duration: duration * 0.24,
+            ease: 'Sine.easeInOut',
+          },
+          {
+            targets: pulseTargets,
+            alpha: 0.88,
+            scale: 1.03,
+            duration: duration * 0.2,
+            ease: 'Sine.easeIn',
+          },
+          {
+            targets: pulseTargets,
+            alpha: 0.12,
+            scale: 1.0,
+            duration: duration * 0.28,
+            ease: 'Sine.easeOut',
+          },
+        ],
         onComplete: () => {
           this.clearHighlightTween = null;
           this.clearClearHighlights(false);
           resolve();
         },
       });
+
+      if (haloTargets.length > 0) {
+        this.tweens.add({
+          targets: haloTargets,
+          alpha: { from: 0.42, to: 0.08 },
+          scale: { from: 0.94, to: 1.13 },
+          duration,
+          ease: 'Sine.easeOut',
+        });
+      }
     });
   }
 
@@ -1633,10 +1670,18 @@ export class GameScene extends Phaser.Scene {
     const x = this.layout.boardOriginX + cell.col * this.layout.cellSize + this.layout.cellSize / 2;
     const y = this.layout.boardOriginY + cell.row * this.layout.cellSize + this.layout.cellSize / 2;
     const highlightStyle = this.getClearHighlightStyle(cell.highlightType);
-
-    return this.add.rectangle(x, y, this.layout.cellSize - 4, this.layout.cellSize - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
+    const core = this.add.rectangle(x, y, this.layout.cellSize - 4, this.layout.cellSize - 4, highlightStyle.fillColor, highlightStyle.fillAlpha)
       .setStrokeStyle(highlightStyle.strokeWidth, highlightStyle.strokeColor, highlightStyle.strokeAlpha)
       .setDepth(9);
+    core.setData('pulseRole', 'core');
+
+    const halo = this.add.rectangle(x, y, this.layout.cellSize + 2, this.layout.cellSize + 2, highlightStyle.glowColor, highlightStyle.glowAlpha)
+      .setStrokeStyle(Math.max(1, highlightStyle.strokeWidth - 1), highlightStyle.glowColor, highlightStyle.glowStrokeAlpha)
+      .setDepth(8)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    halo.setData('pulseRole', 'halo');
+
+    return [halo, core];
   }
 
   getClearHighlightStyle(highlightType) {
@@ -1647,16 +1692,22 @@ export class GameScene extends Phaser.Scene {
         fillAlpha: 0.34,
         strokeAlpha: 0.92,
         strokeWidth: 3,
+        glowColor: CANOPIC_CLEAR_STROKE_COLOR,
+        glowAlpha: 0.24,
+        glowStrokeAlpha: 0.32,
       };
     }
 
     if (highlightType === 'adjacentBrain') {
       return {
-        fillColor: 0x9b62c9,
-        strokeColor: CANOPIC_CLEAR_STROKE_COLOR,
+        fillColor: ADJACENT_BRAIN_FLASH_COLOR,
+        strokeColor: 0xd4af37,
         fillAlpha: 0.38,
         strokeAlpha: 0.95,
         strokeWidth: 3,
+        glowColor: ADJACENT_BRAIN_FLASH_COLOR,
+        glowAlpha: 0.28,
+        glowStrokeAlpha: 0.36,
       };
     }
 
@@ -1666,6 +1717,9 @@ export class GameScene extends Phaser.Scene {
       fillAlpha: 0.25,
       strokeAlpha: 0.72,
       strokeWidth: 2,
+      glowColor: SAME_TYPE_CLEAR_FLASH_COLOR,
+      glowAlpha: 0.2,
+      glowStrokeAlpha: 0.3,
     };
   }
 
