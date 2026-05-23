@@ -47,9 +47,17 @@ const BOMB_AREA_FLASH_STYLES = {
 };
 const SAME_TYPE_CLEAR_FLASH_MS = 320;
 const CANOPIC_CLEAR_FLASH_MS = 420;
+const ADJACENT_BRAIN_CLEAR_FLASH_MS = 360;
 const SAME_TYPE_CLEAR_FLASH_COLOR = 0xf4d77a;
 const CANOPIC_CLEAR_FLASH_COLOR = 0x62f4ff;
 const CANOPIC_CLEAR_STROKE_COLOR = 0xf4d77a;
+const CLEAR_PARTICLE_DEPTH = 11;
+const CLEAR_PARTICLE_LIFETIME_MIN_MS = 300;
+const CLEAR_PARTICLE_LIFETIME_MAX_MS = 600;
+const CLEAR_PARTICLE_BASE_SPEED = 12;
+const CLEAR_PARTICLE_SPEED_SCALE = 0.24;
+const CLEAR_PARTICLE_BASE_RADIUS = 2;
+const CLEAR_PARTICLE_RADIUS_SCALE = 0.06;
 const BOARD_GRAVITY_STEP_MS = 55;
 const BOARD_FEEDBACK_DEPTH = 26;
 const CHAIN_POPUP_DEPTH = 46;
@@ -211,6 +219,8 @@ export class GameScene extends Phaser.Scene {
     this.selectedBombSlot = null;
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
+    this.clearParticleSprites = [];
+    this.clearParticleTweens = [];
     this.isResolvingClears = false;
     this.titleOverlay = null;
     this.howToPlayOverlay = null;
@@ -854,6 +864,7 @@ export class GameScene extends Phaser.Scene {
     this.cancelBombSelection();
     this.clearBombAreaFlash();
     this.clearClearHighlights();
+    this.clearClearParticles();
     this.boardFeedbackText.setText('');
     this.clearChainPopup();
     this.clearPureCanopicPopup();
@@ -1571,7 +1582,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     const hasCanopicSet = clearResult.clearTypes.has('canopic');
-    const duration = hasCanopicSet ? CANOPIC_CLEAR_FLASH_MS : SAME_TYPE_CLEAR_FLASH_MS;
+    const hasAdjacentBrain = clearResult.clearTypes.has('adjacentBrain');
+    const duration = hasCanopicSet
+      ? CANOPIC_CLEAR_FLASH_MS
+      : hasAdjacentBrain
+        ? ADJACENT_BRAIN_CLEAR_FLASH_MS
+        : SAME_TYPE_CLEAR_FLASH_MS;
     return this.flashCells(cells, { duration });
   }
 
@@ -1609,8 +1625,10 @@ export class GameScene extends Phaser.Scene {
 
   flashCells(cells, { duration }) {
     this.clearClearHighlights();
+    this.clearClearParticles();
 
     this.clearHighlightSprites = cells.map((cell) => this.createClearHighlight(cell));
+    this.spawnClearParticles(cells);
 
     return new Promise((resolve) => {
       this.clearHighlightTween = this.tweens.add({
@@ -1677,6 +1695,78 @@ export class GameScene extends Phaser.Scene {
 
     this.clearHighlightSprites.forEach((sprite) => sprite.destroy());
     this.clearHighlightSprites = [];
+  }
+
+  spawnClearParticles(cells) {
+    const particleCountPerCell = this.layout.cellSize <= 32 ? 2 : 3;
+    const maxRadius = CLEAR_PARTICLE_BASE_RADIUS + this.layout.cellSize * CLEAR_PARTICLE_RADIUS_SCALE;
+    const speed = CLEAR_PARTICLE_BASE_SPEED + this.layout.cellSize * CLEAR_PARTICLE_SPEED_SCALE;
+
+    cells.forEach((cell) => {
+      const style = this.getClearParticleStyle(cell.highlightType);
+      const { x, y } = this.getCellCenter(cell.col, cell.row);
+
+      for (let i = 0; i < particleCountPerCell; i += 1) {
+        const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+        const distance = Phaser.Math.FloatBetween(4, this.layout.cellSize * 0.36);
+        const particle = this.add.circle(
+          x + Math.cos(angle) * distance * 0.28,
+          y + Math.sin(angle) * distance * 0.28,
+          Phaser.Math.FloatBetween(1.2, maxRadius),
+          Phaser.Utils.Array.GetRandom(style.colors),
+          style.alpha,
+        ).setDepth(CLEAR_PARTICLE_DEPTH);
+
+        const lifetime = Phaser.Math.Between(CLEAR_PARTICLE_LIFETIME_MIN_MS, CLEAR_PARTICLE_LIFETIME_MAX_MS);
+        const travel = Phaser.Math.FloatBetween(speed * 0.45, speed);
+        const tween = this.tweens.add({
+          targets: particle,
+          x: particle.x + Math.cos(angle) * travel,
+          y: particle.y + Math.sin(angle) * travel - Phaser.Math.FloatBetween(4, 10),
+          alpha: 0,
+          scale: { from: 1, to: 0.7 },
+          duration: lifetime,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            this.clearParticleTweens = this.clearParticleTweens.filter((activeTween) => activeTween !== tween);
+            this.clearParticleSprites = this.clearParticleSprites.filter((activeSprite) => activeSprite !== particle);
+            particle.destroy();
+          },
+        });
+
+        this.clearParticleSprites.push(particle);
+        this.clearParticleTweens.push(tween);
+      }
+    });
+  }
+
+  getClearParticleStyle(highlightType) {
+    if (highlightType === 'canopic') {
+      return {
+        colors: [0x62f4ff, 0x9ae8ff, 0xf4d77a],
+        alpha: 0.8,
+      };
+    }
+
+    if (highlightType === 'adjacentBrain') {
+      return {
+        colors: [0x7b2d8b, 0x4a245d, 0x241126],
+        alpha: 0.7,
+      };
+    }
+
+    return {
+      colors: [0xf4d77a, 0xcfa76a, 0xb38a50],
+      alpha: 0.72,
+    };
+  }
+
+  clearClearParticles() {
+    this.clearParticleTweens.forEach((tween) => tween?.remove?.());
+    this.clearParticleTweens = [];
+
+    this.clearParticleSprites.forEach((sprite) => sprite.destroy());
+    this.clearParticleSprites = [];
   }
 
   updateBombPreview() {
