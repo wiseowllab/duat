@@ -97,6 +97,18 @@ const LAYOUT_CONFIG = {
 };
 const SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV = true;
 
+const TITLE_DUST_PARTICLE_COUNT = 18;
+const TITLE_DUST_DRIFT_MIN_MS = 6800;
+const TITLE_DUST_DRIFT_MAX_MS = 12200;
+const TITLE_LOGO_STEP_MS = 700;
+const TITLE_LOGO_FADE_MS = 1400;
+const TITLE_COFFIN_PULSE_SCALE = 1.018;
+const TITLE_COFFIN_PULSE_MS = 3200;
+const TITLE_AMBIENT_SHIMMER_MS = 5600;
+const TITLE_PROMPT_PULSE_MS = 2200;
+const TITLE_GOD_NAME_INTERVAL_MIN_MS = 7000;
+const TITLE_GOD_NAME_INTERVAL_MAX_MS = 14000;
+
 const GAME_STATES = {
   TITLE: 'title',
   PLAYING: 'playing',
@@ -235,6 +247,9 @@ export class GameScene extends Phaser.Scene {
     this.clearParticleTweens = [];
     this.isResolvingClears = false;
     this.titleOverlay = null;
+    this.titleAmbientTweens = [];
+    this.titleGodNameEvent = null;
+    this.titleGodNameText = null;
     this.howToPlayOverlay = null;
     this.howToPlayTitleText = null;
     this.howToPlayPageIndicatorText = null;
@@ -501,6 +516,9 @@ export class GameScene extends Phaser.Scene {
       .setStrokeStyle(2, 0xd4af37, 0.85);
     const innerPanel = this.add.rectangle(0, 0, 560, 548, 0x1b1208, 0.72)
       .setStrokeStyle(1, 0xf0d27a, 0.34);
+    const ambientGlow = this.add.ellipse(0, -130, 480, 268, 0xf4d77a, 0.06);
+    const titleCoffin = this.add.rectangle(0, -220, 278, 108, 0x2a1b0f, 0.42)
+      .setStrokeStyle(1, 0xf0d27a, 0.3);
     const title = this.add.text(0, -232, 'DUAT', {
       fontFamily: 'Georgia, serif',
       fontSize: '58px',
@@ -509,13 +527,13 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       stroke: '#050301',
       strokeThickness: 6,
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setAlpha(0);
     const subtitle = this.add.text(0, -184, '古代エジプト落ち物パズル', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '22px',
       color: '#f4d77a',
       align: 'center',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setAlpha(0);
     const description = this.add.text(0, -142, '臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
@@ -548,7 +566,7 @@ export class GameScene extends Phaser.Scene {
       align: 'center',
       lineSpacing: 3,
     }).setOrigin(0.5);
-    const keyboardPrompt = this.add.text(0, 156, 'Enter / Space：開始　H：遊び方', {
+    const keyboardPrompt = this.add.text(0, 156, 'PRESS START / Enter / Space　H：遊び方', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '17px',
       color: '#d4af37',
@@ -566,7 +584,10 @@ export class GameScene extends Phaser.Scene {
     const versionTextBackground = this.add.rectangle(-272, 188, 248, 106, 0x070401, 0.88)
       .setOrigin(0, 1)
       .setStrokeStyle(2, 0xd4af37, 0.86);
-    const versionText = this.add.text(-260, 178, `DEV BUILD\nv${GAME_VERSION}\nBuild ${BUILD_LABEL}\n${COMMIT_SHA}`, {
+    const versionText = this.add.text(-260, 178, `DEV BUILD
+v${GAME_VERSION}
+Build ${BUILD_LABEL}
+${COMMIT_SHA}`, {
       fontFamily: 'Arial, sans-serif',
       fontSize: '15px',
       color: '#f8e9c4',
@@ -575,11 +596,35 @@ export class GameScene extends Phaser.Scene {
       lineSpacing: 4,
     }).setOrigin(0, 1);
 
+    const dustParticles = [];
+    for (let i = 0; i < TITLE_DUST_PARTICLE_COUNT; i += 1) {
+      const dust = this.add.circle(
+        Phaser.Math.Between(-258, 258),
+        Phaser.Math.Between(-250, 246),
+        Phaser.Math.Between(1, 3),
+        0xd4af37,
+        Phaser.Math.FloatBetween(0.05, 0.12),
+      );
+      dustParticles.push(dust);
+    }
+
+    this.titleGodNameText = this.add.text(0, -20, '', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '24px',
+      color: '#f4d77a',
+      align: 'center',
+      letterSpacing: 5,
+    }).setOrigin(0.5).setAlpha(0.0);
+
     this.titleOverlay.add([
       panel,
       innerPanel,
+      ambientGlow,
+      ...dustParticles,
+      titleCoffin,
       title,
       subtitle,
+      this.titleGodNameText,
       description,
       bestText,
       controls,
@@ -590,6 +635,9 @@ export class GameScene extends Phaser.Scene {
       versionTextBackground,
       versionText,
     ]);
+
+    this.setupTitleAmbientMotion({ title, subtitle, keyboardPrompt, ambientGlow, titleCoffin, dustParticles });
+
     panel.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => {
       if (!this.isHowToPlayOpen) {
@@ -601,6 +649,92 @@ export class GameScene extends Phaser.Scene {
     howToButton.background.on('pointerdown', () => this.openHowToPlay());
     howToButton.text.on('pointerdown', () => this.openHowToPlay());
     this.createHowToPlayOverlay();
+  }
+
+  setupTitleAmbientMotion({ title, subtitle, keyboardPrompt, ambientGlow, titleCoffin, dustParticles }) {
+    const titleSteps = ['D', 'DU', 'DUA', 'DUAT'];
+    titleSteps.forEach((text, index) => {
+      this.time.delayedCall(index * TITLE_LOGO_STEP_MS, () => {
+        if (this.gameState !== GAME_STATES.TITLE || !title.active) {
+          return;
+        }
+        title.setText(text);
+      });
+    });
+
+    this.titleAmbientTweens.push(
+      this.tweens.add({ targets: title, alpha: 1, duration: TITLE_LOGO_FADE_MS, ease: 'Sine.Out' }),
+      this.tweens.add({ targets: subtitle, alpha: 1, delay: 420, duration: 1200, ease: 'Sine.Out' }),
+      this.tweens.add({
+        targets: titleCoffin,
+        scaleX: TITLE_COFFIN_PULSE_SCALE,
+        scaleY: TITLE_COFFIN_PULSE_SCALE,
+        duration: TITLE_COFFIN_PULSE_MS,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      }),
+      this.tweens.add({
+        targets: keyboardPrompt,
+        alpha: { from: 0.56, to: 0.95 },
+        duration: TITLE_PROMPT_PULSE_MS,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      }),
+      this.tweens.add({
+        targets: ambientGlow,
+        alpha: { from: 0.04, to: 0.1 },
+        duration: TITLE_AMBIENT_SHIMMER_MS,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      }),
+    );
+
+    dustParticles.forEach((dust) => {
+      const tween = this.tweens.add({
+        targets: dust,
+        x: dust.x + Phaser.Math.Between(-38, 38),
+        y: dust.y + Phaser.Math.Between(-18, 18),
+        alpha: { from: dust.alpha * 0.7, to: dust.alpha * 1.1 },
+        duration: Phaser.Math.Between(TITLE_DUST_DRIFT_MIN_MS, TITLE_DUST_DRIFT_MAX_MS),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      });
+      this.titleAmbientTweens.push(tween);
+    });
+
+    this.scheduleNextTitleGodName();
+  }
+
+  scheduleNextTitleGodName() {
+    if (!this.titleGodNameText || this.gameState !== GAME_STATES.TITLE) {
+      return;
+    }
+
+    const names = ['IMSETY', 'HAPI', 'DUAMUTEF', 'QEBEHSENUEF'];
+    const wait = Phaser.Math.Between(TITLE_GOD_NAME_INTERVAL_MIN_MS, TITLE_GOD_NAME_INTERVAL_MAX_MS);
+    this.titleGodNameEvent = this.time.delayedCall(wait, () => {
+      if (!this.titleGodNameText || this.gameState !== GAME_STATES.TITLE) {
+        return;
+      }
+      this.titleGodNameText.setText(Phaser.Utils.Array.GetRandom(names));
+      this.tweens.add({
+        targets: this.titleGodNameText,
+        alpha: { from: 0, to: 0.14 },
+        duration: 1800,
+        yoyo: true,
+        ease: 'Sine.InOut',
+        onComplete: () => {
+          if (this.titleGodNameText) {
+            this.titleGodNameText.setAlpha(0);
+          }
+          this.scheduleNextTitleGodName();
+        },
+      });
+    });
   }
 
   createTitleButton(x, y, width, height, label) {
