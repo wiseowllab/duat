@@ -140,16 +140,16 @@ export class Hud {
     this.tierText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
     this.godText.setDepth(HUD_LAYER_COFFIN_OVERLAY_TEXT);
     this.drawCoffinVisual({ tier: 1, tierName: 'Small Coffin', coffinSize: 'small' });
-    this.coffinText = this.createLabel(SECTION_X + 2, coffinSectionY + 155 - this.y, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 8, 0);
+    this.coffinText = this.createLabel(SECTION_X + 2, coffinSectionY + 158 - this.y, `Meter: 0 / ${COFFIN_METER.requiredByTier[1]}`, 8, 0);
     this.coffinText.setDepth(HUD_LAYER_COFFIN_METER);
     this.coffinText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
-    this.coffinBarBack = this.scene.add.rectangle(this.x + 14, coffinSectionY + 172, this.coffinBarWidth, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
+    this.coffinBarBack = this.scene.add.rectangle(this.x + 14, coffinSectionY + 179, this.coffinBarWidth, COFFIN_BAR_HEIGHT, 0x0b0906, 0.94)
       .setOrigin(0, 0.5)
       .setStrokeStyle(2, 0xd4af37, 0.72)
       .setDepth(HUD_LAYER_COFFIN_BAR_BG);
     this.coffinBarFill = this.scene.add.rectangle(
       this.x + 22 + COFFIN_BAR_INSET,
-      coffinSectionY + 172,
+      coffinSectionY + 179,
       this.coffinBarInnerWidth,
       COFFIN_BAR_FILL_HEIGHT,
       0xffd84d,
@@ -157,14 +157,14 @@ export class Hud {
     ).setOrigin(0, 0.5).setDepth(HUD_LAYER_COFFIN_BAR_FILL);
     this.coffinBarHighlight = this.scene.add.rectangle(
       this.x + 22 + COFFIN_BAR_INSET,
-      coffinSectionY + 168,
+      coffinSectionY + 175,
       this.coffinBarInnerWidth,
       2,
       0xffffb8,
       0.58,
     ).setOrigin(0, 0.5).setDepth(HUD_LAYER_COFFIN_BAR_FILL);
     this.updateCoffinBar(0);
-    this.unlockedText = this.createLabel(SECTION_X + 2, coffinSectionY + 184 - this.y, 'Awake: 0 / 14', 8, 0);
+    this.unlockedText = this.createLabel(SECTION_X + 2, coffinSectionY + 190 - this.y, 'Awake: 0 / 14', 8, 0);
     this.unlockedText.setDepth(HUD_LAYER_COFFIN_METER);
     this.unlockedText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
 
