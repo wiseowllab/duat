@@ -57,6 +57,10 @@ const CHAIN_POPUP_TOP_OFFSET = 26;
 const CHAIN_POPUP_RISE_START_OFFSET = 32;
 const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const PURE_CANOPIC_POPUP_DEPTH = 47;
+const PIECE_CONNECTOR_DEPTH = 3;
+const PIECE_SPRITE_DEPTH = 4;
+const CONNECTOR_ALPHA = 0.34;
+const CONNECTOR_TINT_DARKEN = 0.45;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const LAYOUT_CONFIG = {
@@ -179,6 +183,7 @@ export class GameScene extends Phaser.Scene {
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
     this.blockSprites = [];
+    this.connectionSprites = [];
     this.fallTimer = 0;
     this.lockTimer = 0;
     this.gameState = GAME_STATES.TITLE;
@@ -2182,7 +2187,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   renderBoard() {
+    this.clearConnectionSprites();
     this.clearBlockSprites();
+    this.drawLockedPieceConnections();
 
     for (let row = 0; row < this.board.rows; row += 1) {
       for (let col = 0; col < this.board.columns; col += 1) {
@@ -2230,7 +2237,56 @@ export class GameScene extends Phaser.Scene {
         .setAlpha(alpha));
     }
 
-    return container;
+    return container.setDepth(PIECE_SPRITE_DEPTH);
+  }
+
+  drawLockedPieceConnections() {
+    for (let row = 0; row < this.board.rows; row += 1) {
+      for (let col = 0; col < this.board.columns; col += 1) {
+        const type = this.board.getCell(col, row);
+        if (!this.canConnectType(type)) {
+          continue;
+        }
+
+        this.tryDrawConnection(col, row, col + 1, row, type);
+        this.tryDrawConnection(col, row, col, row + 1, type);
+      }
+    }
+  }
+
+  canConnectType(type) {
+    return Boolean(type) && type !== 'brain';
+  }
+
+  tryDrawConnection(fromCol, fromRow, toCol, toRow, type) {
+    if (!this.board.isInsideColumn(toCol) || !this.board.isVisibleRow(toRow)) {
+      return;
+    }
+
+    if (this.board.getCell(toCol, toRow) !== type) {
+      return;
+    }
+
+    const from = this.getCellCenter(fromCol, fromRow);
+    const to = this.getCellCenter(toCol, toRow);
+    const isHorizontal = fromRow === toRow;
+    const width = isHorizontal ? this.layout.cellSize * 0.72 : this.layout.cellSize * 0.34;
+    const height = isHorizontal ? this.layout.cellSize * 0.34 : this.layout.cellSize * 0.72;
+    const connectorColor = this.getConnectorColor(type);
+    const connector = this.add.rectangle((from.x + to.x) / 2, (from.y + to.y) / 2, width, height, connectorColor, CONNECTOR_ALPHA)
+      .setDepth(PIECE_CONNECTOR_DEPTH);
+
+    this.connectionSprites.push(connector);
+  }
+
+  getConnectorColor(type) {
+    const baseColor = PIECE_COLORS[type] ?? 0xd4af37;
+    return Phaser.Display.Color.Interpolate.ColorWithColor(
+      Phaser.Display.Color.ValueToColor(baseColor),
+      Phaser.Display.Color.ValueToColor(0x1a1207),
+      100,
+      Math.round(CONNECTOR_TINT_DARKEN * 100),
+    ).color;
   }
 
   createPieceShadow(alpha) {
@@ -2243,6 +2299,11 @@ export class GameScene extends Phaser.Scene {
   createFallbackBlock(type, alpha) {
     return this.add.rectangle(0, 0, this.layout.cellSize - 8, this.layout.cellSize - 8, PIECE_COLORS[type], 0.32 * alpha)
       .setStrokeStyle(1, 0xf6e3a1, 0.32);
+  }
+
+  clearConnectionSprites() {
+    this.connectionSprites.forEach((sprite) => sprite.destroy());
+    this.connectionSprites = [];
   }
 
   showBombFeedback(bomb, affectedCount) {
