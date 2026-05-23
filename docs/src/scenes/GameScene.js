@@ -59,12 +59,12 @@ const CHAIN_POPUP_RISE_END_OFFSET = 18;
 const PURE_CANOPIC_POPUP_DEPTH = 47;
 const PIECE_CONNECTOR_DEPTH = 3;
 const PIECE_SPRITE_DEPTH = 4;
-const CONNECTOR_ALPHA = 0.3;
-const CONNECTOR_TINT_DARKEN = 0.5;
-const CONNECTOR_TINT_DARKEN_LARGE_GROUP = 0.58;
-const CONNECTOR_THICKNESS_RATIO = 0.42;
+const CONNECTOR_ALPHA = 0.4;
+const CONNECTOR_TINT_DARKEN = 0.4;
+const CONNECTOR_TINT_DARKEN_LARGE_GROUP = 0.48;
+const CONNECTOR_THICKNESS_RATIO = 0.58;
 const CONNECTOR_LENGTH_RATIO = 0.76;
-const CONNECTOR_BULGE_RATIO = 0.18;
+const CONNECTOR_BULGE_RATIO = 0.32;
 const DANGER_ENTER_ROW = DANGER_BGM.enterRow;
 const DANGER_EXIT_ROW = DANGER_BGM.exitRow;
 const LAYOUT_CONFIG = {
@@ -2298,18 +2298,18 @@ export class GameScene extends Phaser.Scene {
     const coreWidth = isHorizontal ? length : thickness;
     const coreHeight = isHorizontal ? thickness : length;
     const endOffset = (length - thickness) / 2;
-    const bulgeSize = thickness * (1 + CONNECTOR_BULGE_RATIO);
+    const bulgeThickness = thickness * (1 + CONNECTOR_BULGE_RATIO);
 
     container.add(this.add.ellipse(0, 0, coreWidth, coreHeight, color, CONNECTOR_ALPHA));
 
     if (isHorizontal) {
       container.add(this.add.circle(-endOffset, 0, thickness / 2, color, CONNECTOR_ALPHA));
       container.add(this.add.circle(endOffset, 0, thickness / 2, color, CONNECTOR_ALPHA));
-      container.add(this.add.ellipse(0, 0, length * 0.52, bulgeSize, color, CONNECTOR_ALPHA));
+      container.add(this.add.ellipse(0, 0, length * 0.64, bulgeThickness, color, CONNECTOR_ALPHA));
     } else {
       container.add(this.add.circle(0, -endOffset, thickness / 2, color, CONNECTOR_ALPHA));
       container.add(this.add.circle(0, endOffset, thickness / 2, color, CONNECTOR_ALPHA));
-      container.add(this.add.ellipse(0, 0, bulgeSize, length * 0.52, color, CONNECTOR_ALPHA));
+      container.add(this.add.ellipse(0, 0, bulgeThickness, length * 0.64, color, CONNECTOR_ALPHA));
     }
 
     return container;
