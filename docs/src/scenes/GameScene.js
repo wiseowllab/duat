@@ -108,6 +108,43 @@ const TITLE_AMBIENT_SHIMMER_MS = 5600;
 const TITLE_PROMPT_PULSE_MS = 2200;
 const TITLE_GOD_NAME_INTERVAL_MIN_MS = 7000;
 const TITLE_GOD_NAME_INTERVAL_MAX_MS = 14000;
+const DEPTH_TRANSITION_DEPTH = 48;
+const DEPTH_MAX_LEVEL = 3;
+const DEPTH_PURE_CANOPIC_THRESHOLDS = [0, 3, 7];
+const DEPTH_TRANSITION_MESSAGES = [
+  'UNDERWORLD DEPTH I',
+  'UNDERWORLD DEPTH II',
+  'UNDERWORLD DEPTH III',
+];
+const DEPTH_ATMOSPHERE_PROFILES = [
+  {
+    tintColor: 0x1b140d,
+    tintAlpha: 0.08,
+    fogAlpha: 0.03,
+    glowAlpha: 0.04,
+    pulseAlpha: 0.05,
+    dustCount: 12,
+    dustAlpha: 0.2,
+  },
+  {
+    tintColor: 0x160f1f,
+    tintAlpha: 0.14,
+    fogAlpha: 0.06,
+    glowAlpha: 0.07,
+    pulseAlpha: 0.08,
+    dustCount: 16,
+    dustAlpha: 0.24,
+  },
+  {
+    tintColor: 0x0f0f26,
+    tintAlpha: 0.2,
+    fogAlpha: 0.1,
+    glowAlpha: 0.1,
+    pulseAlpha: 0.11,
+    dustCount: 20,
+    dustAlpha: 0.28,
+  },
+];
 
 const GAME_STATES = {
   TITLE: 'title',
@@ -216,6 +253,8 @@ export class GameScene extends Phaser.Scene {
     this.maxTierThisRun = 1;
     this.maxGodsUnlockedThisRun = 0;
     this.revivedSoulsCount = 0;
+    this.totalPureCanopicCount = 0;
+    this.currentDepthLevel = 1;
     this.level = INITIAL_LEVEL;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
@@ -233,6 +272,10 @@ export class GameScene extends Phaser.Scene {
     this.chainPopupTween = null;
     this.pureCanopicPopupText = null;
     this.pureCanopicPopupTween = null;
+    this.depthTransitionText = null;
+    this.depthTransitionTween = null;
+    this.depthAtmosphere = null;
+    this.depthPulseTween = null;
     this.pureCanopicPulseOverlay = null;
     this.pureCanopicRipple = null;
     this.pureCanopicPulseTween = null;
@@ -476,6 +519,7 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(PURE_CANOPIC_POPUP_DEPTH).setAlpha(0);
 
     this.createGameOverAtmosphere();
+    this.createDepthAtmosphere();
   }
 
   createGameOverAtmosphere() {
@@ -488,6 +532,124 @@ export class GameScene extends Phaser.Scene {
     const sand = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x8a6738, 0)
       .setDepth(22);
     this.gameOverAtmosphere = { shade, sand };
+  }
+
+  createDepthAtmosphere() {
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
+    const boardHeight = BOARD_ROWS * this.layout.cellSize;
+
+    const tint = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 36, boardHeight + 36, 0x1b140d, 0.08).setDepth(1.5);
+    const fog = this.add.ellipse(boardCenterX, boardCenterY + 24, boardWidth + 18, boardHeight - 40, 0x6b5a3a, 0.03).setDepth(2);
+    const glow = this.add.ellipse(boardCenterX, boardCenterY - 34, boardWidth * 0.68, boardHeight * 0.3, 0xd4af37, 0.04).setDepth(2);
+    const pulseLines = this.add.graphics().setDepth(2.2);
+    const dustParticles = [];
+
+    this.depthAtmosphere = { tint, fog, glow, pulseLines, dustParticles };
+    this.depthTransitionText = this.add.text(boardCenterX, this.layout.boardOriginY + 98, '', {
+      fontFamily: 'Georgia, serif',
+      fontSize: '17px',
+      color: '#e5d0a0',
+      letterSpacing: 3,
+      stroke: '#120c05',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 0.5).setDepth(DEPTH_TRANSITION_DEPTH).setAlpha(0);
+
+    this.updateDepthAtmosphereVisuals(false);
+  }
+
+  updateDepthAtmosphereVisuals(animatePulse = true) {
+    if (!this.depthAtmosphere) {
+      return;
+    }
+
+    const profile = DEPTH_ATMOSPHERE_PROFILES[this.currentDepthLevel - 1] ?? DEPTH_ATMOSPHERE_PROFILES[0];
+    const { tint, fog, glow, pulseLines } = this.depthAtmosphere;
+
+    tint.setFillStyle(profile.tintColor, profile.tintAlpha);
+    fog.setAlpha(profile.fogAlpha);
+    glow.setAlpha(profile.glowAlpha);
+    this.redrawDepthPulseLines(profile.pulseAlpha);
+    this.rebuildDepthDust(profile.dustCount, profile.dustAlpha);
+
+    if (animatePulse) {
+      if (this.depthPulseTween) {
+        this.depthPulseTween.remove();
+      }
+      this.depthPulseTween = this.tweens.add({
+        targets: [glow, fog],
+        alpha: (target, key, value) => value + 0.02,
+        duration: 1800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      this.tweens.add({
+        targets: pulseLines,
+        alpha: { from: profile.pulseAlpha * 0.8, to: profile.pulseAlpha * 1.05 },
+        duration: 2200,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
+  }
+
+  redrawDepthPulseLines(alpha) {
+    const pulseLines = this.depthAtmosphere?.pulseLines;
+    if (!pulseLines) return;
+    const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
+    const boardHeight = BOARD_ROWS * this.layout.cellSize;
+    const centerX = this.layout.boardOriginX + boardWidth / 2;
+    const centerY = this.layout.boardOriginY + boardHeight / 2;
+
+    pulseLines.clear();
+    pulseLines.lineStyle(1, 0xe2b962, alpha);
+    [-0.32, -0.11, 0.08, 0.29].forEach((offset) => {
+      const y = centerY + (boardHeight * offset);
+      pulseLines.beginPath();
+      pulseLines.moveTo(centerX - boardWidth * 0.44, y);
+      pulseLines.lineTo(centerX - boardWidth * 0.16, y - 4);
+      pulseLines.lineTo(centerX + boardWidth * 0.15, y + 4);
+      pulseLines.lineTo(centerX + boardWidth * 0.43, y);
+      pulseLines.strokePath();
+    });
+  }
+
+  rebuildDepthDust(count, alpha) {
+    const dustParticles = this.depthAtmosphere?.dustParticles ?? [];
+    dustParticles.forEach((particle) => particle.destroy());
+    this.depthAtmosphere.dustParticles = [];
+
+    const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
+    const boardHeight = BOARD_ROWS * this.layout.cellSize;
+    const minX = this.layout.boardOriginX + 8;
+    const maxX = minX + boardWidth - 16;
+    const minY = this.layout.boardOriginY + 8;
+    const maxY = minY + boardHeight - 16;
+
+    for (let index = 0; index < count; index += 1) {
+      const particle = this.add.circle(
+        Phaser.Math.Between(minX, maxX),
+        Phaser.Math.Between(minY, maxY),
+        Phaser.Math.FloatBetween(0.8, 1.7),
+        0xd4af37,
+        alpha,
+      ).setDepth(2.1);
+      this.depthAtmosphere.dustParticles.push(particle);
+
+      this.tweens.add({
+        targets: particle,
+        x: Phaser.Math.Between(minX, maxX),
+        y: Phaser.Math.Between(minY, maxY),
+        alpha: Phaser.Math.FloatBetween(alpha * 0.4, alpha),
+        duration: Phaser.Math.Between(4200, 8600),
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
   }
 
   drawBoardCornerAccents(centerX, centerY, width, height) {
@@ -2357,8 +2519,62 @@ ${COMMIT_SHA}`, {
     }
 
     this.revivedSoulsCount += pureCanopicCount;
+    this.totalPureCanopicCount += pureCanopicCount;
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.showPureCanopicPopup();
+    this.updateDepthProgression();
+  }
+
+  updateDepthProgression() {
+    const nextDepth = this.resolveDepthLevelFromPureCanopicCount(this.totalPureCanopicCount);
+    if (nextDepth <= this.currentDepthLevel) {
+      return;
+    }
+
+    this.currentDepthLevel = nextDepth;
+    this.updateDepthAtmosphereVisuals(false);
+    this.showDepthTransition();
+  }
+
+  resolveDepthLevelFromPureCanopicCount(totalPureCanopicCount) {
+    let depthLevel = 1;
+    DEPTH_PURE_CANOPIC_THRESHOLDS.forEach((threshold, index) => {
+      if (totalPureCanopicCount >= threshold) {
+        depthLevel = index + 1;
+      }
+    });
+    return Math.min(depthLevel, DEPTH_MAX_LEVEL);
+  }
+
+  showDepthTransition() {
+    if (!this.depthTransitionText) {
+      return;
+    }
+    if (this.depthTransitionTween) {
+      this.depthTransitionTween.stop();
+      this.depthTransitionTween = null;
+    }
+
+    const message = DEPTH_TRANSITION_MESSAGES[this.currentDepthLevel - 1] ?? `UNDERWORLD DEPTH ${this.currentDepthLevel}`;
+    this.depthTransitionText.setText(message);
+    this.depthTransitionText.setScale(0.98);
+    this.depthTransitionText.setAlpha(0);
+    this.depthTransitionText.setY(this.layout.boardOriginY + 104);
+
+    this.depthTransitionTween = this.tweens.add({
+      targets: this.depthTransitionText,
+      alpha: { from: 0, to: 0.92 },
+      y: { from: this.layout.boardOriginY + 108, to: this.layout.boardOriginY + 98 },
+      scale: { from: 0.98, to: 1.01 },
+      ease: 'Sine.easeInOut',
+      duration: 360,
+      hold: 680,
+      yoyo: true,
+      onComplete: () => {
+        this.depthTransitionText.setAlpha(0);
+        this.depthTransitionTween = null;
+      },
+    });
   }
 
   addGroupsToCellMap(groups, cellMap) {
