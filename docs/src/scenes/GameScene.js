@@ -120,29 +120,59 @@ const DEPTH_ATMOSPHERE_PROFILES = [
   {
     tintColor: 0x1b140d,
     tintAlpha: 0.08,
+    fogColor: 0x6b5a3a,
     fogAlpha: 0.03,
+    fogScale: 1,
+    glowColor: 0xd4af37,
     glowAlpha: 0.04,
+    pulseLineColor: 0xd9b26a,
     pulseAlpha: 0.05,
+    pulseStrength: 0.018,
+    ambientDrift: 1,
+    corruptionAlpha: 0,
+    eyeGlowAlpha: 0,
     dustCount: 12,
     dustAlpha: 0.2,
+    dustDriftMinMs: 5200,
+    dustDriftMaxMs: 9400,
   },
   {
     tintColor: 0x160f1f,
     tintAlpha: 0.14,
+    fogColor: 0x4c4f66,
     fogAlpha: 0.06,
+    fogScale: 1.04,
+    glowColor: 0x9fd6ff,
     glowAlpha: 0.07,
+    pulseLineColor: 0x9fd6ff,
     pulseAlpha: 0.08,
+    pulseStrength: 0.026,
+    ambientDrift: 1.2,
+    corruptionAlpha: 0.03,
+    eyeGlowAlpha: 0.02,
     dustCount: 16,
     dustAlpha: 0.24,
+    dustDriftMinMs: 5000,
+    dustDriftMaxMs: 9000,
   },
   {
     tintColor: 0x0f0f26,
     tintAlpha: 0.2,
+    fogColor: 0x42375c,
     fogAlpha: 0.1,
+    fogScale: 1.08,
+    glowColor: 0xa9a2ff,
     glowAlpha: 0.1,
+    pulseLineColor: 0xb2a8ff,
     pulseAlpha: 0.11,
+    pulseStrength: 0.034,
+    ambientDrift: 1.35,
+    corruptionAlpha: 0.07,
+    eyeGlowAlpha: 0.06,
     dustCount: 20,
     dustAlpha: 0.28,
+    dustDriftMinMs: 4600,
+    dustDriftMaxMs: 8400,
   },
 ];
 
@@ -544,9 +574,11 @@ export class GameScene extends Phaser.Scene {
     const fog = this.add.ellipse(boardCenterX, boardCenterY + 24, boardWidth + 18, boardHeight - 40, 0x6b5a3a, 0.03).setDepth(2);
     const glow = this.add.ellipse(boardCenterX, boardCenterY - 34, boardWidth * 0.68, boardHeight * 0.3, 0xd4af37, 0.04).setDepth(2);
     const pulseLines = this.add.graphics().setDepth(2.2);
+    const corruption = this.add.ellipse(boardCenterX, boardCenterY + 34, boardWidth * 0.82, boardHeight * 0.54, 0x6f4f9e, 0).setDepth(2.05);
+    const eyeGlow = this.add.ellipse(boardCenterX, boardCenterY - 2, boardWidth * 0.24, boardHeight * 0.08, 0xb5a7ff, 0).setDepth(2.25);
     const dustParticles = [];
 
-    this.depthAtmosphere = { tint, fog, glow, pulseLines, dustParticles };
+    this.depthAtmosphere = { tint, fog, glow, pulseLines, corruption, eyeGlow, dustParticles };
     this.depthTransitionText = this.add.text(boardCenterX, this.layout.boardOriginY + 98, '', {
       fontFamily: 'Georgia, serif',
       fontSize: '17px',
@@ -565,30 +597,36 @@ export class GameScene extends Phaser.Scene {
     }
 
     const profile = DEPTH_ATMOSPHERE_PROFILES[this.currentDepthLevel - 1] ?? DEPTH_ATMOSPHERE_PROFILES[0];
-    const { tint, fog, glow, pulseLines } = this.depthAtmosphere;
+    const { tint, fog, glow, pulseLines, corruption, eyeGlow } = this.depthAtmosphere;
 
     tint.setFillStyle(profile.tintColor, profile.tintAlpha);
+    fog.setFillStyle(profile.fogColor, profile.fogAlpha);
     fog.setAlpha(profile.fogAlpha);
+    fog.setScale(profile.fogScale, profile.fogScale);
+    glow.setFillStyle(profile.glowColor, profile.glowAlpha);
     glow.setAlpha(profile.glowAlpha);
-    this.redrawDepthPulseLines(profile.pulseAlpha);
-    this.rebuildDepthDust(profile.dustCount, profile.dustAlpha);
+    corruption.setAlpha(profile.corruptionAlpha);
+    eyeGlow.setAlpha(profile.eyeGlowAlpha);
+    this.redrawDepthPulseLines(profile.pulseAlpha, profile.pulseLineColor);
+    this.rebuildDepthDust(profile);
+    this.hud?.updateDepthAtmosphere(this.currentDepthLevel, profile);
 
     if (animatePulse) {
       if (this.depthPulseTween) {
         this.depthPulseTween.remove();
       }
       this.depthPulseTween = this.tweens.add({
-        targets: [glow, fog],
-        alpha: (target, key, value) => value + 0.02,
-        duration: 1800,
+        targets: [glow, fog, corruption, eyeGlow],
+        alpha: (target, key, value) => value + profile.pulseStrength,
+        duration: Math.floor(2400 / profile.ambientDrift),
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
       });
       this.tweens.add({
         targets: pulseLines,
-        alpha: { from: profile.pulseAlpha * 0.8, to: profile.pulseAlpha * 1.05 },
-        duration: 2200,
+        alpha: { from: profile.pulseAlpha * 0.74, to: profile.pulseAlpha * 1.08 },
+        duration: Math.floor(3000 / profile.ambientDrift),
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
@@ -596,7 +634,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  redrawDepthPulseLines(alpha) {
+  redrawDepthPulseLines(alpha, lineColor) {
     const pulseLines = this.depthAtmosphere?.pulseLines;
     if (!pulseLines) return;
     const boardWidth = BOARD_COLUMNS * this.layout.cellSize;
@@ -605,7 +643,7 @@ export class GameScene extends Phaser.Scene {
     const centerY = this.layout.boardOriginY + boardHeight / 2;
 
     pulseLines.clear();
-    pulseLines.lineStyle(1, 0xe2b962, alpha);
+    pulseLines.lineStyle(1, lineColor, alpha);
     [-0.32, -0.11, 0.08, 0.29].forEach((offset) => {
       const y = centerY + (boardHeight * offset);
       pulseLines.beginPath();
@@ -617,7 +655,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  rebuildDepthDust(count, alpha) {
+  rebuildDepthDust(profile) {
     const dustParticles = this.depthAtmosphere?.dustParticles ?? [];
     dustParticles.forEach((particle) => particle.destroy());
     this.depthAtmosphere.dustParticles = [];
@@ -629,13 +667,13 @@ export class GameScene extends Phaser.Scene {
     const minY = this.layout.boardOriginY + 8;
     const maxY = minY + boardHeight - 16;
 
-    for (let index = 0; index < count; index += 1) {
+    for (let index = 0; index < profile.dustCount; index += 1) {
       const particle = this.add.circle(
         Phaser.Math.Between(minX, maxX),
         Phaser.Math.Between(minY, maxY),
         Phaser.Math.FloatBetween(0.8, 1.7),
         0xd4af37,
-        alpha,
+        profile.dustAlpha,
       ).setDepth(2.1);
       this.depthAtmosphere.dustParticles.push(particle);
 
@@ -643,8 +681,8 @@ export class GameScene extends Phaser.Scene {
         targets: particle,
         x: Phaser.Math.Between(minX, maxX),
         y: Phaser.Math.Between(minY, maxY),
-        alpha: Phaser.Math.FloatBetween(alpha * 0.4, alpha),
-        duration: Phaser.Math.Between(4200, 8600),
+        alpha: Phaser.Math.FloatBetween(profile.dustAlpha * 0.4, profile.dustAlpha),
+        duration: Phaser.Math.Between(profile.dustDriftMinMs, profile.dustDriftMaxMs),
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
@@ -2534,6 +2572,20 @@ ${COMMIT_SHA}`, {
     this.currentDepthLevel = nextDepth;
     this.updateDepthAtmosphereVisuals(false);
     this.showDepthTransition();
+    this.playDepthTransitionPulse();
+  }
+
+  playDepthTransitionPulse() {
+    if (!this.depthAtmosphere) return;
+    const { tint, fog, glow, corruption, eyeGlow } = this.depthAtmosphere;
+    this.tweens.add({
+      targets: [tint, fog, glow, corruption, eyeGlow],
+      alpha: (target, key, value) => value + 0.04,
+      duration: 200,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+    this.hud?.pulseDepthTransition();
   }
 
   resolveDepthLevelFromPureCanopicCount(totalPureCanopicCount) {

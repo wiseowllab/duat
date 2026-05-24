@@ -94,6 +94,7 @@ export class Hud {
     this.previousCoffinGodId = null;
     this.revivedCount = 0;
     this.revivedIcons = [];
+    this.depthAtmosphereTween = null;
 
     this.create();
   }
@@ -968,6 +969,51 @@ export class Hud {
       this.coffinPanel.setFillStyle(PANEL_FILL, isDimmed ? 0.68 : 0.84);
       this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, isDimmed ? 0.24 : 0.38);
     }
+  }
+
+  updateDepthAtmosphere(depthLevel, profile) {
+    const normalizedDepth = Math.max(1, Number(depthLevel) || 1);
+    const depthBoost = Math.min(0.12, 0.03 * (normalizedDepth - 1));
+    const lineAlpha = Math.min(0.42, 0.22 + depthBoost + ((profile?.pulseAlpha ?? 0) * 0.7));
+    const glowAlpha = Math.min(0.2, 0.08 + depthBoost + ((profile?.eyeGlowAlpha ?? 0) * 0.8));
+    const panelAlpha = Math.min(0.9, 0.84 + (depthBoost * 0.4));
+
+    if (this.coffinPanel) {
+      this.coffinPanel.setFillStyle(PANEL_FILL, panelAlpha);
+      this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, lineAlpha);
+    }
+    if (this.coffinGlow) {
+      this.coffinGlow.setAlpha(glowAlpha);
+    }
+    if (this.coffinBarBack) {
+      this.coffinBarBack.setStrokeStyle(2, 0xd4af37, Math.min(0.88, 0.72 + depthBoost));
+    }
+  }
+
+  pulseDepthTransition() {
+    if (!this.coffinPanel || !this.coffinGlow) {
+      return;
+    }
+    if (this.depthAtmosphereTween) {
+      this.depthAtmosphereTween.stop();
+      this.depthAtmosphereTween = null;
+    }
+    const baseGlowAlpha = this.coffinGlow.alpha;
+    const previousStrokeAlpha = this.coffinPanel.strokeAlpha ?? 0.38;
+    this.depthAtmosphereTween = this.scene.tweens.add({
+      targets: this.coffinGlow,
+      alpha: Math.min(0.26, baseGlowAlpha + 0.08),
+      duration: 240,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+      onStart: () => {
+        this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, 0.56);
+      },
+      onComplete: () => {
+        this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, previousStrokeAlpha);
+        this.depthAtmosphereTween = null;
+      },
+    });
   }
 
   drawNext(types) {
