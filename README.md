@@ -103,8 +103,8 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 
 ### Canopic and Brain Rules
 
-- Canopic set clear detection for connected liver, lung, stomach, and intestine groups.
-- Heart substitution for one missing organ in canopic sets.
+- Canopic set clear detection for strict 2x2 ritual formations containing liver, lung, stomach, and intestine.
+- Heart substitution for exactly one missing organ type inside that same 2x2 ritual.
 - PURE CANOPIC detection: when liver, lung, stomach, and intestine are all used without heart substitution.
 - Each PURE CANOPIC revives one soul/mummy for the current run and increments the in-HUD revival tally.
 - Brain obstacle behavior.
@@ -239,7 +239,7 @@ The page uses responsive CSS, canvas scaling, compact touch-control rows, and `t
 ## Current Piece Rules
 
 - **liver**, **lung**, **stomach**, and **intestine** are normal organ pieces.
-- **heart** can substitute for one missing organ in canopic sets.
+- **heart** can substitute for exactly one missing organ type inside a strict 2x2 canopic set.
 - **brain** is an obstacle piece.
 - Brain appears as an occasional obstacle in falling pairs (separate chance-based spawn), not as a normal weighted organ candidate.
 - Brain does not clear by same-type matching.
