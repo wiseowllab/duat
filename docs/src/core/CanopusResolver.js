@@ -15,14 +15,10 @@ export class CanopusResolver {
   }
 
   findCanopicSets() {
-    // Canopic clears are selected as connected 4-cell groups only.
-    // Larger connected regions may contain many candidates, but each resolved
-    // set is exactly four orthogonally connected cells.
-    const candidates = this.collectConnectedFourCellCandidates();
     const selectedSets = [];
     const usedKeys = new Set();
 
-    candidates.forEach((candidate) => {
+    this.collectTwoByTwoCandidates().forEach((candidate) => {
       if (candidate.cells.some((cell) => usedKeys.has(this.createCellKey(cell.col, cell.row)))) {
         return;
       }
@@ -37,7 +33,7 @@ export class CanopusResolver {
   }
 
   isPureCanopicSet(cells) {
-    return this.validateCanopicFourCellSet(cells).isPure;
+    return this.validateCanopicTwoByTwoSet(cells).isPure;
   }
 
   countPureCanopicSets(canopicSets) {
@@ -50,21 +46,28 @@ export class CanopusResolver {
     ), 0);
   }
 
-  collectConnectedFourCellCandidates() {
-    const unique = new Map();
+  collectTwoByTwoCandidates() {
+    const candidates = [];
 
-    for (let row = 0; row < this.board.rows; row += 1) {
-      for (let col = 0; col < this.board.columns; col += 1) {
-        const type = this.board.getCell(col, row);
-        if (!this.canJoinCanopicGroup(type)) {
+    for (let row = 0; row < this.board.rows - 1; row += 1) {
+      for (let col = 0; col < this.board.columns - 1; col += 1) {
+        const cells = this.getTwoByTwoCells(col, row);
+        const validation = this.validateCanopicTwoByTwoSet(cells);
+
+        if (!validation.isValid) {
           continue;
         }
 
-        this.enumerateConnectedSubsets([{ col, row, type }], unique);
+        candidates.push({
+          cells,
+          isPure: validation.isPure,
+          anchor: this.resolveAnchorCell(cells),
+          key: `${col},${row}`,
+        });
       }
     }
 
-    return [...unique.values()].sort((a, b) => (
+    return candidates.sort((a, b) => (
       Number(b.isPure) - Number(a.isPure)
       || b.anchor.row - a.anchor.row
       || a.anchor.col - b.anchor.col
@@ -72,71 +75,26 @@ export class CanopusResolver {
     ));
   }
 
-  enumerateConnectedSubsets(subset, unique) {
-    if (subset.length === 4) {
-      const candidate = this.buildCandidate(subset);
-      if (candidate) {
-        unique.set(candidate.key, candidate);
-      }
-      return;
-    }
+  getTwoByTwoCells(startCol, startRow) {
+    const positions = [
+      { col: startCol, row: startRow },
+      { col: startCol + 1, row: startRow },
+      { col: startCol, row: startRow + 1 },
+      { col: startCol + 1, row: startRow + 1 },
+    ];
 
-    const subsetKeys = new Set(subset.map((cell) => this.createCellKey(cell.col, cell.row)));
-    const neighbors = this.collectNeighborCells(subset, subsetKeys);
-
-    neighbors.forEach((neighbor) => {
-      this.enumerateConnectedSubsets([...subset, neighbor], unique);
-    });
+    return positions.map(({ col, row }) => ({
+      col,
+      row,
+      type: this.board.getCell(col, row),
+    })).sort((a, b) => b.row - a.row || a.col - b.col);
   }
 
-  collectNeighborCells(subset, subsetKeys) {
-    const neighbors = new Map();
-
-    subset.forEach((cell) => {
-      ORTHOGONAL_DIRECTIONS.forEach((direction) => {
-        const nextCol = cell.col + direction.col;
-        const nextRow = cell.row + direction.row;
-
-        if (!this.board.isInsideColumn(nextCol) || !this.board.isVisibleRow(nextRow)) {
-          return;
-        }
-
-        const key = this.createCellKey(nextCol, nextRow);
-        if (subsetKeys.has(key)) {
-          return;
-        }
-
-        const type = this.board.getCell(nextCol, nextRow);
-        if (!this.canJoinCanopicGroup(type)) {
-          return;
-        }
-
-        neighbors.set(key, { col: nextCol, row: nextRow, type });
-      });
-    });
-
-    return [...neighbors.values()];
+  resolveAnchorCell(cells) {
+    return [...cells].sort((a, b) => b.row - a.row || a.col - b.col)[0];
   }
 
-  buildCandidate(subset) {
-    const sortedCells = [...subset].sort((a, b) => b.row - a.row || a.col - b.col);
-    const validation = this.validateCanopicFourCellSet(sortedCells);
-
-    if (!validation.isValid) {
-      return null;
-    }
-
-    const key = sortedCells.map((cell) => this.createCellKey(cell.col, cell.row)).join('|');
-
-    return {
-      key,
-      cells: sortedCells,
-      isPure: validation.isPure,
-      anchor: sortedCells[0],
-    };
-  }
-
-  validateCanopicFourCellSet(cells) {
+  validateCanopicTwoByTwoSet(cells) {
     if (cells.length !== 4) {
       return { isValid: false, isPure: false };
     }
@@ -152,6 +110,10 @@ export class CanopusResolver {
     });
 
     const heartCount = typeCounts.get(HEART_TYPE) ?? 0;
+    if (heartCount > 1) {
+      return { isValid: false, isPure: false };
+    }
+
     const presentOrganTypes = CANOPIC_ORGAN_TYPES.filter((type) => (typeCounts.get(type) ?? 0) > 0);
     const missingOrganTypes = CANOPIC_ORGAN_TYPES.filter((type) => (typeCounts.get(type) ?? 0) === 0);
 
@@ -160,10 +122,7 @@ export class CanopusResolver {
       return { isValid: isPure, isPure };
     }
 
-    const isHeartSubstitutionValid = heartCount === 1
-      && presentOrganTypes.length === 3
-      && missingOrganTypes.length === 1;
-
+    const isHeartSubstitutionValid = presentOrganTypes.length === 3 && missingOrganTypes.length === 1;
     return { isValid: isHeartSubstitutionValid, isPure: false };
   }
 
