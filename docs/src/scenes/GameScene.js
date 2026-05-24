@@ -27,7 +27,7 @@ import { Hud } from '../ui/Hud.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js';
 import { TOTAL_GOD_COUNT } from '../data/gods.js';
-import { COFFIN_METER, DANGER_BGM } from '../data/balance.js';
+import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 
 const BOMB_AREA_FLASH_MS = 400;
@@ -109,8 +109,8 @@ const TITLE_PROMPT_PULSE_MS = 2200;
 const TITLE_GOD_NAME_INTERVAL_MIN_MS = 7000;
 const TITLE_GOD_NAME_INTERVAL_MAX_MS = 14000;
 const DEPTH_TRANSITION_DEPTH = 48;
-const DEPTH_MAX_LEVEL = 3;
-const DEPTH_PURE_CANOPIC_THRESHOLDS = [0, 3, 7];
+const DEPTH_MAX_LEVEL = UNDERWORLD_DEPTH.maxLevel;
+const DEPTH_PURE_CANOPIC_THRESHOLDS = UNDERWORLD_DEPTH.pureCanopicThresholds;
 const DEPTH_TRANSITION_MESSAGES = [
   'UNDERWORLD DEPTH I',
   'UNDERWORLD DEPTH II',
@@ -359,6 +359,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.drawNext(this.nextPairTypes);
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
     this.createTitleOverlay();
     this.createLayoutDebugOverlay();
   }
@@ -1187,6 +1188,9 @@ ${COMMIT_SHA}`, {
     this.maxTierThisRun = 1;
     this.maxGodsUnlockedThisRun = 0;
     this.level = INITIAL_LEVEL;
+    this.revivedSoulsCount = 0;
+    this.totalPureCanopicCount = 0;
+    this.currentDepthLevel = 1;
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
     this.fallTimer = 0;
@@ -1240,6 +1244,7 @@ ${COMMIT_SHA}`, {
     this.hud.showReadyStatus();
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
   }
 
   pauseGame() {
@@ -2559,6 +2564,7 @@ ${COMMIT_SHA}`, {
     this.revivedSoulsCount += pureCanopicCount;
     this.totalPureCanopicCount += pureCanopicCount;
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.updateUnderworldDepthProgressHud();
     this.showPureCanopicPopup();
     this.updateDepthProgression();
   }
@@ -2570,6 +2576,7 @@ ${COMMIT_SHA}`, {
     }
 
     this.currentDepthLevel = nextDepth;
+    this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
     this.updateDepthAtmosphereVisuals(false);
     this.showDepthTransition();
     this.playDepthTransitionPulse();
@@ -2596,6 +2603,10 @@ ${COMMIT_SHA}`, {
       }
     });
     return Math.min(depthLevel, DEPTH_MAX_LEVEL);
+  }
+
+  updateUnderworldDepthProgressHud() {
+    this.hud?.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
   }
 
   showDepthTransition() {

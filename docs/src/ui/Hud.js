@@ -30,12 +30,13 @@ const NEXT_ICON_SIZE = 24;
 const HUD_TOP_HEIGHT = 74;
 const HUD_NEXT_HEIGHT = 72;
 const HUD_COFFIN_HEIGHT = 200;
+const HUD_UNDERWORLD_HEIGHT = 56;
 const HUD_BOMB_HEIGHT = 82;
 const HUD_REVIVED_HEIGHT = 68;
 const HUD_SECTION_GAP = 6;
 const HUD_PANEL_INSET = 6;
 const HUD_STACK_START_Y = 40;
-const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_BOMB_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 4);
+const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_UNDERWORLD_HEIGHT + HUD_BOMB_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 5);
 const SECTION_X = 12;
 const SECTION_HEADER_Y = 5;
 
@@ -123,6 +124,7 @@ export class Hud {
     const scoreSectionY = this.y + this.sectionLayout.score.y;
     const nextSectionY = this.y + this.sectionLayout.next.y;
     const coffinSectionY = this.y + this.sectionLayout.coffin.y;
+    const underworldSectionY = this.y + this.sectionLayout.underworld.y;
     const bombSectionY = this.y + this.sectionLayout.bomb.y;
     const revivedSectionY = this.y + this.sectionLayout.revived.y;
 
@@ -171,6 +173,12 @@ export class Hud {
     this.unlockedText = this.createLabel(SECTION_X + 2, coffinSectionY + 190 - this.y, 'Awake: 0 / 14', 8, 0);
     this.unlockedText.setDepth(HUD_LAYER_COFFIN_METER);
     this.unlockedText.setStroke('#120d06', 3).setShadow(0, 1, '#000000', 2, true, true);
+
+    this.scene.add.text(this.x + SECTION_X, underworldSectionY + SECTION_HEADER_Y, '冥界深度', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
+    this.depthLabelText = this.createLabel(SECTION_X, underworldSectionY + 21 - this.y, 'Depth I', 10, 0);
+    this.depthProgressLabelText = this.createLabel(SECTION_X, underworldSectionY + 34 - this.y, '儀式', 9, 0);
+    this.depthProgressText = this.createLabel(SECTION_X + 34, underworldSectionY + 34 - this.y, '0 / 3', 9, 0);
+    this.depthProgressText.setColor('#9fdfe8');
 
     this.scene.add.text(this.x + SECTION_X, bombSectionY + SECTION_HEADER_Y, 'BOMB STOCK', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
     this.bombStockText = this.createLabel(SECTION_X, bombSectionY + 21 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 8, -2);
@@ -293,12 +301,14 @@ export class Hud {
     const scoreY = HUD_STACK_START_Y;
     const nextY = scoreY + HUD_TOP_HEIGHT + HUD_SECTION_GAP;
     const coffinY = nextY + HUD_NEXT_HEIGHT + HUD_SECTION_GAP;
-    const bombY = coffinY + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP;
+    const underworldY = coffinY + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP;
+    const bombY = underworldY + HUD_UNDERWORLD_HEIGHT + HUD_SECTION_GAP;
     const revivedY = bombY + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
     return {
       score: { y: scoreY, height: HUD_TOP_HEIGHT },
       next: { y: nextY, height: HUD_NEXT_HEIGHT },
       coffin: { y: coffinY, height: HUD_COFFIN_HEIGHT },
+      underworld: { y: underworldY, height: HUD_UNDERWORLD_HEIGHT },
       bomb: { y: bombY, height: HUD_BOMB_HEIGHT },
       revived: { y: revivedY, height: HUD_REVIVED_HEIGHT },
       towerBottom: revivedY + HUD_REVIVED_HEIGHT,
@@ -314,6 +324,7 @@ export class Hud {
     this.createPanel(8, this.sectionLayout.score.y, this.panelWidth, HUD_TOP_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.next.y, this.panelWidth, HUD_NEXT_HEIGHT, '');
     this.coffinPanel = this.createPanel(COFFIN_PANEL_X, this.sectionLayout.coffin.y, this.panelWidth, COFFIN_PANEL_HEIGHT, '');
+    this.createPanel(8, this.sectionLayout.underworld.y, this.panelWidth, HUD_UNDERWORLD_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.bomb.y, this.panelWidth, HUD_BOMB_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.revived.y, this.panelWidth, HUD_REVIVED_HEIGHT, '');
 
@@ -335,7 +346,7 @@ export class Hud {
   drawEgyptianAccents() {
     const graphics = this.scene.add.graphics();
     graphics.lineStyle(1, 0xf0d27a, 0.38);
-    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
+    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.underworld.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
       graphics.lineBetween(this.x + 22, this.y + offsetY, this.x + 68, this.y + offsetY);
       graphics.lineBetween(this.x + this.panelWidth - 26, this.y + offsetY, this.x + this.panelWidth + 20, this.y + offsetY);
     });
@@ -376,6 +387,23 @@ export class Hud {
 
   updateLevel(level) {
     this.levelText.setText(`Lv: ${level}`);
+  }
+
+  updateUnderworldDepth(currentDepthLevel, totalPureCanopicCount, depthThresholds) {
+    const depthLevel = Math.max(1, Number(currentDepthLevel) || 1);
+    const depthRoman = ['I', 'II', 'III', 'IV', 'V'][depthLevel - 1] ?? `${depthLevel}`;
+    const isMaxDepth = depthLevel >= depthThresholds.length;
+    this.depthLabelText.setText(`Depth ${depthRoman}`);
+    if (isMaxDepth) {
+      this.depthProgressText.setText('MAX');
+      return;
+    }
+
+    const startThreshold = depthThresholds[depthLevel - 1] ?? 0;
+    const nextThreshold = depthThresholds[depthLevel] ?? startThreshold;
+    const progress = Math.max(0, totalPureCanopicCount - startThreshold);
+    const needed = Math.max(1, nextThreshold - startThreshold);
+    this.depthProgressText.setText(`${Math.min(progress, needed)} / ${needed}`);
   }
 
   updateSoundStatus(isSoundOn) {

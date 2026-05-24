@@ -68,3 +68,8 @@ export const DANGER_BGM = {
 export const BOMB_STOCK = {
   maxStock: 4,
 };
+
+export const UNDERWORLD_DEPTH = {
+  maxLevel: 3,
+  pureCanopicThresholds: [0, 3, 7],
+};
