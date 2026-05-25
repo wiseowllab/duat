@@ -53,6 +53,19 @@ export class Board {
     return this.cells[row][col] === null;
   }
 
+
+  isCompletelyEmpty() {
+    for (let row = 0; row < this.rows; row += 1) {
+      for (let col = 0; col < this.columns; col += 1) {
+        if (this.cells[row][col] !== null) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   canPlace(piece) {
     return piece.getCells().every((cell) => this.isEmpty(cell.col, cell.row));
   }
