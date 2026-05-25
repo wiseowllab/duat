@@ -188,6 +188,9 @@ const ENDING_TYPES = {
   NORMAL_END: 'normal_end',
   TRUE_END: 'true_end',
 };
+const RITUAL_SOUL_CAP = 28;
+const PYRAMID_MIN_TIERS = 2;
+const PYRAMID_MAX_TIERS = 12;
 
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
@@ -2877,7 +2880,7 @@ ${COMMIT_SHA}`, {
         ? 'THE UNDERWORLD CLAIMED YOU'
         : 'GAME OVER';
     const subtitleText = this.currentEndingType === ENDING_TYPES.TRUE_END
-      ? 'The underworld has been purified.'
+      ? 'The revived souls rebuild the sacred horizon.'
       : this.currentEndingType === ENDING_TYPES.NORMAL_END
         ? 'Amun-Ra awakened, yet DUAT consumed the pilgrim.'
         : '魂は冥界へ沈んだ…';
@@ -2905,7 +2908,7 @@ ${COMMIT_SHA}`, {
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
-      const pyramid = this.createEndingPyramidVisualization(this.revivedSoulsCount);
+      const pyramid = this.createEndingPyramidVisualization(this.revivedSoulsCount, this.currentEndingType);
       pyramid.setY(82);
       nodes.push(pyramid);
     }
@@ -2924,29 +2927,70 @@ ${COMMIT_SHA}`, {
   }
 
   playRitualEndingAtmosphere() {
-    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.54, duration: 950, ease: 'Sine.easeOut' });
-    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.36, duration: 920, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.62, duration: 950, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.42, duration: 920, ease: 'Sine.easeOut' });
   }
 
-  createEndingPyramidVisualization(revivedSoulsCount) {
+  createEndingPyramidVisualization(revivedSoulsCount, endingType = ENDING_TYPES.TRUE_END) {
     const container = this.add.container(0, 0);
-    const layers = Math.min(10, 4 + Math.floor(Math.max(0, revivedSoulsCount) / 2));
-    const baseWidth = 170;
+    const souls = Math.max(0, revivedSoulsCount);
+    const soulScale = Phaser.Math.Clamp(souls / RITUAL_SOUL_CAP, 0, 1);
+    const tierCount = Math.round(Phaser.Math.Linear(PYRAMID_MIN_TIERS, PYRAMID_MAX_TIERS, soulScale));
+    const tierProgress = endingType === ENDING_TYPES.TRUE_END ? 1 : 0.55;
+    const baseWidth = 182;
     const layerHeight = 8;
+    const completeLayers = Math.max(1, Math.floor(tierCount * tierProgress));
 
-    for (let index = 0; index < layers; index += 1) {
-      const ratio = 1 - (index / (layers + 1));
-      const width = Math.max(24, baseWidth * ratio);
-      const y = 30 - (index * layerHeight);
-      const alpha = 0.18 + (index / layers) * 0.2;
-      const color = index % 2 === 0 ? 0x9f7a42 : 0xb99255;
-      const layer = this.add.rectangle(0, y, width, layerHeight, color, alpha).setStrokeStyle(1, 0xd8be80, 0.2);
+    const dawnGlow = this.add.ellipse(0, -48, 232, 92, 0xb4d9ff, endingType === ENDING_TYPES.TRUE_END ? 0.18 : 0.09);
+    container.add(dawnGlow);
+
+    for (let index = 0; index < tierCount; index += 1) {
+      const ratio = 1 - (index / (tierCount + 1));
+      const width = Math.max(20, baseWidth * ratio);
+      const y = 34 - (index * layerHeight);
+      const isCompleted = index < completeLayers;
+      const color = isCompleted ? (index % 2 === 0 ? 0x9f7a42 : 0xb99255) : 0x3f3020;
+      const alpha = isCompleted ? (0.26 + (index / tierCount) * 0.26) : 0.22;
+      const layer = this.add.rectangle(0, y, width, layerHeight, color, alpha).setStrokeStyle(1, 0xd8be80, isCompleted ? 0.28 : 0.12);
       container.add(layer);
     }
 
-    const glow = this.add.circle(0, -48, 18, 0x9fd6ff, 0.14);
-    container.add(glow);
+    const foregroundSand = this.add.ellipse(0, 44, 224, 30, 0x5f4528, 0.2);
+    container.add(foregroundSand);
+
+    this.addRitualSouls(container, souls, tierCount, completeLayers, endingType);
     return container;
+  }
+
+  addRitualSouls(container, souls, tierCount, completeLayers, endingType) {
+    const visualSouls = Math.min(RITUAL_SOUL_CAP, Math.max(2, Math.floor(Math.sqrt(Math.max(1, souls)) * 4)));
+    const completedHeight = completeLayers * 8;
+    const incompleteBuild = completeLayers < tierCount;
+
+    for (let index = 0; index < visualSouls; index += 1) {
+      const ratio = visualSouls <= 1 ? 0.5 : index / (visualSouls - 1);
+      const baseX = Phaser.Math.Linear(-84, 84, ratio) + Phaser.Math.Between(-4, 4);
+      const baseY = 48 + Phaser.Math.Between(-2, 3);
+      const soul = this.add.container(baseX, baseY);
+      const body = this.add.rectangle(0, 0, 7, 12, 0xd8cab5, 0.84).setStrokeStyle(1, 0x5a4a36, 0.35);
+      const head = this.add.circle(0, -8, 3, 0xe8dcc7, 0.86);
+      const eyes = this.add.rectangle(0, -8, 3, 1, 0x8fd6ff, endingType === ENDING_TYPES.TRUE_END ? 0.45 : 0.16);
+      soul.add([body, head, eyes]);
+      container.add(soul);
+
+      const carryY = 40 - (Math.min(completedHeight, 40) * (0.2 + ratio * 0.6));
+      const buildTarget = incompleteBuild ? { x: baseX * 0.38, y: carryY } : { x: baseX, y: baseY };
+      this.tweens.add({
+        targets: soul,
+        x: buildTarget.x,
+        y: buildTarget.y,
+        duration: 3600 + Phaser.Math.Between(0, 1800),
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+        delay: Phaser.Math.Between(0, 900),
+      });
+    }
   }
 
   renderBoard() {
