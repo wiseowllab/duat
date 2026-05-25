@@ -183,6 +183,12 @@ const GAME_STATES = {
   GAME_OVER: 'gameOver',
 };
 
+const ENDING_TYPES = {
+  STANDARD_GAME_OVER: 'standard_game_over',
+  NORMAL_END: 'normal_end',
+  TRUE_END: 'true_end',
+};
+
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
   horizontal_clear: '横消し',
@@ -342,6 +348,7 @@ export class GameScene extends Phaser.Scene {
     this.isDangerState = false;
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
+    this.currentEndingType = ENDING_TYPES.STANDARD_GAME_OVER;
     this.isTouchSoftDropping = false;
     this.touchActionHandler = null;
 
@@ -550,7 +557,34 @@ export class GameScene extends Phaser.Scene {
     }).setOrigin(0.5, 0).setDepth(PURE_CANOPIC_POPUP_DEPTH).setAlpha(0);
 
     this.createGameOverAtmosphere();
+    this.createRitualEndingAtmosphere();
     this.createDepthAtmosphere();
+  }
+
+
+  createRitualEndingAtmosphere() {
+    this.endingHudDimmer = this.add.rectangle(
+      this.layout.hudX + (this.layout.hudWidth / 2),
+      GAME_HEIGHT / 2,
+      this.layout.hudWidth + 12,
+      GAME_HEIGHT - 24,
+      0x0a0907,
+      0,
+    ).setDepth(20);
+
+    this.endingBoardFade = this.add.rectangle(
+      this.layout.boardOriginX + ((BOARD_COLUMNS * this.layout.cellSize) / 2),
+      this.layout.boardOriginY + ((BOARD_ROWS * this.layout.cellSize) / 2),
+      (BOARD_COLUMNS * this.layout.cellSize) + 16,
+      (BOARD_ROWS * this.layout.cellSize) + 16,
+      0x1c140d,
+      0,
+    ).setDepth(20);
+  }
+
+  resetRitualEndingAtmosphere() {
+    this.endingHudDimmer?.setAlpha(0);
+    this.endingBoardFade?.setAlpha(0);
   }
 
   createGameOverAtmosphere() {
@@ -1203,9 +1237,11 @@ ${COMMIT_SHA}`, {
     this.isDangerState = false;
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
+    this.currentEndingType = ENDING_TYPES.STANDARD_GAME_OVER;
     this.bgm.stop();
     this.clearTransientVisuals();
     this.resetGameOverAtmosphere();
+    this.resetRitualEndingAtmosphere();
     this.updateHudForReset();
     this.renderBoard();
   }
@@ -1537,7 +1573,7 @@ ${COMMIT_SHA}`, {
     this.hud.drawNext(this.nextPairTypes);
 
     if (!this.board.canPlace(this.activePiece)) {
-      this.endGame();
+      this.endGame(ENDING_TYPES.STANDARD_GAME_OVER);
       return;
     }
 
@@ -1654,7 +1690,7 @@ ${COMMIT_SHA}`, {
 
     if (!lockedSuccessfully) {
       this.renderBoard();
-      this.endGame();
+      this.endGame(ENDING_TYPES.STANDARD_GAME_OVER);
       return;
     }
 
@@ -1668,6 +1704,11 @@ ${COMMIT_SHA}`, {
     }
 
     if (this.gameState === GAME_STATES.PLAYING && !this.isGameOver) {
+      if (this.shouldTriggerTrueEnd()) {
+        this.endGame(ENDING_TYPES.TRUE_END);
+        return;
+      }
+
       this.spawnPiece();
     }
   }
@@ -2734,7 +2775,30 @@ ${COMMIT_SHA}`, {
     return null;
   }
 
-  endGame() {
+
+  isAmunRaUnlocked() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    return unlockedGods.some((god) => god?.id === 'amun_ra');
+  }
+
+  shouldTriggerTrueEnd() {
+    return this.isAmunRaUnlocked() && this.board.isCompletelyEmpty();
+  }
+
+  getEndingTypeForGameOver(requestedEndingType) {
+    if (requestedEndingType === ENDING_TYPES.TRUE_END) {
+      return ENDING_TYPES.TRUE_END;
+    }
+
+    if (this.isAmunRaUnlocked()) {
+      return ENDING_TYPES.NORMAL_END;
+    }
+
+    return ENDING_TYPES.STANDARD_GAME_OVER;
+  }
+
+  endGame(requestedEndingType = ENDING_TYPES.STANDARD_GAME_OVER) {
+    this.currentEndingType = this.getEndingTypeForGameOver(requestedEndingType);
     this.bgm.duck(900, 0.3);
     this.sfx.playGameOver();
     this.bgm.stop();
@@ -2803,75 +2867,86 @@ ${COMMIT_SHA}`, {
 
     const centerX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
     const centerY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
-    const panelWidth = Math.min(332, GAME_WIDTH - 56);
-    const panelHeight = 290;
+    const panelWidth = Math.min(350, GAME_WIDTH - 56);
+    const panelHeight = this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 290 : 336;
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x120806, 0.94)
-      .setStrokeStyle(2, 0xd4af37, 0.82);
-    const title = this.add.text(0, -108, 'GAME OVER', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '34px',
-      color: '#d4af37',
-      fontStyle: 'bold',
-      align: 'center',
-      stroke: '#1a1006',
-      strokeThickness: 4,
-    }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -70, '魂は冥界へ沈んだ…', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
-      color: '#cdb98b',
-      align: 'center',
-      fontStyle: 'italic',
-    }).setOrigin(0.5);
-    const recordText = this.add.text(0, 8, [
+
+    const titleText = this.currentEndingType === ENDING_TYPES.TRUE_END
+      ? 'CONGRATULATIONS\nTHE SUN RISES AGAIN'
+      : this.currentEndingType === ENDING_TYPES.NORMAL_END
+        ? 'THE UNDERWORLD CLAIMED YOU'
+        : 'GAME OVER';
+    const subtitleText = this.currentEndingType === ENDING_TYPES.TRUE_END
+      ? 'The underworld has been purified.'
+      : this.currentEndingType === ENDING_TYPES.NORMAL_END
+        ? 'Amun-Ra awakened, yet DUAT consumed the pilgrim.'
+        : '魂は冥界へ沈んだ…';
+    const promptText = this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER
+      ? 'Enter / Space で再挑戦'
+      : 'Press Enter / Tap to return';
+
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x120806, 0.94).setStrokeStyle(2, 0xd4af37, 0.82);
+    const title = this.add.text(0, -112, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '34px' : '28px', color: '#d4af37', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 4 }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -66, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#cdb98b', align: 'center', fontStyle: 'italic' }).setOrigin(0.5);
+
+    const recordText = this.add.text(0, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 8 : 22, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
       highScoreResult.isNewHighScore ? '新記録!' : '',
       `最大連鎖: ${this.bestChainThisRun}`,
       `到達Tier: ${this.maxTierThisRun}`,
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
-    ].filter(Boolean).join('\n'), {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
-      color: '#eadfca',
-      align: 'center',
-      lineSpacing: 5,
-      wordWrap: { width: panelWidth - 36 },
-    }).setOrigin(0.5);
-    if (highScoreResult.isNewHighScore) {
-      recordText.setColor('#f4d77a');
-      recordText.setFontStyle('bold');
-    }
-    const prompt = this.add.text(0, 112, 'Enter / Space で再挑戦', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '16px',
-      color: '#f2d783',
-      align: 'center',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
+      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
+      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
+    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '15px', color: '#eadfca', align: 'center', lineSpacing: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
 
-    this.gameOverOverlay.add([panel, title, subtitle, recordText, prompt]);
-    this.tweens.add({
-      targets: this.gameOverOverlay,
-      alpha: 1,
-      y: centerY - 6,
-      duration: 650,
-      ease: 'Sine.easeOut',
-    });
-    this.tweens.add({
-      targets: panel,
-      scaleX: { from: 0.98, to: 1.01 },
-      scaleY: { from: 0.98, to: 1.01 },
-      yoyo: true,
-      repeat: -1,
-      duration: 2400,
-      ease: 'Sine.easeInOut',
-    });
+    const nodes=[panel,title,subtitle,recordText];
+
+    if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
+      this.playRitualEndingAtmosphere();
+      const pyramid = this.createEndingPyramidVisualization(this.revivedSoulsCount);
+      pyramid.setY(82);
+      nodes.push(pyramid);
+    }
+
+    const prompt = this.add.text(0, panelHeight / 2 - 28, promptText, { fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#f2d783', align: 'center', fontStyle: 'bold' }).setOrigin(0.5);
+    nodes.push(prompt);
+
+    if (highScoreResult.isNewHighScore) { recordText.setColor('#f4d77a'); recordText.setFontStyle('bold'); }
+
+    this.gameOverOverlay.add(nodes);
+    this.tweens.add({ targets: this.gameOverOverlay, alpha: 1, y: centerY - 6, duration: 650, ease: 'Sine.easeOut' });
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => this.restartGame());
     prompt.on('pointerdown', () => this.restartGame());
+  }
+
+  playRitualEndingAtmosphere() {
+    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.54, duration: 950, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.36, duration: 920, ease: 'Sine.easeOut' });
+  }
+
+  createEndingPyramidVisualization(revivedSoulsCount) {
+    const container = this.add.container(0, 0);
+    const layers = Math.min(10, 4 + Math.floor(Math.max(0, revivedSoulsCount) / 2));
+    const baseWidth = 170;
+    const layerHeight = 8;
+
+    for (let index = 0; index < layers; index += 1) {
+      const ratio = 1 - (index / (layers + 1));
+      const width = Math.max(24, baseWidth * ratio);
+      const y = 30 - (index * layerHeight);
+      const alpha = 0.18 + (index / layers) * 0.2;
+      const color = index % 2 === 0 ? 0x9f7a42 : 0xb99255;
+      const layer = this.add.rectangle(0, y, width, layerHeight, color, alpha).setStrokeStyle(1, 0xd8be80, 0.2);
+      container.add(layer);
+    }
+
+    const glow = this.add.circle(0, -48, 18, 0x9fd6ff, 0.14);
+    container.add(glow);
+    return container;
   }
 
   renderBoard() {
