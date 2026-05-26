@@ -35,12 +35,13 @@ const HUD_TOP_HEIGHT = 74;
 const HUD_NEXT_HEIGHT = 72;
 const HUD_COFFIN_HEIGHT = 200;
 const HUD_UNDERWORLD_HEIGHT = 56;
+const HUD_AWAKENED_HEIGHT = 64;
 const HUD_BOMB_HEIGHT = 82;
 const HUD_REVIVED_HEIGHT = 68;
 const HUD_SECTION_GAP = 6;
 const HUD_PANEL_INSET = 6;
 const HUD_STACK_START_Y = 40;
-const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_UNDERWORLD_HEIGHT + HUD_BOMB_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 5);
+const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_UNDERWORLD_HEIGHT + HUD_AWAKENED_HEIGHT + HUD_BOMB_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 6);
 const SECTION_X = 12;
 const SECTION_HEADER_Y = 5;
 
@@ -66,6 +67,12 @@ const BOMB_LABELS_JA = {
   chaos_clear: '混沌消し',
   full_board_clear: '全消し',
   maximum_coffin_burst: '最大棺バースト',
+};
+const GOD_PRESENCE_COLORS = {
+  imsety: '#e8c76e',
+  hapy: '#8ecff2',
+  duamutef: '#e09a6c',
+  qebehsenuef: '#b794f8',
 };
 
 export class Hud {
@@ -133,6 +140,7 @@ export class Hud {
     const coffinSectionY = this.y + this.sectionLayout.coffin.y;
     const underworldSectionY = this.y + this.sectionLayout.underworld.y;
     const bombSectionY = this.y + this.sectionLayout.bomb.y;
+    const awakenedSectionY = this.y + this.sectionLayout.awakened.y;
     const revivedSectionY = this.y + this.sectionLayout.revived.y;
 
     this.scene.add.text(this.x + SECTION_X, scoreSectionY + SECTION_HEADER_Y, 'SCORE', this.headingStyle(11)).setDepth(HUD_LAYER_TEXT);
@@ -186,6 +194,12 @@ export class Hud {
     this.depthProgressLabelText = this.createLabel(SECTION_X, underworldSectionY + 34 - this.y, '儀式', 9, 0);
     this.depthProgressText = this.createLabel(SECTION_X + 34, underworldSectionY + 34 - this.y, '0 / 3', 9, 0);
     this.depthProgressText.setColor('#9fdfe8');
+
+    this.scene.add.text(this.x + SECTION_X, awakenedSectionY + SECTION_HEADER_Y, 'AWAKENED GODS', this.headingStyle(9)).setDepth(HUD_LAYER_TEXT);
+    this.awakenedGodsText = this.createLabel(SECTION_X, awakenedSectionY + 20 - this.y, '𓂀 ---', 9, 0);
+    this.awakenedGodsText.setColor('#d7c7a4');
+    this.awakenedGodsSubText = this.createLabel(SECTION_X, awakenedSectionY + 34 - this.y, 'Presence: quiet', 8, 0);
+    this.awakenedGodsSubText.setColor('#9faec4');
 
     this.scene.add.text(this.x + SECTION_X, bombSectionY + SECTION_HEADER_Y, 'BOMB STOCK', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
     this.bombStockText = this.createLabel(SECTION_X, bombSectionY + 21 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 8, -2);
@@ -426,13 +440,15 @@ export class Hud {
     const nextY = scoreY + HUD_TOP_HEIGHT + HUD_SECTION_GAP;
     const coffinY = nextY + HUD_NEXT_HEIGHT + HUD_SECTION_GAP;
     const underworldY = coffinY + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP;
-    const bombY = underworldY + HUD_UNDERWORLD_HEIGHT + HUD_SECTION_GAP;
+    const awakenedY = underworldY + HUD_UNDERWORLD_HEIGHT + HUD_SECTION_GAP;
+    const bombY = awakenedY + HUD_AWAKENED_HEIGHT + HUD_SECTION_GAP;
     const revivedY = bombY + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
     return {
       score: { y: scoreY, height: HUD_TOP_HEIGHT },
       next: { y: nextY, height: HUD_NEXT_HEIGHT },
       coffin: { y: coffinY, height: HUD_COFFIN_HEIGHT },
       underworld: { y: underworldY, height: HUD_UNDERWORLD_HEIGHT },
+      awakened: { y: awakenedY, height: HUD_AWAKENED_HEIGHT },
       bomb: { y: bombY, height: HUD_BOMB_HEIGHT },
       revived: { y: revivedY, height: HUD_REVIVED_HEIGHT },
       towerBottom: revivedY + HUD_REVIVED_HEIGHT,
@@ -449,6 +465,7 @@ export class Hud {
     this.createPanel(8, this.sectionLayout.next.y, this.panelWidth, HUD_NEXT_HEIGHT, '');
     this.coffinPanel = this.createPanel(COFFIN_PANEL_X, this.sectionLayout.coffin.y, this.panelWidth, COFFIN_PANEL_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.underworld.y, this.panelWidth, HUD_UNDERWORLD_HEIGHT, '');
+    this.createPanel(8, this.sectionLayout.awakened.y, this.panelWidth, HUD_AWAKENED_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.bomb.y, this.panelWidth, HUD_BOMB_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.revived.y, this.panelWidth, HUD_REVIVED_HEIGHT, '');
 
@@ -470,7 +487,7 @@ export class Hud {
   drawEgyptianAccents() {
     const graphics = this.scene.add.graphics();
     graphics.lineStyle(1, 0xf0d27a, 0.38);
-    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.underworld.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
+    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.underworld.y + 12, this.sectionLayout.awakened.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
       graphics.lineBetween(this.x + 22, this.y + offsetY, this.x + 68, this.y + offsetY);
       graphics.lineBetween(this.x + this.panelWidth - 26, this.y + offsetY, this.x + this.panelWidth + 20, this.y + offsetY);
     });
@@ -596,6 +613,36 @@ export class Hud {
     this.unlockedText.setText(`Awake: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
     this.pulseCoffinBarOnGain(currentGod, progress);
+    this.updateAwakenedCoffinPresence(unlockedCount);
+  }
+
+  updateAwakenedGodsPresence(awakenedGods) {
+    const gods = Array.isArray(awakenedGods) ? awakenedGods : [];
+    if (!this.awakenedGodsText || !this.awakenedGodsSubText) {
+      return;
+    }
+    if (gods.length === 0) {
+      this.awakenedGodsText.setText('𓂀 ---');
+      this.awakenedGodsText.setColor('#d7c7a4');
+      this.awakenedGodsSubText.setText('Presence: quiet');
+      return;
+    }
+    const compact = gods.slice(0, 4).map((god) => `𓂀 ${god.name}`).join('  ');
+    this.awakenedGodsText.setText(compact);
+    const leadColor = GOD_PRESENCE_COLORS[gods[0]?.id] ?? '#d7c7a4';
+    this.awakenedGodsText.setColor(leadColor);
+    this.awakenedGodsSubText.setText(`Presence: ${gods.length} awakened`);
+  }
+
+  updateAwakenedCoffinPresence(unlockedCount) {
+    const awakenRatio = Phaser.Math.Clamp((Number(unlockedCount) || 0) / 14, 0, 1);
+    const strokeAlpha = 0.24 + awakenRatio * 0.3;
+    if (this.coffinPanel) {
+      this.coffinPanel.setStrokeStyle(1, PANEL_STROKE, strokeAlpha);
+    }
+    if (this.coffinGlow) {
+      this.coffinGlow.setAlpha(0.08 + awakenRatio * 0.09);
+    }
   }
 
   drawCoffinVisual(currentTier) {
