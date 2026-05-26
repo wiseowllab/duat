@@ -235,6 +235,11 @@ The page uses responsive CSS, canvas scaling, compact touch-control rows, and `t
 - **Shift+G**: when debug mode is on, fill the current god's coffin meter and unlock that god.
 - **T**: when debug mode is on, advance by filling the current god's coffin meter.
 - **R**: when debug mode is on during normal play, reset coffin progression and bomb stock. On the game over screen, **R** restarts the game instead.
+- **Shift+R**: when debug mode is on during normal play, add +5 revived souls immediately (for pyramid scaling checks).
+- **Shift+T**: when debug mode is on during normal play, apply high ending test stats (revived souls, pure canopic count, depth max, and full god awaken state) and show `Ending test stats applied`.
+- **Shift+E**: when debug mode is on during normal play, force the TRUE END presentation immediately.
+- **Shift+N**: when debug mode is on during normal play, force the NORMAL END presentation immediately.
+- Ending debug shortcuts are developer-only and do nothing while debug mode is off.
 
 ## Current Piece Rules
 

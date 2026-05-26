@@ -1330,6 +1330,8 @@ ${COMMIT_SHA}`, {
     this.keyG = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.G);
     this.keyT = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
     this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+    this.keyE = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
+    this.keyN = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.N);
     this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.keyH = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
@@ -1351,8 +1353,10 @@ ${COMMIT_SHA}`, {
     this.keyA.on('down', () => this.handleLeftKey());
     this.keyD.on('down', () => this.handleRightOrDebugKey());
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
-    this.keyT.on('down', () => this.advanceDebugGod());
-    this.keyR.on('down', () => this.handleRestartOrDebugReset());
+    this.keyT.on('down', (key, event) => this.handleDebugTKey(event));
+    this.keyR.on('down', (key, event) => this.handleRestartOrDebugReset(event));
+    this.keyE.on('down', (key, event) => this.handleDebugEndingShortcut(event));
+    this.keyN.on('down', (key, event) => this.handleDebugEndingShortcut(event));
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyM.on('down', () => this.toggleMute());
     this.keyH.on('down', () => this.handleHowToPlayKey());
@@ -1556,13 +1560,17 @@ ${COMMIT_SHA}`, {
     }
   }
 
-  handleRestartOrDebugReset() {
+  handleRestartOrDebugReset(event) {
     if (this.gameState === GAME_STATES.GAME_OVER) {
       this.restartGame();
       return;
     }
 
     if (this.gameState === GAME_STATES.PLAYING) {
+      if (event?.shiftKey) {
+        this.addDebugRevivedSouls(5);
+        return;
+      }
       this.resetDebugProgression();
     }
   }
@@ -2369,6 +2377,101 @@ ${COMMIT_SHA}`, {
     this.fillDebugGod();
   }
 
+  handleDebugTKey(event) {
+    if (event?.shiftKey) {
+      this.applyHighStatEndingTest();
+      return;
+    }
+
+    this.advanceDebugGod();
+  }
+
+  handleDebugEndingShortcut(event) {
+    if (!event?.shiftKey || !this.isDebugMode) {
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.E) {
+      this.triggerDebugTrueEnd();
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.N) {
+      this.triggerDebugNormalEnd();
+    }
+  }
+
+  unlockToAmunRaForEndingTest() {
+    while (!this.isAmunRaUnlocked() && !this.coffinMeter.isComplete()) {
+      this.fillDebugGod();
+    }
+  }
+
+  addDebugRevivedSouls(amount) {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+      return;
+    }
+
+    const addAmount = Math.max(1, Math.floor(amount));
+    this.revivedSoulsCount += addAmount;
+    this.totalPureCanopicCount += addAmount;
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.updateDepthProgression();
+    this.updateUnderworldDepthProgressHud();
+    this.showDebugFeedback(`Revived souls +${addAmount}`);
+  }
+
+  applyHighStatEndingTest() {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+      return;
+    }
+
+    this.unlockToAmunRaForEndingTest();
+    this.revivedSoulsCount = 30;
+    this.totalPureCanopicCount = 10;
+    this.currentDepthLevel = DEPTH_MAX_LEVEL;
+    this.updateRunProgressionRecords();
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.updateUnderworldDepthProgressHud();
+    this.showDebugFeedback('Ending test stats applied');
+  }
+
+  triggerDebugTrueEnd() {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+      return;
+    }
+
+    this.unlockToAmunRaForEndingTest();
+    this.updateRunProgressionRecords();
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.endGame(ENDING_TYPES.TRUE_END);
+  }
+
+  triggerDebugNormalEnd() {
+    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+      return;
+    }
+
+    this.unlockToAmunRaForEndingTest();
+    this.updateRunProgressionRecords();
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.endGame(ENDING_TYPES.NORMAL_END);
+  }
+
+  showDebugFeedback(message) {
+    this.boardFeedbackText.setText(message);
+
+    if (this.feedbackTimer) {
+      this.feedbackTimer.remove(false);
+    }
+
+    this.feedbackTimer = this.time.delayedCall(1200, () => {
+      this.boardFeedbackText.setText('');
+      this.clearChainPopup();
+    });
+  }
+
   updateRunProgressionRecords() {
     const state = this.coffinMeter.getState();
     this.maxTierThisRun = Math.max(this.maxTierThisRun, state.currentTier?.tier ?? 4);
@@ -2387,16 +2490,7 @@ ${COMMIT_SHA}`, {
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.safeUpdateBgmForGameState();
-    this.boardFeedbackText.setText('デバッグ進行リセット');
-
-    if (this.feedbackTimer) {
-      this.feedbackTimer.remove(false);
-    }
-
-    this.feedbackTimer = this.time.delayedCall(1200, () => {
-      this.boardFeedbackText.setText('');
-    this.clearChainPopup();
-    });
+    this.showDebugFeedback('デバッグ進行リセット');
   }
 
   showUnlockEvents(unlockEvents) {
