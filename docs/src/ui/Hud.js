@@ -232,6 +232,7 @@ export class Hud {
     });
     this.revivedIconsContainer = this.scene.add.container(10, 34);
     this.revivedPanel.add([panelBack, this.revivedLabelText, this.revivedCountText, this.revivedIconsContainer]);
+    this.revivedPanelBack = panelBack;
   }
 
   updateRevivedSouls(count) {
@@ -272,6 +273,35 @@ export class Hud {
       this.revivedIcons.push(overflowText);
       this.revivedIconsContainer.add(overflowText);
     }
+  }
+
+  getRevivedSoulsTargetWorldPoint() {
+    return {
+      x: this.revivedPanel.x + this.panelWidth - 24,
+      y: this.revivedPanel.y + 24,
+    };
+  }
+
+  pulseRevivedSoulsPanel() {
+    if (!this.revivedPanel || !this.revivedPanelBack) {
+      return;
+    }
+
+    this.scene.tweens.add({
+      targets: this.revivedPanelBack,
+      alpha: { from: 0.92, to: 1 },
+      duration: 180,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+    this.scene.tweens.add({
+      targets: this.revivedPanel,
+      scaleX: { from: 1, to: 1.03 },
+      scaleY: { from: 1, to: 1.03 },
+      duration: 180,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
   }
 
   createUnlockBadge() {

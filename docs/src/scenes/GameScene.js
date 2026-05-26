@@ -68,6 +68,9 @@ const CAMERA_SHAKE_CHAIN_SCALE = 0.0005;
 const PURE_CANOPIC_PULSE_DEPTH = 25;
 const PURE_CANOPIC_PULSE_DURATION_MS = 320;
 const PURE_CANOPIC_HIT_STOP_MS = 210;
+const SOUL_ASCENT_DEPTH = 45;
+const SOUL_FLOAT_UP_MS = 170;
+const SOUL_TO_HUD_MS = 300;
 const CHAIN_POPUP_DEPTH = 46;
 const CHAIN_POPUP_TOP_OFFSET = 26;
 const CHAIN_POPUP_RISE_START_OFFSET = 32;
@@ -1765,6 +1768,7 @@ ${COMMIT_SHA}`, {
       pureCanopicCount += clearResult.pureCanopicCount;
 
       this.matchResolver.clearCells(clearResult.cellsToClear);
+      await this.animateRevivedSoulAcquisition(clearResult);
       await this.applyBoardGravityStepwise();
       nextChain += 1;
     }
@@ -2699,12 +2703,84 @@ ${COMMIT_SHA}`, {
       return;
     }
 
-    this.revivedSoulsCount += pureCanopicCount;
     this.totalPureCanopicCount += pureCanopicCount;
-    this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.updateUnderworldDepthProgressHud();
     this.showPureCanopicPopup();
     this.updateDepthProgression();
+  }
+
+  async animateRevivedSoulAcquisition(clearResult) {
+    if (!clearResult || clearResult.pureCanopicCount <= 0 || !this.hud) {
+      return;
+    }
+
+    const pureSoulOrigins = this.getPureCanopicSoulOrigins(clearResult);
+    if (pureSoulOrigins.length === 0) {
+      this.revivedSoulsCount += clearResult.pureCanopicCount;
+      this.hud.updateRevivedSouls(this.revivedSoulsCount);
+      this.hud.pulseRevivedSoulsPanel();
+      return;
+    }
+
+    const hudTarget = this.hud.getRevivedSoulsTargetWorldPoint();
+    const souls = pureSoulOrigins.map((origin) => this.createRevivedSoulVisual(origin));
+
+    await Promise.all(souls.map((soul, index) => this.animateSoulToHud(soul, hudTarget, index)));
+
+    this.revivedSoulsCount += clearResult.pureCanopicCount;
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.hud.pulseRevivedSoulsPanel();
+  }
+
+  getPureCanopicSoulOrigins(clearResult) {
+    const pureGroups = clearResult.canopicSets.filter((group) => this.canopusResolver.isPureCanopicSet(group));
+    return pureGroups.map((group) => {
+      const center = group.reduce((acc, cell) => {
+        const point = this.getCellCenter(cell.col, cell.row);
+        return { x: acc.x + point.x, y: acc.y + point.y };
+      }, { x: 0, y: 0 });
+      return { x: center.x / group.length, y: center.y / group.length };
+    });
+  }
+
+  createRevivedSoulVisual(origin) {
+    const soul = this.add.container(origin.x, origin.y).setDepth(SOUL_ASCENT_DEPTH).setAlpha(0.96);
+    const body = this.add.ellipse(0, 3, this.layout.cellSize * 0.24, this.layout.cellSize * 0.34, 0xe6d1a1, 0.95)
+      .setStrokeStyle(1, 0xd4af37, 0.5);
+    const head = this.add.circle(0, -4, this.layout.cellSize * 0.07, 0xefdfba, 0.96);
+    const eyes = this.add.ellipse(0, -4, this.layout.cellSize * 0.045, this.layout.cellSize * 0.02, 0xf4d77a, 0.7);
+    soul.add([body, head, eyes]);
+    return soul;
+  }
+
+  animateSoulToHud(soul, hudTarget, index) {
+    const driftX = (index % 2 === 0 ? -1 : 1) * (6 + index * 2);
+    return new Promise((resolve) => {
+      this.tweens.add({
+        targets: soul,
+        y: soul.y - Math.max(12, this.layout.cellSize * 0.5),
+        x: soul.x + driftX,
+        alpha: { from: 0.96, to: 1 },
+        duration: SOUL_FLOAT_UP_MS,
+        ease: 'Sine.easeOut',
+        onComplete: () => {
+          this.tweens.add({
+            targets: soul,
+            x: hudTarget.x,
+            y: hudTarget.y,
+            alpha: { from: 1, to: 0.1 },
+            scaleX: { from: 1, to: 0.72 },
+            scaleY: { from: 1, to: 0.72 },
+            duration: SOUL_TO_HUD_MS,
+            ease: 'Cubic.easeIn',
+            onComplete: () => {
+              soul.destroy();
+              resolve();
+            },
+          });
+        },
+      });
+    });
   }
 
   updateDepthProgression() {
