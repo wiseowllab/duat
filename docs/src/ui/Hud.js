@@ -25,7 +25,11 @@ const HUD_LAYER_COFFIN_BAR_FILL = 13.7;
 const HUD_LAYER_TEXT = 13;
 const HUD_LAYER_UNLOCK_FEEDBACK = 14;
 const HUD_LAYER_UNLOCK_BADGE = 17;
-const REVIVED_ICON_VISIBLE_MAX = 6;
+const REVIVED_ICON_VISIBLE_MAX = 12;
+const REVIVED_ICON_COLUMNS = 4;
+const REVIVED_ICON_SPACING_X = 18;
+const REVIVED_ICON_SPACING_Y = 11;
+const REVIVED_ICON_BASE_FONT_SIZE = 11;
 const NEXT_ICON_SIZE = 24;
 const HUD_TOP_HEIGHT = 74;
 const HUD_NEXT_HEIGHT = 72;
@@ -95,6 +99,9 @@ export class Hud {
     this.previousCoffinGodId = null;
     this.revivedCount = 0;
     this.revivedIcons = [];
+    this.revivedIconTweens = [];
+    this.revivedEyeTimers = [];
+    this.revivedDepthLevel = 1;
     this.depthAtmosphereTween = null;
 
     this.create();
@@ -230,41 +237,50 @@ export class Hud {
       color: '#e5d0a0',
       fontStyle: 'bold',
     });
-    this.revivedIconsContainer = this.scene.add.container(10, 34);
+    this.revivedIconsContainer = this.scene.add.container(10, 33);
     this.revivedPanel.add([panelBack, this.revivedLabelText, this.revivedCountText, this.revivedIconsContainer]);
     this.revivedPanelBack = panelBack;
   }
 
   updateRevivedSouls(count) {
+    const previousCount = this.revivedCount;
     this.revivedCount = Math.max(0, count);
     this.revivedCountText.setText(`×${this.revivedCount}`);
     this.revivedIconsContainer.setVisible(this.revivedCount > 0);
     this.renderRevivedIcons();
+    if (this.revivedCount > previousCount) {
+      this.pulseRevivedSoulsCommunity();
+    }
   }
 
   renderRevivedIcons() {
+    this.clearRevivedSoulAtmosphere();
     this.revivedIcons.forEach((icon) => icon.destroy());
     this.revivedIcons = [];
     this.revivedIconsContainer.removeAll(true);
 
     const maxIconsForCompact = Math.min(this.revivedCount, REVIVED_ICON_VISIBLE_MAX);
+    const rows = Math.max(1, Math.ceil(maxIconsForCompact / REVIVED_ICON_COLUMNS));
     for (let index = 0; index < maxIconsForCompact; index += 1) {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      const iconX = col * 22;
-      const iconY = row * 13;
+      const col = index % REVIVED_ICON_COLUMNS;
+      const row = Math.floor(index / REVIVED_ICON_COLUMNS);
+      const rowWidth = this.resolveRowWidth(row, maxIconsForCompact);
+      const colStart = ((REVIVED_ICON_COLUMNS - rowWidth) * REVIVED_ICON_SPACING_X) / 2;
+      const iconX = colStart + (col * REVIVED_ICON_SPACING_X);
+      const iconY = row * REVIVED_ICON_SPACING_Y;
       const icon = this.scene.add.text(iconX, iconY, '𓀾', {
         fontFamily: 'Georgia, serif',
-        fontSize: '12px',
+        fontSize: `${REVIVED_ICON_BASE_FONT_SIZE}px`,
         color: '#d9bb76',
-      }).setShadow(0, 0, '#f0c14f', 3, true, true);
+      }).setOrigin(0.5, 0.5).setShadow(0, 0, '#f0c14f', 2, true, true);
       this.revivedIcons.push(icon);
       this.revivedIconsContainer.add(icon);
+      this.attachSoulIdle(icon, index, row, rows);
     }
 
     if (this.revivedCount > REVIVED_ICON_VISIBLE_MAX) {
       const remaining = this.revivedCount - REVIVED_ICON_VISIBLE_MAX;
-      const overflowText = this.scene.add.text(68, 13, `+${remaining}`, {
+      const overflowText = this.scene.add.text(76, 13, `+${remaining}`, {
         fontFamily: 'Arial, sans-serif',
         fontSize: '9px',
         color: '#e5d0a0',
@@ -302,6 +318,84 @@ export class Hud {
       yoyo: true,
       ease: 'Sine.easeInOut',
     });
+  }
+
+  resolveRowWidth(row, visibleCount) {
+    const iconsBeforeRow = row * REVIVED_ICON_COLUMNS;
+    return Math.min(REVIVED_ICON_COLUMNS, Math.max(0, visibleCount - iconsBeforeRow));
+  }
+
+  attachSoulIdle(icon, index, row, totalRows) {
+    const depthFactor = Math.max(1, this.revivedDepthLevel);
+    const swayAmplitude = 0.6 + (row * 0.08);
+    const breatheScale = 1 + Math.min(0.016, 0.01 + (depthFactor - 1) * 0.003);
+    const pulseAlpha = 0.9 + Math.min(0.08, (depthFactor - 1) * 0.03);
+    const durationOffset = (index % REVIVED_ICON_COLUMNS) * 120;
+    const rowDelay = (totalRows - row) * 40;
+
+    const swayTween = this.scene.tweens.add({
+      targets: icon,
+      x: icon.x + swayAmplitude,
+      duration: 2600 + durationOffset + rowDelay,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    const breathTween = this.scene.tweens.add({
+      targets: icon,
+      scaleX: breatheScale,
+      scaleY: breatheScale + 0.004,
+      alpha: pulseAlpha,
+      duration: 1800 + durationOffset,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    this.revivedIconTweens.push(swayTween, breathTween);
+
+    if (depthFactor >= 3) {
+      const timer = this.scene.time.addEvent({
+        delay: 2400 + (index * 180),
+        loop: true,
+        callback: () => {
+          if (!icon.active) {
+            return;
+          }
+          this.scene.tweens.add({
+            targets: icon,
+            alpha: { from: icon.alpha, to: Math.max(0.72, icon.alpha - 0.18) },
+            duration: 100,
+            yoyo: true,
+            ease: 'Sine.easeInOut',
+          });
+        },
+      });
+      this.revivedEyeTimers.push(timer);
+    }
+  }
+
+  pulseRevivedSoulsCommunity() {
+    if (!this.revivedIcons.length) {
+      return;
+    }
+    this.revivedIcons.forEach((icon, index) => {
+      this.scene.tweens.add({
+        targets: icon,
+        scaleX: 1.08,
+        scaleY: 1.08,
+        duration: 130,
+        delay: index * 24,
+        yoyo: true,
+        ease: 'Sine.easeOut',
+      });
+    });
+  }
+
+  clearRevivedSoulAtmosphere() {
+    this.revivedIconTweens.forEach((tween) => tween?.stop());
+    this.revivedEyeTimers.forEach((timer) => timer?.remove(false));
+    this.revivedIconTweens = [];
+    this.revivedEyeTimers = [];
   }
 
   createUnlockBadge() {
@@ -1045,6 +1139,13 @@ export class Hud {
     }
     if (this.coffinBarBack) {
       this.coffinBarBack.setStrokeStyle(2, 0xd4af37, Math.min(0.88, 0.72 + depthBoost));
+    }
+    this.revivedDepthLevel = normalizedDepth;
+    if (this.revivedPanelBack) {
+      const revivedPanelAlpha = Math.min(0.95, 0.92 + (normalizedDepth - 1) * 0.01);
+      const revivedStrokeAlpha = Math.min(0.65, 0.45 + (normalizedDepth - 1) * 0.08);
+      this.revivedPanelBack.setFillStyle(0x0d0a06, revivedPanelAlpha);
+      this.revivedPanelBack.setStrokeStyle(1, normalizedDepth >= 2 ? 0xf0d27a : 0xd4af37, revivedStrokeAlpha);
     }
   }
 
