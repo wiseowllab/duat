@@ -68,6 +68,8 @@ const CAMERA_SHAKE_CHAIN_SCALE = 0.0005;
 const PURE_CANOPIC_PULSE_DEPTH = 25;
 const PURE_CANOPIC_PULSE_DURATION_MS = 320;
 const PURE_CANOPIC_HIT_STOP_MS = 210;
+const GOD_AWAKENING_PRESENCE_MS = 680;
+const GOD_AWAKENING_RIPPLE_MAX_RADIUS = 260;
 const SOUL_ASCENT_DEPTH = 45;
 const SOUL_FLOAT_UP_MS = 170;
 const SOUL_TO_HUD_MS = 300;
@@ -515,9 +517,9 @@ export class GameScene extends Phaser.Scene {
     this.add.rectangle(this.layout.boardOriginX + (boardWidth / 2), boardPanelCenterY, boardWidth + 24, gameplayHeight - 14, 0x161009, 0.84)
       .setStrokeStyle(1, 0xd4af37, 0.22);
 
-    this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 28, boardHeight + 28, 0x332313, 0.95)
+    this.boardOuterFrame = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 28, boardHeight + 28, 0x332313, 0.95)
       .setStrokeStyle(2, 0xd4af37, 0.82);
-    this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x0c0a08, 0.98)
+    this.boardInnerFrame = this.add.rectangle(boardCenterX, boardCenterY, boardWidth + 16, boardHeight + 16, 0x0c0a08, 0.98)
       .setStrokeStyle(1, 0xf0d27a, 0.35);
     this.add.rectangle(boardCenterX, boardCenterY, boardWidth, boardHeight, 0x12100d, 1);
 
@@ -2511,6 +2513,78 @@ ${COMMIT_SHA}`, {
     const unlockEventsWithBombInfo = this.addBombsForUnlockEvents(unlockEvents);
     this.hud.showGodUnlocked(unlockEventsWithBombInfo);
     this.refreshAwakenedGodPresence();
+    unlockEventsWithBombInfo.forEach((unlockEvent, index) => {
+      this.time.delayedCall(index * 140, () => {
+        this.playGodAwakeningPresence(unlockEvent?.god?.id);
+      });
+    });
+  }
+
+  playGodAwakeningPresence(godId) {
+    const colors = {
+      imsety: 0xe8c76e,
+      hapy: 0x8ecff2,
+      duamutef: 0xe09a6c,
+      qebehsenuef: 0xb794f8,
+    };
+    const pulseColor = colors[godId] ?? 0xd4af37;
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const ripple = this.add.circle(boardCenterX, boardCenterY, 14, pulseColor, 0.08)
+      .setStrokeStyle(2, 0xf2dfad, 0.42)
+      .setDepth(5.2);
+
+    this.tweens.add({
+      targets: ripple,
+      radius: GOD_AWAKENING_RIPPLE_MAX_RADIUS,
+      alpha: 0,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: GOD_AWAKENING_PRESENCE_MS,
+      ease: 'Sine.easeOut',
+      onComplete: () => ripple.destroy(),
+    });
+
+    if (this.boardOuterFrame && this.boardInnerFrame) {
+      this.boardOuterFrame.setStrokeStyle(2, pulseColor, 0.94);
+      this.boardInnerFrame.setStrokeStyle(2, 0xf4e9c8, 0.58);
+      this.tweens.add({
+        targets: [this.boardOuterFrame, this.boardInnerFrame],
+        alpha: (target, key, value) => Math.min(1, value + 0.04),
+        duration: 180,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+        onComplete: () => {
+          this.boardOuterFrame.setStrokeStyle(2, 0xd4af37, 0.82);
+          this.boardInnerFrame.setStrokeStyle(1, 0xf0d27a, 0.35);
+        },
+      });
+    }
+
+    if (this.depthAtmosphere) {
+      const { tint, glow, pulseLines, dustParticles } = this.depthAtmosphere;
+      tint.setFillStyle(pulseColor, tint.alpha);
+      this.tweens.add({
+        targets: [tint, glow, pulseLines],
+        alpha: (target, key, value) => value + 0.04,
+        duration: 160,
+        yoyo: true,
+        ease: 'Sine.easeInOut',
+        onComplete: () => this.updateDepthAtmosphereVisuals(false),
+      });
+      dustParticles.slice(0, 8).forEach((particle, index) => {
+        this.tweens.add({
+          targets: particle,
+          x: particle.x + (index % 2 === 0 ? 5 : -5),
+          duration: 120,
+          yoyo: true,
+          ease: 'Sine.easeInOut',
+        });
+      });
+    }
+
+    this.hud?.pulseAwakenedSigil(godId);
+    this.hud?.pulseCurrentCoffin(godId);
   }
 
   addBombsForUnlockEvents(unlockEvents) {

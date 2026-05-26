@@ -687,7 +687,7 @@ export class Hud {
       }).setOrigin(0.5);
 
       this.awakenedSigilContainer.add([glow, core, mark]);
-      this.awakenedSigilNodes.push({ glow, core, mark });
+      this.awakenedSigilNodes.push({ godId: god.id, glow, core, mark });
 
       if (isNewGod) {
         const pulseTween = this.scene.tweens.add({
@@ -714,6 +714,65 @@ export class Hud {
     if (this.coffinGlow) {
       this.coffinGlow.setAlpha(0.08 + awakenRatio * 0.09);
     }
+  }
+
+  pulseAwakenedSigil(godId) {
+    if (!godId) {
+      return;
+    }
+    const sigilNode = this.awakenedSigilNodes.find((node) => node.godId === godId);
+    if (!sigilNode) {
+      return;
+    }
+    const { glow, core, mark } = sigilNode;
+    glow.setAlpha(Math.max(glow.alpha, 0.3));
+    this.scene.tweens.add({
+      targets: [glow, core, mark],
+      scaleX: 1.2,
+      scaleY: 1.2,
+      duration: 160,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+    this.scene.tweens.add({
+      targets: glow,
+      alpha: { from: Math.max(glow.alpha, 0.32), to: 0.2 },
+      duration: 320,
+      ease: 'Sine.easeOut',
+    });
+  }
+
+  pulseCurrentCoffin(godId) {
+    if (!this.coffinContainer || !this.coffinGlow) {
+      return;
+    }
+    const pulseColors = {
+      imsety: 0xe8c76e,
+      hapy: 0x8ecff2,
+      duamutef: 0xe09a6c,
+      qebehsenuef: 0xb794f8,
+    };
+    const pulseColor = pulseColors[godId] ?? 0xd4af37;
+    const originalGlowAlpha = this.coffinGlow.alpha;
+    this.coffinGlow.setFillStyle(pulseColor, originalGlowAlpha);
+    this.scene.tweens.add({
+      targets: this.coffinContainer,
+      scaleX: 1.024,
+      scaleY: 1.024,
+      duration: 180,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+    });
+    this.scene.tweens.add({
+      targets: this.coffinGlow,
+      alpha: Math.min(0.24, originalGlowAlpha + 0.12),
+      duration: 190,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
+      onComplete: () => {
+        this.coffinGlow.setFillStyle(0xd4af37, this.coffinGlow.alpha);
+      },
+    });
   }
 
   drawCoffinVisual(currentTier) {
