@@ -25,6 +25,7 @@ const HUD_LAYER_COFFIN_BAR_FILL = 13.7;
 const HUD_LAYER_TEXT = 13;
 const HUD_LAYER_UNLOCK_FEEDBACK = 14;
 const HUD_LAYER_UNLOCK_BADGE = 17;
+const HUD_LAYER_AWAKENED_SIGILS = 13.2;
 const REVIVED_ICON_VISIBLE_MAX = 12;
 const REVIVED_ICON_COLUMNS = 4;
 const REVIVED_ICON_SPACING_X = 18;
@@ -74,6 +75,11 @@ const GOD_PRESENCE_COLORS = {
   duamutef: '#e09a6c',
   qebehsenuef: '#b794f8',
 };
+const AWAKENED_SIGIL_COLORS = [0xd4af37, 0x8ecff2, 0xb794f8];
+const AWAKENED_SIGILS_PER_ROW = 7;
+const AWAKENED_SIGIL_RADIUS = 4;
+const AWAKENED_SIGIL_SPACING_X = 18;
+const AWAKENED_SIGIL_SPACING_Y = 12;
 
 export class Hud {
   constructor(scene, x, y, width = HUD_WIDTH) {
@@ -110,6 +116,10 @@ export class Hud {
     this.revivedEyeTimers = [];
     this.revivedDepthLevel = 1;
     this.depthAtmosphereTween = null;
+    this.awakenedSigilContainer = null;
+    this.awakenedSigilNodes = [];
+    this.awakenedSigilPulseTweens = [];
+    this.awakenedGodIdSet = new Set();
 
     this.create();
   }
@@ -195,11 +205,12 @@ export class Hud {
     this.depthProgressText = this.createLabel(SECTION_X + 34, underworldSectionY + 34 - this.y, '0 / 3', 9, 0);
     this.depthProgressText.setColor('#9fdfe8');
 
-    this.scene.add.text(this.x + SECTION_X, awakenedSectionY + SECTION_HEADER_Y, 'AWAKENED GODS', this.headingStyle(9)).setDepth(HUD_LAYER_TEXT);
-    this.awakenedGodsText = this.createLabel(SECTION_X, awakenedSectionY + 20 - this.y, '𓂀 ---', 9, 0);
+    this.scene.add.text(this.x + SECTION_X, awakenedSectionY + SECTION_HEADER_Y, 'AWAKENED GODS / 目覚めた神々', this.headingStyle(8)).setDepth(HUD_LAYER_TEXT);
+    this.awakenedGodsText = this.createLabel(SECTION_X, awakenedSectionY + 17 - this.y, '𓂀 ---', 8, 0);
     this.awakenedGodsText.setColor('#d7c7a4');
-    this.awakenedGodsSubText = this.createLabel(SECTION_X, awakenedSectionY + 34 - this.y, 'Presence: quiet', 8, 0);
+    this.awakenedGodsSubText = this.createLabel(SECTION_X, awakenedSectionY + 49 - this.y, 'Presence: quiet', 8, 0);
     this.awakenedGodsSubText.setColor('#9faec4');
+    this.createAwakenedSigilHud(awakenedSectionY);
 
     this.scene.add.text(this.x + SECTION_X, bombSectionY + SECTION_HEADER_Y, 'BOMB STOCK', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
     this.bombStockText = this.createLabel(SECTION_X, bombSectionY + 21 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 8, -2);
@@ -621,17 +632,77 @@ export class Hud {
     if (!this.awakenedGodsText || !this.awakenedGodsSubText) {
       return;
     }
+    const incomingIdSet = new Set(gods.map((god) => god.id));
     if (gods.length === 0) {
       this.awakenedGodsText.setText('𓂀 ---');
       this.awakenedGodsText.setColor('#d7c7a4');
       this.awakenedGodsSubText.setText('Presence: quiet');
+      this.renderAwakenedSigils(gods, new Set());
+      this.awakenedGodIdSet = incomingIdSet;
       return;
     }
-    const compact = gods.slice(0, 4).map((god) => `𓂀 ${god.name}`).join('  ');
+    const compact = gods.length <= 2
+      ? gods.map((god) => `𓂀 ${god.name}`).join('  ')
+      : `${gods.slice(0, 2).map((god) => god.name).join(', ')}…`;
     this.awakenedGodsText.setText(compact);
     const leadColor = GOD_PRESENCE_COLORS[gods[0]?.id] ?? '#d7c7a4';
     this.awakenedGodsText.setColor(leadColor);
-    this.awakenedGodsSubText.setText(`Presence: ${gods.length} awakened`);
+    this.awakenedGodsSubText.setText(`Sigils: ${gods.length} awakened`);
+    this.renderAwakenedSigils(gods, this.awakenedGodIdSet);
+    this.awakenedGodIdSet = incomingIdSet;
+  }
+
+  createAwakenedSigilHud(awakenedSectionY) {
+    const baseX = this.x + SECTION_X + 3;
+    const baseY = awakenedSectionY + 32;
+    this.awakenedSigilContainer = this.scene.add.container(baseX, baseY).setDepth(HUD_LAYER_AWAKENED_SIGILS);
+  }
+
+  renderAwakenedSigils(gods, previousIdSet) {
+    if (!this.awakenedSigilContainer) {
+      return;
+    }
+    this.awakenedSigilPulseTweens.forEach((tween) => tween?.stop());
+    this.awakenedSigilPulseTweens = [];
+    this.awakenedSigilContainer.removeAll(true);
+    this.awakenedSigilNodes = [];
+
+    const visibleGods = gods.slice(0, AWAKENED_SIGILS_PER_ROW * 2);
+    visibleGods.forEach((god, index) => {
+      const row = Math.floor(index / AWAKENED_SIGILS_PER_ROW);
+      const col = index % AWAKENED_SIGILS_PER_ROW;
+      const x = col * AWAKENED_SIGIL_SPACING_X;
+      const y = row * AWAKENED_SIGIL_SPACING_Y;
+      const fillColor = AWAKENED_SIGIL_COLORS[index % AWAKENED_SIGIL_COLORS.length];
+      const isNewGod = !previousIdSet.has(god.id);
+
+      const glow = this.scene.add.circle(x, y, AWAKENED_SIGIL_RADIUS + 1.5, fillColor, 0.24);
+      const core = this.scene.add.circle(x, y, AWAKENED_SIGIL_RADIUS, fillColor, 0.92)
+        .setStrokeStyle(1, 0xf4d77a, 0.88);
+      const mark = this.scene.add.text(x, y, '𓂀', {
+        fontFamily: 'Noto Sans JP, Arial, sans-serif',
+        fontSize: '8px',
+        color: '#1a130a',
+        fontStyle: 'bold',
+      }).setOrigin(0.5);
+
+      this.awakenedSigilContainer.add([glow, core, mark]);
+      this.awakenedSigilNodes.push({ glow, core, mark });
+
+      if (isNewGod) {
+        const pulseTween = this.scene.tweens.add({
+          targets: [glow, core, mark],
+          scaleX: 1.24,
+          scaleY: 1.24,
+          alpha: (target) => Math.max(0.9, target.alpha),
+          duration: 160,
+          yoyo: true,
+          repeat: 2,
+          ease: 'Sine.easeInOut',
+        });
+        this.awakenedSigilPulseTweens.push(pulseTween);
+      }
+    });
   }
 
   updateAwakenedCoffinPresence(unlockedCount) {
