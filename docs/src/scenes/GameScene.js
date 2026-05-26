@@ -295,6 +295,7 @@ export class GameScene extends Phaser.Scene {
     this.maxTierThisRun = 1;
     this.maxGodsUnlockedThisRun = 0;
     this.revivedSoulsCount = 0;
+    this.awakenedGodIdsThisRun = new Set();
     this.totalPureCanopicCount = 0;
     this.currentDepthLevel = 1;
     this.level = INITIAL_LEVEL;
@@ -373,6 +374,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
+    this.refreshAwakenedGodPresence();
     this.createTitleOverlay();
     this.createLayoutDebugOverlay();
   }
@@ -1229,6 +1231,7 @@ ${COMMIT_SHA}`, {
     this.maxGodsUnlockedThisRun = 0;
     this.level = INITIAL_LEVEL;
     this.revivedSoulsCount = 0;
+    this.awakenedGodIdsThisRun = new Set();
     this.totalPureCanopicCount = 0;
     this.currentDepthLevel = 1;
     this.activePiece = null;
@@ -1287,6 +1290,7 @@ ${COMMIT_SHA}`, {
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
+    this.refreshAwakenedGodPresence();
   }
 
   pauseGame() {
@@ -2506,6 +2510,7 @@ ${COMMIT_SHA}`, {
     this.sfx.playGodUnlock();
     const unlockEventsWithBombInfo = this.addBombsForUnlockEvents(unlockEvents);
     this.hud.showGodUnlocked(unlockEventsWithBombInfo);
+    this.refreshAwakenedGodPresence();
   }
 
   addBombsForUnlockEvents(unlockEvents) {
@@ -2538,6 +2543,8 @@ ${COMMIT_SHA}`, {
     const profile = this.getClearImpactProfile(clearResult, chainCount);
 
     if (profile.pureCanopicPulse) {
+      const currentGod = this.coffinMeter.getState().currentGod;
+      this.flashGodPresence(currentGod?.id);
       this.playPureCanopicPulse(clearResult);
       this.hud.showPureCanopicRitual(this.coffinMeter.getState().currentGod);
       await this.wait(profile.hitStopMs);
@@ -2792,8 +2799,46 @@ ${COMMIT_SHA}`, {
     this.currentDepthLevel = nextDepth;
     this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
     this.updateDepthAtmosphereVisuals(false);
+    this.applyAwakenedGodBoardPresence();
     this.showDepthTransition();
     this.playDepthTransitionPulse();
+  }
+
+  refreshAwakenedGodPresence() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    this.awakenedGodIdsThisRun = new Set(unlockedGods.map((god) => god.id));
+    this.hud?.updateAwakenedGodsPresence(unlockedGods);
+    this.applyAwakenedGodBoardPresence();
+  }
+
+  applyAwakenedGodBoardPresence() {
+    if (!this.depthAtmosphere) return;
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    const unlockedCount = unlockedGods.length;
+    const { tint, fog } = this.depthAtmosphere;
+    const baseAlpha = 0.05 + Math.min(0.12, unlockedCount * 0.008);
+    tint.setAlpha(baseAlpha);
+    fog.setAlpha(0.02 + Math.min(0.08, unlockedCount * 0.006));
+  }
+
+  flashGodPresence(godId) {
+    if (!this.depthAtmosphere) return;
+    const colors = {
+      imsety: 0xd9b35c,
+      hapy: 0x68bde6,
+      duamutef: 0xd98f53,
+      qebehsenuef: 0x8f6fe4,
+    };
+    const pulseColor = colors[godId] ?? 0xd4af37;
+    const { glow } = this.depthAtmosphere;
+    glow.setFillStyle(pulseColor, glow.alpha);
+    this.tweens.add({
+      targets: glow,
+      alpha: Math.min(0.24, glow.alpha + 0.1),
+      duration: 180,
+      yoyo: true,
+      onComplete: () => this.updateDepthAtmosphereVisuals(false),
+    });
   }
 
   playDepthTransitionPulse() {
