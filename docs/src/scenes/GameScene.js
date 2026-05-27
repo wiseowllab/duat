@@ -191,9 +191,6 @@ const ENDING_TYPES = {
   NORMAL_END: 'normal_end',
   TRUE_END: 'true_end',
 };
-const RITUAL_SOUL_CAP = 28;
-const PYRAMID_MIN_TIERS = 2;
-const PYRAMID_MAX_TIERS = 12;
 const ENDING_VISUAL_SOUL_CAP = 20;
 
 const BOMB_LABELS_JA = {
@@ -370,6 +367,9 @@ export class GameScene extends Phaser.Scene {
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
     this.currentEndingType = ENDING_TYPES.STANDARD_GAME_OVER;
+    this.isEndingSequenceRunning = false;
+    this.isEndingStatsVisible = false;
+    this.endingSequenceTimers = [];
     this.isTouchSoftDropping = false;
     this.touchActionHandler = null;
 
@@ -1413,6 +1413,9 @@ ${COMMIT_SHA}`, {
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
     this.currentEndingType = ENDING_TYPES.STANDARD_GAME_OVER;
+    this.isEndingSequenceRunning = false;
+    this.isEndingStatsVisible = false;
+    this.clearEndingSequenceTimers();
     this.bgm.stop();
     this.clearTransientVisuals();
     this.resetGameOverAtmosphere();
@@ -1440,6 +1443,13 @@ ${COMMIT_SHA}`, {
       this.gameOverOverlay.destroy(true);
       this.gameOverOverlay = null;
     }
+
+    this.clearEndingSequenceTimers();
+  }
+
+  clearEndingSequenceTimers() {
+    this.endingSequenceTimers?.forEach((timer) => timer?.remove(false));
+    this.endingSequenceTimers = [];
   }
 
   updateHudForReset() {
@@ -1726,6 +1736,9 @@ ${COMMIT_SHA}`, {
     }
 
     if (this.gameState === GAME_STATES.GAME_OVER) {
+      if (this.trySkipEndingSequence()) {
+        return;
+      }
       if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
         this.restartGame();
       } else {
@@ -1862,7 +1875,14 @@ ${COMMIT_SHA}`, {
     }
 
     if (this.gameState === GAME_STATES.GAME_OVER) {
-      this.restartGame();
+      if (this.trySkipEndingSequence()) {
+        return;
+      }
+      if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
+        this.restartGame();
+      } else {
+        this.returnToTitle();
+      }
       return;
     }
 
@@ -2650,7 +2670,31 @@ ${COMMIT_SHA}`, {
     if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.ZERO) {
       console.log('[DebugEnding] Shift+0 => Clear ending test state');
       this.clearDebugEndingTestState();
+      return;
     }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.P) {
+      console.log('[DebugEnding] Shift+P => Phase 1 TRUE END cinematic test');
+      this.triggerDebugCinematicEnding(ENDING_TYPES.TRUE_END);
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.O) {
+      console.log('[DebugEnding] Shift+O => Phase 1 NORMAL END cinematic test');
+      this.triggerDebugCinematicEnding(ENDING_TYPES.NORMAL_END);
+    }
+  }
+
+  triggerDebugCinematicEnding(endingType) {
+    this.score = 128400;
+    this.bestChainThisRun = 7;
+    this.maxTierThisRun = 4;
+    this.maxGodsUnlockedThisRun = Math.max(this.maxGodsUnlockedThisRun, 4);
+    this.totalPureCanopicCount = Math.max(this.totalPureCanopicCount, 9);
+    this.currentDepthLevel = Math.max(this.currentDepthLevel, 3);
+    this.revivedSoulsCount = 18;
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.endGame(endingType);
   }
 
   unlockToAmunRaForEndingTest() {
@@ -3432,7 +3476,7 @@ ${COMMIT_SHA}`, {
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
 
     const titleText = this.currentEndingType === ENDING_TYPES.TRUE_END
-      ? 'CONGRATULATIONS\nTHE SUN RISES AGAIN'
+      ? 'CONGRATULATIONS'
       : this.currentEndingType === ENDING_TYPES.NORMAL_END
         ? 'UNDERWORLD CLAIMED YOU'
         : 'GAME OVER';
@@ -3448,10 +3492,10 @@ ${COMMIT_SHA}`, {
     const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
     const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.96).setStrokeStyle(3, borderColor, 0.9);
-    const title = this.add.text(0, -panelHeight / 2 + 60, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -panelHeight / 2 + 124, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
+    const title = this.add.text(0, -panelHeight / 2 + 56, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -panelHeight / 2 + 110, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
-    const recordText = this.add.text(0, panelHeight / 2 - 190, [
+    const recordText = this.add.text(0, panelHeight / 2 - 236, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
       highScoreResult.isNewHighScore ? '新記録!' : '',
@@ -3461,15 +3505,15 @@ ${COMMIT_SHA}`, {
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
-    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#eadfca', align: 'center', lineSpacing: 8, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0);
+    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#eadfca', align: 'center', lineSpacing: 8, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0).setAlpha(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : 0).setName('endingStats');
 
     const nodes=[panel,title,subtitle,recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
-      const pyramid = this.createEndingPyramidVisualization(this.revivedSoulsCount, this.currentEndingType);
-      pyramid.setY(-8);
-      nodes.push(pyramid);
+      const ritualSequence = this.createRitualEndingSequence(panelWidth, this.currentEndingType, this.revivedSoulsCount);
+      nodes.push(...ritualSequence.nodes);
+      this.playRitualEndingSequence(ritualSequence, recordText);
     }
 
     const prompt = this.add.text(0, panelHeight / 2 - 30, promptText, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#f2d783', align: 'center', fontStyle: 'bold' }).setOrigin(0.5);
@@ -3482,6 +3526,9 @@ ${COMMIT_SHA}`, {
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
     panel.on('pointerdown', () => {
+      if (this.trySkipEndingSequence()) {
+        return;
+      }
       if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
         this.restartGame();
       } else {
@@ -3489,6 +3536,9 @@ ${COMMIT_SHA}`, {
       }
     });
     prompt.on('pointerdown', () => {
+      if (this.trySkipEndingSequence()) {
+        return;
+      }
       if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
         this.restartGame();
       } else {
@@ -3502,66 +3552,72 @@ ${COMMIT_SHA}`, {
     this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.58, duration: 920, ease: 'Sine.easeOut' });
   }
 
-  createEndingPyramidVisualization(revivedSoulsCount, endingType = ENDING_TYPES.TRUE_END) {
-    const container = this.add.container(0, 0);
-    const souls = Math.max(0, revivedSoulsCount);
-    const soulScale = Phaser.Math.Clamp(souls / RITUAL_SOUL_CAP, 0, 1);
-    const tierCount = Math.round(Phaser.Math.Linear(PYRAMID_MIN_TIERS, PYRAMID_MAX_TIERS, soulScale));
-    const tierProgress = endingType === ENDING_TYPES.TRUE_END ? 1 : 0.55;
-    const baseWidth = 182;
-    const layerHeight = 8;
-    const completeLayers = Math.max(1, Math.floor(tierCount * tierProgress));
-
-    const dawnGlow = this.add.ellipse(0, -48, 232, 92, 0xb4d9ff, endingType === ENDING_TYPES.TRUE_END ? 0.18 : 0.09);
-    container.add(dawnGlow);
-
-    for (let index = 0; index < tierCount; index += 1) {
-      const ratio = 1 - (index / (tierCount + 1));
-      const width = Math.max(20, baseWidth * ratio);
-      const y = 34 - (index * layerHeight);
-      const isCompleted = index < completeLayers;
-      const color = isCompleted ? (index % 2 === 0 ? 0x9f7a42 : 0xb99255) : 0x3f3020;
-      const alpha = isCompleted ? (0.26 + (index / tierCount) * 0.26) : 0.22;
-      const layer = this.add.rectangle(0, y, width, layerHeight, color, alpha).setStrokeStyle(1, 0xd8be80, isCompleted ? 0.28 : 0.12);
-      container.add(layer);
-    }
-
-    const foregroundSand = this.add.ellipse(0, 44, 224, 30, 0x5f4528, 0.2);
-    container.add(foregroundSand);
-
-    this.addRitualSouls(container, souls, tierCount, completeLayers, endingType);
-    return container;
+  trySkipEndingSequence() {
+    if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER || !this.isEndingSequenceRunning) return false;
+    this.clearEndingSequenceTimers();
+    this.isEndingSequenceRunning = false;
+    this.isEndingStatsVisible = true;
+    this.gameOverOverlay?.iterate((node) => { if (node?.name === 'endingStats') node.setAlpha(1); });
+    return true;
   }
 
-  addRitualSouls(container, souls, tierCount, completeLayers, endingType) {
-    const visualSouls = Math.min(ENDING_VISUAL_SOUL_CAP, Math.max(2, souls));
-    const completedHeight = completeLayers * 8;
-    const incompleteBuild = completeLayers < tierCount;
-
-    for (let index = 0; index < visualSouls; index += 1) {
-      const ratio = visualSouls <= 1 ? 0.5 : index / (visualSouls - 1);
-      const baseX = Phaser.Math.Linear(-84, 84, ratio) + Phaser.Math.Between(-4, 4);
-      const baseY = 48 + Phaser.Math.Between(-2, 3);
-      const soul = this.add.container(baseX, baseY);
-      const body = this.add.rectangle(0, 0, 7, 12, 0xd8cab5, 0.84).setStrokeStyle(1, 0x5a4a36, 0.35);
-      const head = this.add.circle(0, -8, 3, 0xe8dcc7, 0.86);
-      const eyes = this.add.rectangle(0, -8, 3, 1, 0x8fd6ff, endingType === ENDING_TYPES.TRUE_END ? 0.45 : 0.16);
-      soul.add([body, head, eyes]);
-      container.add(soul);
-
-      const carryY = 40 - (Math.min(completedHeight, 40) * (0.2 + ratio * 0.6));
-      const buildTarget = incompleteBuild ? { x: baseX * 0.38, y: carryY } : { x: baseX, y: baseY };
-      this.tweens.add({
-        targets: soul,
-        x: buildTarget.x,
-        y: buildTarget.y,
-        duration: 3600 + Phaser.Math.Between(0, 1800),
-        ease: 'Sine.easeInOut',
-        yoyo: true,
-        repeat: -1,
-        delay: Phaser.Math.Between(0, 900),
-      });
+  createRitualEndingSequence(panelWidth, endingType, revivedSoulsCount) {
+    const area = this.add.container(0, -8);
+    const tone = endingType === ENDING_TYPES.TRUE_END ? 0x9fd6ff : 0xd48d53;
+    const sunrise = this.add.ellipse(0, -62, 220, 96, 0xb9deff, 0).setScale(0.9);
+    const areaBg = this.add.rectangle(0, 22, panelWidth - 48, 168, 0x0e0a07, 0.38);
+    const soulsRow = this.add.container(0, 76);
+    const pyramid = this.add.container(0, 28);
+    const capstone = this.add.rectangle(0, -18, 16, 10, 0xf4d77a, 0).setStrokeStyle(1, 0xfff0a8, 0);
+    const finalText = this.add.text(0, -100, 'THE SUN RISES AGAIN', { fontFamily: 'Georgia, serif', fontSize: '26px', color: '#f7dc7c', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(0);
+    area.add([sunrise, areaBg, pyramid, soulsRow, capstone, finalText]);
+    const tierCount = revivedSoulsCount <= 5 ? 4 : revivedSoulsCount <= 15 ? 6 : revivedSoulsCount <= 30 ? 8 : 10;
+    const buildCount = endingType === ENDING_TYPES.TRUE_END ? tierCount : Math.max(2, tierCount - 2);
+    const layers = [];
+    for (let i = 0; i < buildCount; i += 1) {
+      const width = Math.max(24, 188 - i * 18);
+      const y = 42 - i * 10;
+      const layer = this.add.rectangle(0, y + 8, width, 9, i % 2 ? 0xba9356 : 0xa57f46, 0).setStrokeStyle(1, 0xe0c68f, 0);
+      layers.push(layer);
+      pyramid.add(layer);
     }
+    return { nodes: [area], sunrise, soulsRow, pyramid, capstone, finalText, layers, tone, endingType, revivedSoulsCount };
+  }
+
+  playRitualEndingSequence(sequence, recordText) {
+    this.isEndingSequenceRunning = true;
+    this.isEndingStatsVisible = false;
+    const visualSouls = Math.min(ENDING_VISUAL_SOUL_CAP, Math.max(2, sequence.revivedSoulsCount));
+    const silenceMs = 700;
+    const gatherMs = 1100;
+    const buildStartMs = silenceMs + gatherMs;
+    const layerStepMs = 180;
+    const finalRevealMs = buildStartMs + sequence.layers.length * layerStepMs + 300;
+    for (let i = 0; i < visualSouls; i += 1) {
+      const startX = (i % 2 === 0 ? -1 : 1) * (160 + (i * 6));
+      const ratio = visualSouls <= 1 ? 0.5 : i / (visualSouls - 1);
+      const targetX = Phaser.Math.Linear(-94, 94, ratio);
+      const soul = this.add.rectangle(startX, Phaser.Math.Between(-6, 6), 6, 11, 0xdccdb4, 0).setStrokeStyle(1, 0x5a4a36, 0.3);
+      sequence.soulsRow.add(soul);
+      this.tweens.add({ targets: soul, alpha: 0.85, x: targetX, duration: gatherMs, delay: silenceMs + i * 35, ease: 'Sine.easeOut' });
+    }
+    sequence.layers.forEach((layer, index) => {
+      this.endingSequenceTimers.push(this.time.delayedCall(buildStartMs + (index * layerStepMs), () => {
+        this.tweens.add({ targets: layer, alpha: 0.7, y: layer.y - 8, duration: 200, ease: 'Sine.easeOut' });
+      }));
+    });
+    if (sequence.endingType === ENDING_TYPES.TRUE_END) {
+      this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs, () => {
+        this.tweens.add({ targets: [sequence.capstone, sequence.sunrise], alpha: 1, duration: 420, ease: 'Sine.easeOut' });
+        this.tweens.add({ targets: sequence.finalText, alpha: 1, duration: 480, ease: 'Sine.easeOut', delay: 120 });
+      }));
+    }
+    this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs + 550, () => {
+      recordText.setAlpha(1);
+      this.isEndingSequenceRunning = false;
+      this.isEndingStatsVisible = true;
+      this.clearEndingSequenceTimers();
+    }));
   }
 
   renderBoard() {
