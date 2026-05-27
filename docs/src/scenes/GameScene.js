@@ -2690,9 +2690,9 @@ ${COMMIT_SHA}`, {
     this.bestChainThisRun = 7;
     this.maxTierThisRun = 4;
     this.maxGodsUnlockedThisRun = Math.max(this.maxGodsUnlockedThisRun, 4);
-    this.totalPureCanopicCount = Math.max(this.totalPureCanopicCount, 9);
+    this.totalPureCanopicCount = Math.max(this.totalPureCanopicCount, 10);
     this.currentDepthLevel = Math.max(this.currentDepthLevel, 3);
-    this.revivedSoulsCount = 18;
+    this.revivedSoulsCount = 30;
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.endGame(endingType);
   }
@@ -3562,54 +3562,80 @@ ${COMMIT_SHA}`, {
   }
 
   createRitualEndingSequence(panelWidth, endingType, revivedSoulsCount) {
-    const area = this.add.container(0, -8);
-    const tone = endingType === ENDING_TYPES.TRUE_END ? 0x9fd6ff : 0xd48d53;
-    const sunrise = this.add.ellipse(0, -62, 220, 96, 0xb9deff, 0).setScale(0.9);
-    const areaBg = this.add.rectangle(0, 22, panelWidth - 48, 168, 0x0e0a07, 0.38);
-    const soulsRow = this.add.container(0, 76);
-    const pyramid = this.add.container(0, 28);
-    const capstone = this.add.rectangle(0, -18, 16, 10, 0xf4d77a, 0).setStrokeStyle(1, 0xfff0a8, 0);
-    const finalText = this.add.text(0, -100, 'THE SUN RISES AGAIN', { fontFamily: 'Georgia, serif', fontSize: '26px', color: '#f7dc7c', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(0);
-    area.add([sunrise, areaBg, pyramid, soulsRow, capstone, finalText]);
-    const tierCount = revivedSoulsCount <= 5 ? 4 : revivedSoulsCount <= 15 ? 6 : revivedSoulsCount <= 30 ? 8 : 10;
-    const buildCount = endingType === ENDING_TYPES.TRUE_END ? tierCount : Math.max(2, tierCount - 2);
-    const layers = [];
+    const area = this.add.container(0, 8).setDepth(28);
+    const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
+    const theme = isTrueEnd
+      ? { sky: 0x0d203f, haze: 0x8db9f7, stoneA: 0xd8b67a, stoneB: 0xc79f63, stroke: 0x7d5a2f }
+      : { sky: 0x1a120f, haze: 0x4b3222, stoneA: 0x87623f, stoneB: 0x735233, stroke: 0x4f3821 };
+    const areaBg = this.add.rectangle(0, 22, panelWidth - 42, 280, theme.sky, 0.7).setStrokeStyle(2, 0x21170f, 0.8);
+    const horizonGlow = this.add.ellipse(0, 42, 286, 92, theme.haze, 0.48).setAlpha(0);
+    const sunDisk = this.add.circle(0, 18, 48, isTrueEnd ? 0xf8df9c : 0x5e4330, isTrueEnd ? 0.64 : 0.32).setAlpha(0);
+    const darkHaze = this.add.ellipse(0, 48, 280, 96, 0x120a07, isTrueEnd ? 0 : 0.45);
+    const pyramid = this.add.container(0, 72);
+    const soulsRow = this.add.container(0, 112);
+    const dustLayer = this.add.container(0, 72);
+    const capstone = this.add.triangle(0, -112, -8, 8, 8, 8, 0, -8, 0xf4d77a, 0).setStrokeStyle(1, 0xfff3be, 0).setAlpha(0);
+    const finalText = this.add.text(0, -116, isTrueEnd ? 'THE SUN RISES AGAIN' : 'THE PYRAMID REMAINS UNFINISHED', { fontFamily: 'Georgia, serif', fontSize: '22px', color: isTrueEnd ? '#f7dc7c' : '#d59c66', fontStyle: 'bold', align: 'center' }).setOrigin(0.5).setAlpha(0);
+    area.add([areaBg, horizonGlow, sunDisk, darkHaze, pyramid, dustLayer, soulsRow, capstone, finalText]);
+    const tierCount = revivedSoulsCount <= 5 ? 3 : revivedSoulsCount <= 15 ? 5 : revivedSoulsCount <= 30 ? 7 : 9;
+    const buildCount = isTrueEnd ? tierCount : Math.max(3, tierCount - 2);
+    const tiers = [];
     for (let i = 0; i < buildCount; i += 1) {
-      const width = Math.max(24, 188 - i * 18);
-      const y = 42 - i * 10;
-      const layer = this.add.rectangle(0, y + 8, width, 9, i % 2 ? 0xba9356 : 0xa57f46, 0).setStrokeStyle(1, 0xe0c68f, 0);
-      layers.push(layer);
-      pyramid.add(layer);
+      const blockCount = Math.max(2, 10 - i);
+      const y = 66 - i * 14;
+      const tier = this.add.container(0, y + 10).setAlpha(0);
+      for (let b = 0; b < blockCount; b += 1) {
+        const x = (b - (blockCount - 1) / 2) * 14;
+        const block = this.add.rectangle(x, 0, 14, 12, b % 2 ? theme.stoneA : theme.stoneB, 1).setStrokeStyle(1, theme.stroke, 0.9);
+        const shade = this.add.rectangle(x, 4, 12, 3, 0x000000, 0.12);
+        tier.add([block, shade]);
+      }
+      tiers.push(tier);
+      pyramid.add(tier);
     }
-    return { nodes: [area], sunrise, soulsRow, pyramid, capstone, finalText, layers, tone, endingType, revivedSoulsCount };
+    return { nodes: [area], soulsRow, dustLayer, capstone, finalText, sunDisk, horizonGlow, tiers, endingType, revivedSoulsCount };
   }
 
   playRitualEndingSequence(sequence, recordText) {
     this.isEndingSequenceRunning = true;
     this.isEndingStatsVisible = false;
-    const visualSouls = Math.min(ENDING_VISUAL_SOUL_CAP, Math.max(2, sequence.revivedSoulsCount));
-    const silenceMs = 700;
-    const gatherMs = 1100;
+    const visualSouls = Math.min(ENDING_VISUAL_SOUL_CAP, Math.max(4, sequence.revivedSoulsCount));
+    const silenceMs = 420;
+    const gatherMs = 980;
     const buildStartMs = silenceMs + gatherMs;
-    const layerStepMs = 180;
-    const finalRevealMs = buildStartMs + sequence.layers.length * layerStepMs + 300;
+    const layerStepMs = 240;
+    const finalRevealMs = buildStartMs + sequence.tiers.length * layerStepMs + 300;
     for (let i = 0; i < visualSouls; i += 1) {
       const startX = (i % 2 === 0 ? -1 : 1) * (160 + (i * 6));
       const ratio = visualSouls <= 1 ? 0.5 : i / (visualSouls - 1);
-      const targetX = Phaser.Math.Linear(-94, 94, ratio);
-      const soul = this.add.rectangle(startX, Phaser.Math.Between(-6, 6), 6, 11, 0xdccdb4, 0).setStrokeStyle(1, 0x5a4a36, 0.3);
+      const targetX = Phaser.Math.Linear(-108, 108, ratio);
+      const soul = this.add.container(startX, Phaser.Math.Between(-8, 8)).setAlpha(0).setScale(0.9);
+      const body = this.add.rectangle(0, 2, 9, 14, 0xe2d8bd, 1).setStrokeStyle(1, 0x4f3c2a, 0.92);
+      const head = this.add.circle(0, -7, 4, 0xf2eacb, 1).setStrokeStyle(1, 0x4f3c2a, 0.9);
+      const eye = this.add.circle(1, -7, 1, 0x96e6ff, 0.95);
+      const bandA = this.add.rectangle(0, -1, 9, 1, 0xb9ae93, 0.85);
+      const bandB = this.add.rectangle(0, 4, 9, 1, 0xb9ae93, 0.85);
+      soul.add([body, head, eye, bandA, bandB]);
       sequence.soulsRow.add(soul);
       this.tweens.add({ targets: soul, alpha: 0.85, x: targetX, duration: gatherMs, delay: silenceMs + i * 35, ease: 'Sine.easeOut' });
     }
-    sequence.layers.forEach((layer, index) => {
+    sequence.tiers.forEach((tier, index) => {
       this.endingSequenceTimers.push(this.time.delayedCall(buildStartMs + (index * layerStepMs), () => {
-        this.tweens.add({ targets: layer, alpha: 0.7, y: layer.y - 8, duration: 200, ease: 'Sine.easeOut' });
+        this.tweens.add({ targets: tier, alpha: 1, y: tier.y - 10, duration: 220, ease: 'Back.easeOut' });
+        const dust = this.add.ellipse(0, tier.y + 8, 56, 12, 0xd5b483, 0.45);
+        sequence.dustLayer.add(dust);
+        this.tweens.add({ targets: dust, alpha: 0, scaleX: 1.4, scaleY: 1.5, duration: 260, ease: 'Sine.easeOut', onComplete: () => dust.destroy() });
       }));
     });
     if (sequence.endingType === ENDING_TYPES.TRUE_END) {
       this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs, () => {
-        this.tweens.add({ targets: [sequence.capstone, sequence.sunrise], alpha: 1, duration: 420, ease: 'Sine.easeOut' });
+        this.tweens.add({ targets: [sequence.capstone, sequence.sunDisk, sequence.horizonGlow], alpha: 1, duration: 420, ease: 'Sine.easeOut' });
         this.tweens.add({ targets: sequence.finalText, alpha: 1, duration: 480, ease: 'Sine.easeOut', delay: 120 });
+        this.tweens.add({ targets: sequence.capstone, scaleX: 1.12, scaleY: 1.12, yoyo: true, repeat: -1, duration: 900 });
+      }));
+    } else {
+      this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs, () => {
+        this.tweens.add({ targets: sequence.finalText, alpha: 1, duration: 400, ease: 'Sine.easeOut' });
       }));
     }
     this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs + 550, () => {
