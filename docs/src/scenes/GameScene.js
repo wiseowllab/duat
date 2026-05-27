@@ -3570,6 +3570,7 @@ ${COMMIT_SHA}`, {
     const area = this.add.container(0, 6).setDepth(28);
     const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
     const panelCenterX = 0;
+    const pyramidCenterX = panelCenterX;
     const visualAreaY = panelHeight <= 700 ? 24 : 22;
     const visualAreaHeight = panelHeight <= 700 ? 232 : 244;
     const visualTop = visualAreaY - visualAreaHeight / 2;
@@ -3584,7 +3585,7 @@ ${COMMIT_SHA}`, {
     const darkHaze = this.add.ellipse(panelCenterX, 48, 280, 96, 0x120a07, isTrueEnd ? 0 : 0.28);
     const horizonGlow = this.add.ellipse(panelCenterX, 52, 286, 102, theme.haze, 0.42).setAlpha(isTrueEnd ? 1 : 0.35);
     const sunDisk = this.add.circle(panelCenterX, 32, 54, isTrueEnd ? 0xf8df9c : 0x8e6d4f, isTrueEnd ? 0.42 : 0.24).setAlpha(isTrueEnd ? 1 : 0.5);
-    const pyramid = this.add.container(panelCenterX, 0);
+    const pyramid = this.add.container(0, 0);
     const soulsRow = this.add.container(0, soulsY);
     const dustLayer = this.add.container(0, 64);
     const capstone = this.add.triangle(0, -112, -10, 10, 10, 10, 0, -10, 0xf4d77a, 0).setStrokeStyle(1, 0xfff3be, 0).setAlpha(0);
@@ -3606,7 +3607,7 @@ ${COMMIT_SHA}`, {
       tierCount: buildCount,
       areaDepth: area.depth,
       endingPanelDepth: this.gameOverOverlay?.depth,
-      panelCenterX,
+      pyramidCenterX,
       visualAreaY,
       visualAreaHeight,
       pyramidBaseY,
@@ -3623,7 +3624,7 @@ ${COMMIT_SHA}`, {
     const backingHeight = Math.min(totalPyramidHeight + 4, visualAreaHeight - 58);
     const backingCenterY = pyramidBaseY - (backingHeight / 2);
     const backingTriangle = this.add.triangle(
-      panelCenterX,
+      pyramidCenterX,
       backingCenterY,
       -backingHalfWidth,
       backingHeight / 2,
@@ -3645,7 +3646,7 @@ ${COMMIT_SHA}`, {
       const topWidth = Phaser.Math.Linear(baseWidth, apexWidth, t1);
       const tierColor = i % 2 === 0 ? (isTrueEnd ? 0xe6bf74 : theme.stoneA) : (isTrueEnd ? 0xd9ae64 : theme.stoneB);
       const tier = this.add.polygon(
-        panelCenterX,
+        pyramidCenterX,
         0,
         [
           -bottomWidth / 2, bottomY,
@@ -3658,7 +3659,7 @@ ${COMMIT_SHA}`, {
       ).setStrokeStyle(2, theme.stroke, 0.9).setAlpha(1);
       const tierFillTweenTarget = isTrueEnd ? 1 : 0.94;
       const tierFill = this.add.polygon(
-        panelCenterX,
+        pyramidCenterX,
         0,
         [
           -bottomWidth / 2 + 1.5, bottomY - 0.5,
@@ -3669,14 +3670,14 @@ ${COMMIT_SHA}`, {
         tierColor,
         tierFillTweenTarget,
       );
-      const layerLine = this.add.line(panelCenterX, 0, -topWidth / 2, topY, topWidth / 2, topY, 0xf5ddb0, isTrueEnd ? 0.3 : 0.2).setLineWidth(1, 1);
+      const layerLine = this.add.line(pyramidCenterX, 0, -topWidth / 2, topY, topWidth / 2, topY, 0xf5ddb0, isTrueEnd ? 0.3 : 0.2).setLineWidth(1, 1);
       const seamCount = Math.max(0, Math.floor(bottomWidth / 56));
       const seamNodes = [];
       for (let seamIndex = 1; seamIndex <= seamCount; seamIndex += 1) {
         const seamT = seamIndex / (seamCount + 1);
         const seamBottomX = Phaser.Math.Linear(-bottomWidth / 2, bottomWidth / 2, seamT);
         const seamTopX = Phaser.Math.Linear(-topWidth / 2, topWidth / 2, seamT);
-        seamNodes.push(this.add.line(panelCenterX, 0, seamBottomX, bottomY - 1, seamTopX, topY + 1, theme.stroke, 0.2).setLineWidth(1, 1));
+        seamNodes.push(this.add.line(pyramidCenterX, 0, seamBottomX, bottomY - 1, seamTopX, topY + 1, theme.stroke, 0.2).setLineWidth(1, 1));
       }
       const tierNodes = [tier, tierFill, layerLine, ...seamNodes];
       tiers.push({ nodes: tierNodes, y: bottomY, topY });
@@ -3705,7 +3706,7 @@ ${COMMIT_SHA}`, {
       const startX = (i % 2 === 0 ? -1 : 1) * (160 + (i * 6));
       const ratio = visualSouls <= 1 ? 0.5 : i / (visualSouls - 1);
       const targetX = Phaser.Math.Linear(-86, 86, ratio);
-      const soul = this.add.container(startX, Phaser.Math.Between(-8, 8)).setAlpha(0).setScale(0.9);
+      const soul = this.add.container(startX, 0).setAlpha(0).setScale(0.9);
       const body = this.add.rectangle(0, 2, 9, 14, 0xe2d8bd, 1).setStrokeStyle(1, 0x4f3c2a, 0.92);
       const head = this.add.circle(0, -7, 4, 0xf2eacb, 1).setStrokeStyle(1, 0x4f3c2a, 0.9);
       const eye = this.add.circle(1, -7, 1, 0x96e6ff, 0.95);
