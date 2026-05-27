@@ -216,65 +216,62 @@ const BOMB_LABELS_JA = {
 
 const HOW_TO_PLAY_PAGES = [
   {
-    title: '遊び方 1/4：操作',
+    title: '遊び方 1/6：操作',
     body: [
-      '基本操作:',
-      '← / →：移動',
-      '↓：ソフトドロップ',
-      '↑ / Z：回転',
-      'Space：ハードドロップ',
-      'Enter：ポーズ / 再開 / リスタート',
-      '1〜4：ボム選択',
-      'Esc：選択解除',
-      'M：ミュート',
+      '・← / →：移動',
+      '・↓：ソフトドロップ',
+      '・↑ / Z：回転',
+      '・Space：ハードドロップ',
+      '・Enter：ポーズ / 再開 / リスタート',
+      '・1〜4：ボム選択',
+      '・Esc：選択解除',
+      '・M：ミュート',
     ].join('\n'),
   },
   {
-    title: '遊び方 2/4：カノピック儀式',
+    title: '遊び方 2/6：基本ルール',
     body: [
-      'カノピックセット:',
+      '・落ちてくる2つのピースを操作します。',
+      '・同じ臓器を4つ以上つなげると消えます。',
+      '・消えるとスコアと棺メーターが増えます。',
+      '・連鎖すると得点が伸びます。',
+    ].join('\n'),
+  },
+  {
+    title: '遊び方 3/6：カノピックセット',
+    body: [
       '・肝臓・肺・胃・腸を2×2でそろえると成立。',
       '・並び順は自由です。',
       '・心臓は足りない臓器1種類の代わりになります。',
-      '・ただし心臓は1つまでです。',
-      '・心臓が2つ以上ある2×2は不成立です。',
-      '',
-      'PURE CANOPIC:',
-      '・心臓なしで4臓器だけの2×2を作ると発生。',
-      '・死者の魂が復活します。',
-      '・復活した魂はREVIVED SOULSに蓄積されます。',
+      '・心臓は1つまでです。',
+      '・心臓が2つ以上ある2×2では成立しません。',
     ].join('\n'),
   },
   {
-    title: '遊び方 3/4：脳・冥界深度・神々',
+    title: '遊び方 4/6：脳・冥界深度',
     body: [
-      '脳:',
       '・脳は障害ピースです。',
       '・脳は4つそろえても消えません。',
       '・カノピックセットには使えません。',
       '・ボムや一部の効果で消せます。',
-      '',
-      '冥界深度:',
-      '・PURE CANOPICなどの儀式で深度が進みます。',
-      '・深度が上がると背景演出が変化します。',
-      '・HUDで深度と儀式進行を確認できます。',
-      '',
-      '神々:',
-      '・棺メーターが進むと神が目覚めます。',
-      '・目覚めた神はHUDに記録されます。',
-      '・神はボムを授けます。',
+      '・儀式を重ねると冥界深度が進みます。',
+      '・深度はHUDで確認できます。',
     ].join('\n'),
   },
   {
-    title: '遊び方 4/4：ボムとエンディング',
+    title: '遊び方 5/6：神々・ボム',
     body: [
-      'ボム操作:',
-      '1〜4：ボム選択',
-      '同じ番号をもう一度：使用',
-      'Enter / Space：使用',
-      'Esc：キャンセル',
-      '',
-      'Ending:',
+      '・棺メーターが進むと神が目覚めます。',
+      '・目覚めた神はHUDに記録されます。',
+      '・神はボムを授けます。',
+      '・1〜4でボムを選択します。',
+      '・同じ番号/Enter/Spaceで発動します。',
+      '・Escで選択解除できます。',
+    ].join('\n'),
+  },
+  {
+    title: '遊び方 6/6：エンディング',
+    body: [
       '・アメンラー解放後、盤面を浄化するとTRUE END。',
       '・アメンラー解放後に力尽きるとNORMAL END。',
       '・復活した死者の数が演出に反映されます。',
@@ -1122,6 +1119,7 @@ ${COMMIT_SHA}`, {
     const viewportWidth = canvas?.clientWidth ?? GAME_WIDTH;
     const viewportHeight = canvas?.clientHeight ?? GAME_HEIGHT;
     const isMobilePortrait = viewportWidth <= 520 && viewportHeight > viewportWidth;
+    this.isHowToPlayMobilePortrait = isMobilePortrait;
     const panelWidth = isMobilePortrait ? 620 : 700;
     const panelHeight = isMobilePortrait ? 540 : 560;
     const horizontalPadding = isMobilePortrait ? 38 : 30;
@@ -1190,9 +1188,33 @@ ${COMMIT_SHA}`, {
     this.howToPlayTitleText?.setText(page.title);
     this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
     this.howToPlayBodyText?.setText(page.body);
+    this.fitHowToPlayBodyToViewport();
     this.resetHowToPlayBodyScroll();
     this.updateHowToPlayButtonState(this.howToPlayPreviousButton, this.helpPageIndex > 0);
     this.updateHowToPlayButtonState(this.howToPlayNextButton, this.helpPageIndex < HOW_TO_PLAY_PAGES.length - 1);
+  }
+
+  fitHowToPlayBodyToViewport() {
+    if (!this.howToPlayBodyText) {
+      return;
+    }
+
+    const baseFontSize = this.isHowToPlayMobilePortrait ? 15 : 16;
+    const minFontSize = 13;
+    const baseLineSpacing = this.isHowToPlayMobilePortrait ? 10 : 7;
+    const minLineSpacing = 4;
+
+    let fontSize = baseFontSize;
+    let lineSpacing = baseLineSpacing;
+    this.howToPlayBodyText.setFontSize(`${fontSize}px`);
+    this.howToPlayBodyText.setLineSpacing(lineSpacing);
+
+    while (this.howToPlayBodyText.height > this.howToPlayBodyViewportHeight && fontSize > minFontSize) {
+      fontSize -= 1;
+      lineSpacing = Math.max(minLineSpacing, lineSpacing - 1);
+      this.howToPlayBodyText.setFontSize(`${fontSize}px`);
+      this.howToPlayBodyText.setLineSpacing(lineSpacing);
+    }
   }
 
   updateHowToPlayButtonState(button, isEnabled) {
