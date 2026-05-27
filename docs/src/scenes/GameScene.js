@@ -100,8 +100,6 @@ const LAYOUT_CONFIG = {
   boardBottomPadding: 12,
   portraitMaxCellSize: 50,
 };
-const SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV = true;
-
 const TITLE_DUST_PARTICLE_COUNT = 18;
 const TITLE_DUST_DRIFT_MIN_MS = 6800;
 const TITLE_DUST_DRIFT_MAX_MS = 12200;
@@ -325,6 +323,7 @@ export class GameScene extends Phaser.Scene {
     this.isGameOver = false;
     this.isDebugMode = false;
     this.layoutDebugText = null;
+    this.isLayoutDebugOverlayVisible = false;
     this.feedbackTimer = null;
     this.chainPopupText = null;
     this.chainPopupTween = null;
@@ -480,7 +479,10 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const shouldShow = (SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV || this.isDebugMode) && !this.isHowToPlayOpen;
+    const shouldShow = this.isDebugMode
+      && this.isLayoutDebugOverlayVisible
+      && !this.isHowToPlayOpen
+      && this.gameState !== GAME_STATES.GAME_OVER;
     this.layoutDebugText.setVisible(shouldShow);
 
     if (!shouldShow) {
@@ -1502,6 +1504,7 @@ ${COMMIT_SHA}`, {
     this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.keyH = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+    this.keyL = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L);
     this.key7 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SEVEN);
     this.key8 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.EIGHT);
     this.key9 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NINE);
@@ -1531,6 +1534,7 @@ ${COMMIT_SHA}`, {
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyM.on('down', () => this.toggleMute());
     this.keyH.on('down', () => this.handleHowToPlayKey());
+    this.keyL.on('down', (key, event) => this.handleLayoutDebugOverlayToggle(event));
     this.key7.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
     this.key8.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
     this.key9.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
@@ -2516,7 +2520,19 @@ ${COMMIT_SHA}`, {
     }
 
     this.isDebugMode = !this.isDebugMode;
+    if (!this.isDebugMode) {
+      this.isLayoutDebugOverlayVisible = false;
+    }
     this.hud.setDebugMode(this.isDebugMode);
+    this.updateLayoutDebugOverlay();
+  }
+
+  handleLayoutDebugOverlayToggle(event) {
+    if (!event?.shiftKey || !this.isDebugMode) {
+      return;
+    }
+
+    this.isLayoutDebugOverlayVisible = !this.isLayoutDebugOverlayVisible;
     this.updateLayoutDebugOverlay();
   }
 
