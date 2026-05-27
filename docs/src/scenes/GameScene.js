@@ -479,7 +479,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const shouldShow = SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV || this.isDebugMode;
+    const shouldShow = (SHOW_LAYOUT_DEBUG_OVERLAY_IN_DEV || this.isDebugMode) && !this.isHowToPlayOpen;
     this.layoutDebugText.setVisible(shouldShow);
 
     if (!shouldShow) {
@@ -1054,10 +1054,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setAlpha(1);
     this.howToPlayBodyText.setDepth(2);
 
-    this.howToPlayBodyMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
-    this.howToPlayBodyMask = this.howToPlayBodyMaskShape.createGeometryMask();
-    this.howToPlayBodyText.setMask(this.howToPlayBodyMask);
-
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
@@ -1134,7 +1130,8 @@ ${COMMIT_SHA}`, {
 
     this.howToPlayPageIndicatorText.setPosition(0, -panelHeight / 2 + 74);
 
-    const titleAreaBottom = this.howToPlayPageIndicatorText.y + 24;
+    const pageIndicatorBottom = this.howToPlayPageIndicatorText.y + (this.howToPlayPageIndicatorText.height / 2);
+    const titleAreaBottom = pageIndicatorBottom;
     const footerY = panelHeight / 2 - 84;
     const buttonY = panelHeight / 2 - 42;
     const footerHeight = this.howToPlayFooterText.height || 18;
@@ -1143,7 +1140,17 @@ ${COMMIT_SHA}`, {
     const bodyBottom = Math.min(footerY - bodyBottomMargin, buttonY - footerHeight - bodyBottomMargin);
 
     this.howToPlayBodyViewportTop = titleAreaBottom + bodyTopMargin;
-    this.howToPlayBodyViewportHeight = Math.max(32, bodyBottom - this.howToPlayBodyViewportTop);
+    const computedBodyHeight = bodyBottom - this.howToPlayBodyViewportTop;
+    if (computedBodyHeight <= 0) {
+      console.warn('[HelpLayout] Invalid body height detected. Falling back to safe height.', {
+        computedBodyHeight,
+        bodyBottom,
+        bodyTop: this.howToPlayBodyViewportTop,
+        panelWidth,
+        panelHeight,
+      });
+    }
+    this.howToPlayBodyViewportHeight = Math.max(32, computedBodyHeight);
     this.howToPlayBodyText.setPosition(-panelWidth / 2 + horizontalPadding, this.howToPlayBodyViewportTop);
     this.howToPlayBodyText.setWordWrapWidth(contentWidth);
     this.howToPlayBodyText.setFontSize(isMobilePortrait ? '15px' : '16px');
@@ -1154,15 +1161,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
     this.howToPlayFooterText.setFontSize(isMobilePortrait ? '13px' : '14px');
-
-    this.howToPlayBodyMaskShape.clear();
-    this.howToPlayBodyMaskShape.fillStyle(0xffffff, 1);
-    this.howToPlayBodyMaskShape.fillRect(
-      -panelWidth / 2 + horizontalPadding,
-      this.howToPlayBodyViewportTop,
-      contentWidth,
-      this.howToPlayBodyViewportHeight,
-    );
 
     this.howToPlayPreviousButton.container.setPosition(-panelWidth * 0.24, buttonY);
     this.howToPlayNextButton.container.setPosition(0, buttonY);
@@ -1185,13 +1183,29 @@ ${COMMIT_SHA}`, {
   }
   updateHowToPlayPage() {
     const page = HOW_TO_PLAY_PAGES[this.helpPageIndex];
+    const bodyText = typeof page.body === 'string'
+      ? page.body
+      : Array.isArray(page.body)
+        ? page.body.join('\n')
+        : '';
     this.howToPlayTitleText?.setText(page.title);
     this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
-    this.howToPlayBodyText?.setText(page.body);
+    this.howToPlayBodyText?.setText(bodyText);
     this.fitHowToPlayBodyToViewport();
     this.resetHowToPlayBodyScroll();
     this.updateHowToPlayButtonState(this.howToPlayPreviousButton, this.helpPageIndex > 0);
     this.updateHowToPlayButtonState(this.howToPlayNextButton, this.helpPageIndex < HOW_TO_PLAY_PAGES.length - 1);
+    console.debug('[HelpPage]', {
+      pageIndex: this.helpPageIndex,
+      title: page.title,
+      bodyLineCount: bodyText ? bodyText.split('\n').length : 0,
+      bodyArea: {
+        x: this.howToPlayBodyText?.x ?? 0,
+        y: this.howToPlayBodyViewportTop,
+        width: this.howToPlayBodyText?.style.wordWrapWidth ?? 0,
+        height: this.howToPlayBodyViewportHeight,
+      },
+    });
   }
 
   fitHowToPlayBodyToViewport() {
