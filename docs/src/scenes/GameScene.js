@@ -3612,75 +3612,36 @@ ${COMMIT_SHA}`, {
       visualAreaHeight,
       pyramidBaseY,
     });
-    const pyramidHeight = isTrueEnd ? 122 : 116;
-    const tierHeight = pyramidHeight / Math.max(1, buildCount);
-    const baseWidth = Math.min(areaWidth - 70, 196);
-    const apexWidth = isTrueEnd ? 10 : 14;
+    const tierHeight = 12;
+    const baseWidth = 240;
+    const apexWidth = 30;
     const totalPyramidHeight = tierHeight * buildCount;
     const pyramidTopY = pyramidBaseY - totalPyramidHeight;
-
-    const backingMargin = 20;
-    const backingHalfWidth = Math.min(baseWidth * 0.94, (areaWidth / 2) - backingMargin);
-    const backingHeight = Math.min(totalPyramidHeight + 4, visualAreaHeight - 58);
-    const backingCenterY = pyramidBaseY - (backingHeight / 2);
-    const backingTriangle = this.add.triangle(
-      pyramidCenterX,
-      backingCenterY,
-      -backingHalfWidth,
-      backingHeight / 2,
-      backingHalfWidth,
-      backingHeight / 2,
-      0,
-      -backingHeight / 2,
-      isTrueEnd ? 0xdfbe84 : 0x5e432b,
-      isTrueEnd ? 0.16 : 0.14,
-    ).setStrokeStyle(0);
-    pyramid.add(backingTriangle);
+    const centerLine = this.add.line(pyramidCenterX, 0, 0, pyramidBaseY, 0, pyramidTopY - 18, 0x7ac6ff, 0.5)
+      .setLineWidth(1, 1);
+    pyramid.add(centerLine);
 
     for (let i = 0; i < buildCount; i += 1) {
-      const t0 = i / buildCount;
-      const t1 = (i + 1) / buildCount;
-      const bottomY = pyramidBaseY - t0 * totalPyramidHeight;
-      const topY = pyramidBaseY - t1 * totalPyramidHeight;
-      const bottomWidth = Phaser.Math.Linear(baseWidth, apexWidth, t0);
-      const topWidth = Phaser.Math.Linear(baseWidth, apexWidth, t1);
+      const t = buildCount <= 1 ? 0 : i / (buildCount - 1);
+      const tierWidth = Phaser.Math.Linear(baseWidth, apexWidth, t);
+      const topY = pyramidBaseY - (i + 1) * tierHeight;
+      const tierCenterY = topY + (tierHeight / 2);
       const tierColor = i % 2 === 0 ? (isTrueEnd ? 0xe6bf74 : theme.stoneA) : (isTrueEnd ? 0xd9ae64 : theme.stoneB);
-      const tier = this.add.polygon(
+      const tier = this.add.rectangle(pyramidCenterX, tierCenterY, tierWidth, tierHeight, tierColor, 1)
+        .setStrokeStyle(2, theme.stroke, 0.9)
+        .setAlpha(1);
+      const highlight = this.add.line(
         pyramidCenterX,
         0,
-        [
-          -bottomWidth / 2, bottomY,
-          bottomWidth / 2, bottomY,
-          topWidth / 2, topY,
-          -topWidth / 2, topY,
-        ],
-        tierColor,
-        0,
-      ).setStrokeStyle(2, theme.stroke, 0.9).setAlpha(1);
-      const tierFillTweenTarget = isTrueEnd ? 1 : 0.94;
-      const tierFill = this.add.polygon(
-        pyramidCenterX,
-        0,
-        [
-          -bottomWidth / 2 + 1.5, bottomY - 0.5,
-          bottomWidth / 2 - 1.5, bottomY - 0.5,
-          topWidth / 2 - 1, topY + 0.5,
-          -topWidth / 2 + 1, topY + 0.5,
-        ],
-        tierColor,
-        tierFillTweenTarget,
-      );
-      const layerLine = this.add.line(pyramidCenterX, 0, -topWidth / 2, topY, topWidth / 2, topY, 0xf5ddb0, isTrueEnd ? 0.3 : 0.2).setLineWidth(1, 1);
-      const seamCount = Math.max(0, Math.floor(bottomWidth / 56));
-      const seamNodes = [];
-      for (let seamIndex = 1; seamIndex <= seamCount; seamIndex += 1) {
-        const seamT = seamIndex / (seamCount + 1);
-        const seamBottomX = Phaser.Math.Linear(-bottomWidth / 2, bottomWidth / 2, seamT);
-        const seamTopX = Phaser.Math.Linear(-topWidth / 2, topWidth / 2, seamT);
-        seamNodes.push(this.add.line(pyramidCenterX, 0, seamBottomX, bottomY - 1, seamTopX, topY + 1, theme.stroke, 0.2).setLineWidth(1, 1));
-      }
-      const tierNodes = [tier, tierFill, layerLine, ...seamNodes];
-      tiers.push({ nodes: tierNodes, y: bottomY, topY });
+        -tierWidth / 2 + 2,
+        topY + 1,
+        tierWidth / 2 - 2,
+        topY + 1,
+        0xf5ddb0,
+        isTrueEnd ? 0.3 : 0.2,
+      ).setLineWidth(1, 1);
+      const tierNodes = [tier, highlight];
+      tiers.push({ nodes: tierNodes, y: topY + tierHeight, topY });
       pyramid.add(tierNodes);
     }
     area.bringToTop(soulsRow);
