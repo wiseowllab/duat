@@ -484,10 +484,13 @@ export class GameScene extends Phaser.Scene {
       && !this.isHowToPlayOpen
       && this.gameState !== GAME_STATES.GAME_OVER;
     this.layoutDebugText.setVisible(shouldShow);
+    this.layoutDebugText.setAlpha(shouldShow ? 1 : 0);
 
     if (!shouldShow) {
       return;
     }
+
+    this.layoutDebugText.setDepth(200);
 
     const ratio = this.layout.boardWidth > 0 ? this.layout.hudWidth / this.layout.boardWidth : 0;
     const lines = [
@@ -1402,7 +1405,8 @@ ${COMMIT_SHA}`, {
     this.lockTimer = 0;
     this.isGameOver = false;
     this.isDebugMode = false;
-    this.layoutDebugText = null;
+    this.isLayoutDebugOverlayVisible = false;
+    this.layoutDebugText?.setVisible(false);
     this.isResolvingClears = false;
     this.isTouchSoftDropping = false;
     this.isDangerState = false;
@@ -1518,14 +1522,13 @@ ${COMMIT_SHA}`, {
       this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.FOUR),
     ];
 
-    this.input.keyboard.on('keydown', () => this.sfx.resume());
+    this.input.keyboard.on('keydown', (event) => this.handleKeyboardDown(event));
     this.cursors.left.on('down', () => this.handleLeftKey());
     this.cursors.right.on('down', () => this.handleRightKey());
     this.cursors.up.on('down', () => this.tryRotate());
     this.keyZ.on('down', () => this.tryRotate());
     this.cursors.space.on('down', () => this.handleSpaceKey());
     this.keyA.on('down', () => this.handleLeftKey());
-    this.keyD.on('down', () => this.handleRightOrDebugKey());
     this.keyG.on('down', (key, event) => this.handleDebugMeterKey(event));
     this.keyT.on('down', (key, event) => this.handleDebugTKey(event));
     this.keyR.on('down', (key, event) => this.handleRestartOrDebugReset(event));
@@ -1534,7 +1537,6 @@ ${COMMIT_SHA}`, {
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyM.on('down', () => this.toggleMute());
     this.keyH.on('down', () => this.handleHowToPlayKey());
-    this.keyL.on('down', (key, event) => this.handleLayoutDebugOverlayToggle(event));
     this.key7.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
     this.key8.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
     this.key9.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
@@ -1547,6 +1549,26 @@ ${COMMIT_SHA}`, {
 
     this.registerTouchControls();
     this.createPauseOverlay();
+  }
+
+  handleKeyboardDown(event) {
+    this.sfx.resume();
+
+    if (!event) {
+      return;
+    }
+
+    const key = event.key ?? '';
+    const code = event.code ?? '';
+
+    if ((key === 'd' || key === 'D' || code === 'KeyD') && !event.repeat) {
+      this.toggleDebugMode();
+      return;
+    }
+
+    if ((key === 'l' || key === 'L' || code === 'KeyL') && event.shiftKey && !event.repeat) {
+      this.handleLayoutDebugOverlayToggle(event);
+    }
   }
 
   registerTouchControls() {
@@ -2515,7 +2537,7 @@ ${COMMIT_SHA}`, {
   }
 
   toggleDebugMode() {
-    if (this.gameState !== GAME_STATES.PLAYING) {
+    if (this.isHowToPlayOpen || this.gameState === GAME_STATES.PAUSED) {
       return;
     }
 
@@ -2524,15 +2546,20 @@ ${COMMIT_SHA}`, {
       this.isLayoutDebugOverlayVisible = false;
     }
     this.hud.setDebugMode(this.isDebugMode);
+    this.showDebugFeedback(this.isDebugMode ? 'DEBUG ON' : 'DEBUG OFF');
     this.updateLayoutDebugOverlay();
   }
 
   handleLayoutDebugOverlayToggle(event) {
-    if (!event?.shiftKey || !this.isDebugMode) {
+    const key = event?.key ?? '';
+    const code = event?.code ?? '';
+    const isLKey = key === 'l' || key === 'L' || code === 'KeyL';
+    if (!this.isDebugMode || !event?.shiftKey || !isLKey || this.isHowToPlayOpen) {
       return;
     }
 
     this.isLayoutDebugOverlayVisible = !this.isLayoutDebugOverlayVisible;
+    console.log('layout debug visible:', this.isLayoutDebugOverlayVisible);
     this.updateLayoutDebugOverlay();
   }
 
