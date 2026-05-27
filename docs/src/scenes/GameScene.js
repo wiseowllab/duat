@@ -256,7 +256,7 @@ const HOW_TO_PLAY_PAGES = [
       '',
       '冥界深度:',
       '・PURE CANOPICなどの儀式で深度が進みます。',
-      '・深度が上がると背景や雰囲気が変化します。',
+      '・深度が上がると背景演出が変化します。',
       '・HUDで深度と儀式進行を確認できます。',
       '',
       '神々:',
@@ -1057,6 +1057,10 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setAlpha(1);
     this.howToPlayBodyText.setDepth(2);
 
+    this.howToPlayBodyMaskShape = this.make.graphics({ x: 0, y: 0, add: false });
+    this.howToPlayBodyMask = this.howToPlayBodyMaskShape.createGeometryMask();
+    this.howToPlayBodyText.setMask(this.howToPlayBodyMask);
+
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
@@ -1134,11 +1138,14 @@ ${COMMIT_SHA}`, {
 
     const titleAreaBottom = this.howToPlayPageIndicatorText.y + 24;
     const footerY = panelHeight / 2 - 84;
+    const buttonY = panelHeight / 2 - 42;
+    const footerHeight = this.howToPlayFooterText.height || 18;
     const bodyTopMargin = 12;
-    const bodyBottomMargin = 14;
+    const bodyBottomMargin = isMobilePortrait ? 18 : 14;
+    const bodyBottom = Math.min(footerY - bodyBottomMargin, buttonY - footerHeight - bodyBottomMargin);
 
     this.howToPlayBodyViewportTop = titleAreaBottom + bodyTopMargin;
-    this.howToPlayBodyViewportHeight = Math.max(32, footerY - this.howToPlayBodyViewportTop - bodyBottomMargin);
+    this.howToPlayBodyViewportHeight = Math.max(32, bodyBottom - this.howToPlayBodyViewportTop);
     this.howToPlayBodyText.setPosition(-panelWidth / 2 + horizontalPadding, this.howToPlayBodyViewportTop);
     this.howToPlayBodyText.setWordWrapWidth(contentWidth);
     this.howToPlayBodyText.setFontSize(isMobilePortrait ? '15px' : '16px');
@@ -1150,10 +1157,24 @@ ${COMMIT_SHA}`, {
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
     this.howToPlayFooterText.setFontSize(isMobilePortrait ? '13px' : '14px');
 
-    const buttonY = panelHeight / 2 - 42;
+    this.howToPlayBodyMaskShape.clear();
+    this.howToPlayBodyMaskShape.fillStyle(0xffffff, 1);
+    this.howToPlayBodyMaskShape.fillRect(
+      -panelWidth / 2 + horizontalPadding,
+      this.howToPlayBodyViewportTop,
+      contentWidth,
+      this.howToPlayBodyViewportHeight,
+    );
+
     this.howToPlayPreviousButton.container.setPosition(-panelWidth * 0.24, buttonY);
     this.howToPlayNextButton.container.setPosition(0, buttonY);
     this.howToPlayCloseButton?.container.setPosition(panelWidth * 0.24, buttonY);
+
+    this.howToPlayBodyText.setDepth(2);
+    this.howToPlayFooterText.setDepth(3);
+    this.howToPlayPreviousButton.container.setDepth(4);
+    this.howToPlayNextButton.container.setDepth(4);
+    this.howToPlayCloseButton?.container.setDepth(4);
 
     this.resetHowToPlayBodyScroll();
   }
