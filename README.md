@@ -231,6 +231,7 @@ The page uses responsive CSS, canvas scaling, compact touch-control rows, and `t
 ### Debug Controls
 
 - **D**: toggle debug mode.
+- **Shift+L**: when debug mode is on, toggle the layout debug overlay on/off.
 - **G**: when debug mode is on, add 500 coffin meter points.
 - **Shift+G**: when debug mode is on, fill the current god's coffin meter and unlock that god.
 - **T**: when debug mode is on, advance by filling the current god's coffin meter.
