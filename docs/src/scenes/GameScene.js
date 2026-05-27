@@ -1022,9 +1022,9 @@ ${COMMIT_SHA}`, {
       .setVisible(false);
 
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.78);
-    const panel = this.add.rectangle(0, 0, 700, 560, 0x100b06, 0.98)
+    this.howToPlayPanel = this.add.rectangle(0, 0, 700, 560, 0x100b06, 0.98)
       .setStrokeStyle(2, 0xd4af37, 0.88);
-    const innerPanel = this.add.rectangle(0, 0, 660, 518, 0x1b1208, 0.82)
+    this.howToPlayInnerPanel = this.add.rectangle(0, 0, 660, 518, 0x1b1208, 0.82)
       .setStrokeStyle(1, 0xf0d27a, 0.36);
 
     this.howToPlayTitleText = this.add.text(0, -244, '', {
@@ -1045,7 +1045,9 @@ ${COMMIT_SHA}`, {
       align: 'center',
     }).setOrigin(0.5);
 
-    this.howToPlayBodyText = this.add.text(-300, -188, '', {
+    this.howToPlayBodyViewportTop = -188;
+    this.howToPlayBodyViewportHeight = 332;
+    this.howToPlayBodyText = this.add.text(-300, this.howToPlayBodyViewportTop, '', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '16px',
       color: '#eadfca',
@@ -1063,22 +1065,40 @@ ${COMMIT_SHA}`, {
 
     this.howToPlayPreviousButton = this.createHowToPlayButton(-170, 236, 120, '前へ', () => this.showPreviousHelpPage());
     this.howToPlayNextButton = this.createHowToPlayButton(0, 236, 120, '次へ', () => this.showNextHelpPage());
-    const closeButton = this.createHowToPlayButton(170, 236, 120, '閉じる', () => this.closeHowToPlay());
+    this.howToPlayCloseButton = this.createHowToPlayButton(170, 236, 120, '閉じる', () => this.closeHowToPlay());
+
+
+    this.howToPlayBodyMaskGraphic = this.make.graphics({ x: 0, y: 0, add: false });
+    this.howToPlayBodyText.setMask(this.howToPlayBodyMaskGraphic.createGeometryMask());
+    this.howToPlayBodyText.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1, 1), Phaser.Geom.Rectangle.Contains);
+    this.input.on('wheel', (pointer, _gameObjects, _deltaX, deltaY) => {
+      if (!this.isHowToPlayOpen || !this.isPointerInsideHowToPlayBody(pointer)) {
+        return;
+      }
+      this.scrollHowToPlayBody(deltaY);
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (!this.isHowToPlayOpen || !pointer.isDown || !this.isPointerInsideHowToPlayBody(pointer)) {
+        return;
+      }
+      this.scrollHowToPlayBody(-pointer.velocity.y * 0.018);
+    });
+    this.layoutHowToPlayOverlay();
 
     this.howToPlayOverlay.add([
       shade,
-      panel,
-      innerPanel,
+      this.howToPlayPanel,
+      this.howToPlayInnerPanel,
       this.howToPlayTitleText,
       this.howToPlayPageIndicatorText,
       this.howToPlayBodyText,
       this.howToPlayFooterText,
       this.howToPlayPreviousButton.container,
       this.howToPlayNextButton.container,
-      closeButton.container,
+      this.howToPlayCloseButton.container,
     ]);
     shade.setInteractive();
-    panel.setInteractive();
+    this.howToPlayPanel.setInteractive();
     this.updateHowToPlayPage();
   }
 
@@ -1103,11 +1123,80 @@ ${COMMIT_SHA}`, {
     return { container, background, text };
   }
 
+
+  layoutHowToPlayOverlay() {
+    if (!this.howToPlayPanel || !this.howToPlayBodyMaskGraphic) {
+      return;
+    }
+    const canvas = this.sys?.game?.canvas;
+    const viewportWidth = canvas?.clientWidth ?? GAME_WIDTH;
+    const viewportHeight = canvas?.clientHeight ?? GAME_HEIGHT;
+    const isMobilePortrait = viewportWidth <= 520 && viewportHeight > viewportWidth;
+    const panelWidth = isMobilePortrait ? 620 : 700;
+    const panelHeight = isMobilePortrait ? 540 : 560;
+    const horizontalPadding = isMobilePortrait ? 38 : 30;
+    const contentWidth = panelWidth - (horizontalPadding * 2);
+
+    this.howToPlayPanel.setSize(panelWidth, panelHeight);
+    this.howToPlayInnerPanel.setSize(panelWidth - 40, panelHeight - 42);
+
+    this.howToPlayTitleText.setPosition(0, -panelHeight / 2 + 38);
+    this.howToPlayTitleText.setWordWrapWidth(contentWidth);
+    this.howToPlayTitleText.setFontSize(isMobilePortrait ? '22px' : '25px');
+
+    this.howToPlayPageIndicatorText.setPosition(0, -panelHeight / 2 + 74);
+
+    this.howToPlayBodyViewportTop = -panelHeight / 2 + 104;
+    this.howToPlayBodyViewportHeight = panelHeight - 254;
+    this.howToPlayBodyText.setPosition(-panelWidth / 2 + horizontalPadding, this.howToPlayBodyViewportTop);
+    this.howToPlayBodyText.setWordWrapWidth(contentWidth);
+    this.howToPlayBodyText.setFontSize(isMobilePortrait ? '15px' : '16px');
+    this.howToPlayBodyText.setLineSpacing(isMobilePortrait ? 10 : 7);
+
+    this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
+    this.howToPlayFooterText.setWordWrapWidth(contentWidth);
+    this.howToPlayFooterText.setFontSize(isMobilePortrait ? '13px' : '14px');
+
+    const buttonY = panelHeight / 2 - 42;
+    this.howToPlayPreviousButton.container.setPosition(-panelWidth * 0.24, buttonY);
+    this.howToPlayNextButton.container.setPosition(0, buttonY);
+    this.howToPlayCloseButton?.container.setPosition(panelWidth * 0.24, buttonY);
+
+    const maskLeft = -panelWidth / 2 + horizontalPadding;
+    this.howToPlayBodyMaskGraphic.clear();
+    this.howToPlayBodyMaskGraphic.fillStyle(0xffffff, 1);
+    this.howToPlayBodyMaskGraphic.fillRect(maskLeft, this.howToPlayBodyViewportTop, contentWidth, this.howToPlayBodyViewportHeight);
+    this.howToPlayBodyText.input.hitArea.setTo(maskLeft, this.howToPlayBodyViewportTop, contentWidth, this.howToPlayBodyViewportHeight);
+    this.resetHowToPlayBodyScroll();
+  }
+
+  isPointerInsideHowToPlayBody(pointer) {
+    const localX = pointer.worldX - this.howToPlayOverlay.x;
+    const localY = pointer.worldY - this.howToPlayOverlay.y;
+    return localX >= this.howToPlayBodyText.x
+      && localX <= this.howToPlayBodyText.x + this.howToPlayBodyText.style.wordWrapWidth
+      && localY >= this.howToPlayBodyViewportTop
+      && localY <= this.howToPlayBodyViewportTop + this.howToPlayBodyViewportHeight;
+  }
+
+  scrollHowToPlayBody(deltaY) {
+    const minY = this.howToPlayBodyViewportTop - Math.max(0, this.howToPlayBodyText.height - this.howToPlayBodyViewportHeight);
+    const maxY = this.howToPlayBodyViewportTop;
+    this.howToPlayBodyText.y = Phaser.Math.Clamp(this.howToPlayBodyText.y - deltaY, minY, maxY);
+  }
+
+  resetHowToPlayBodyScroll() {
+    if (!this.howToPlayBodyText) {
+      return;
+    }
+    this.howToPlayBodyText.y = this.howToPlayBodyViewportTop;
+  }
   updateHowToPlayPage() {
     const page = HOW_TO_PLAY_PAGES[this.helpPageIndex];
     this.howToPlayTitleText?.setText(page.title);
     this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
     this.howToPlayBodyText?.setText(page.body);
+    this.resetHowToPlayBodyScroll();
     this.updateHowToPlayButtonState(this.howToPlayPreviousButton, this.helpPageIndex > 0);
     this.updateHowToPlayButtonState(this.howToPlayNextButton, this.helpPageIndex < HOW_TO_PLAY_PAGES.length - 1);
   }
@@ -1158,6 +1247,7 @@ ${COMMIT_SHA}`, {
     this.helpPageIndex = 0;
     this.updateHowToPlayPage();
     this.isHowToPlayOpen = true;
+    this.layoutHowToPlayOverlay();
     this.howToPlayOverlay?.setVisible(true);
   }
 
