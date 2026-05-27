@@ -196,6 +196,7 @@ const ENDING_TYPES = {
 const RITUAL_SOUL_CAP = 28;
 const PYRAMID_MIN_TIERS = 2;
 const PYRAMID_MAX_TIERS = 12;
+const ENDING_VISUAL_SOUL_CAP = 20;
 
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
@@ -1368,6 +1369,16 @@ ${COMMIT_SHA}`, {
     this.spawnPiece();
   }
 
+  returnToTitle() {
+    this.sfx.resume();
+    this.resetGameState();
+    this.gameState = GAME_STATES.TITLE;
+    this.titleOverlay?.setVisible(true);
+    this.closeHowToPlay();
+    this.pauseOverlay?.setVisible(false);
+    this.safeUpdateBgmForGameState();
+  }
+
   resetGameState() {
     this.board.reset();
     this.scoreSystem = new ScoreSystem();
@@ -1491,6 +1502,10 @@ ${COMMIT_SHA}`, {
     this.keyP = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
     this.keyM = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.M);
     this.keyH = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.H);
+    this.key7 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SEVEN);
+    this.key8 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.EIGHT);
+    this.key9 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NINE);
+    this.key0 = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ZERO);
     this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
     this.keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.bombKeys = [
@@ -1516,6 +1531,10 @@ ${COMMIT_SHA}`, {
     this.keyP.on('down', () => this.handlePauseKey());
     this.keyM.on('down', () => this.toggleMute());
     this.keyH.on('down', () => this.handleHowToPlayKey());
+    this.key7.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
+    this.key8.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
+    this.key9.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
+    this.key0.on('down', (key, event) => this.handleDebugEndingNumberShortcut(event));
     this.keyEnter.on('down', () => this.handleEnterKey());
     this.keyEsc.on('down', () => this.handleEscKey());
     this.bombKeys.forEach((key, index) => {
@@ -1681,7 +1700,11 @@ ${COMMIT_SHA}`, {
     }
 
     if (this.gameState === GAME_STATES.GAME_OVER) {
-      this.restartGame();
+      if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
+        this.restartGame();
+      } else {
+        this.returnToTitle();
+      }
       return;
     }
 
@@ -2558,6 +2581,35 @@ ${COMMIT_SHA}`, {
     }
   }
 
+  handleDebugEndingNumberShortcut(event) {
+    if (!event?.shiftKey) {
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.SEVEN) {
+      console.log('[DebugEnding] Shift+7 => TRUE END test');
+      this.triggerDebugTrueEnd();
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.EIGHT) {
+      console.log('[DebugEnding] Shift+8 => NORMAL END test');
+      this.triggerDebugNormalEnd();
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.NINE) {
+      console.log('[DebugEnding] Shift+9 => Sample ending overlay');
+      this.triggerDebugSampleEndingOverlay();
+      return;
+    }
+
+    if (event.keyCode === Phaser.Input.Keyboard.KeyCodes.ZERO) {
+      console.log('[DebugEnding] Shift+0 => Clear ending test state');
+      this.clearDebugEndingTestState();
+    }
+  }
+
   unlockToAmunRaForEndingTest() {
     while (!this.isAmunRaUnlocked() && !this.coffinMeter.isComplete()) {
       this.fillDebugGod();
@@ -2595,7 +2647,7 @@ ${COMMIT_SHA}`, {
   }
 
   triggerDebugTrueEnd() {
-    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+    if (this.gameState !== GAME_STATES.PLAYING) {
       return;
     }
 
@@ -2606,7 +2658,7 @@ ${COMMIT_SHA}`, {
   }
 
   triggerDebugNormalEnd() {
-    if (this.gameState !== GAME_STATES.PLAYING || !this.isDebugMode) {
+    if (this.gameState !== GAME_STATES.PLAYING) {
       return;
     }
 
@@ -2614,6 +2666,32 @@ ${COMMIT_SHA}`, {
     this.updateRunProgressionRecords();
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.endGame(ENDING_TYPES.NORMAL_END);
+  }
+
+  triggerDebugSampleEndingOverlay() {
+    if (this.gameState !== GAME_STATES.PLAYING) {
+      return;
+    }
+
+    this.score = Math.max(this.score, 98765);
+    this.bestChainThisRun = Math.max(this.bestChainThisRun, 9);
+    this.maxTierThisRun = Math.max(this.maxTierThisRun, 4);
+    this.maxGodsUnlockedThisRun = Math.max(this.maxGodsUnlockedThisRun, TOTAL_GOD_COUNT);
+    this.revivedSoulsCount = Math.max(this.revivedSoulsCount, 16);
+    this.totalPureCanopicCount = Math.max(this.totalPureCanopicCount, 12);
+    this.currentDepthLevel = Math.max(this.currentDepthLevel, 3);
+    this.unlockToAmunRaForEndingTest();
+    this.hud.updateScore(this.score);
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.updateUnderworldDepthProgressHud();
+    this.endGame(ENDING_TYPES.TRUE_END);
+  }
+
+  clearDebugEndingTestState() {
+    if (this.gameState === GAME_STATES.GAME_OVER || this.gameState === GAME_STATES.PLAYING) {
+      this.restartGame();
+    }
   }
 
   showDebugFeedback(message) {
@@ -3304,31 +3382,33 @@ ${COMMIT_SHA}`, {
       this.gameOverOverlay.destroy(true);
     }
 
-    const centerX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
-    const centerY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
-    const panelWidth = Math.min(350, GAME_WIDTH - 56);
-    const panelHeight = this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 290 : 336;
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+    const panelWidth = Math.min(460, GAME_WIDTH - 24);
+    const panelHeight = Math.min(760, GAME_HEIGHT - 18);
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
 
     const titleText = this.currentEndingType === ENDING_TYPES.TRUE_END
       ? 'CONGRATULATIONS\nTHE SUN RISES AGAIN'
       : this.currentEndingType === ENDING_TYPES.NORMAL_END
-        ? 'THE UNDERWORLD CLAIMED YOU'
+        ? 'UNDERWORLD CLAIMED YOU'
         : 'GAME OVER';
     const subtitleText = this.currentEndingType === ENDING_TYPES.TRUE_END
-      ? 'The revived souls rebuild the sacred horizon.'
+      ? '冥界は浄化され、太陽は再び昇る。'
       : this.currentEndingType === ENDING_TYPES.NORMAL_END
-        ? 'Amun-Ra awakened, yet DUAT consumed the pilgrim.'
+        ? 'アメンラーは目覚めたが、巡礼者は冥界に沈んだ。'
         : '魂は冥界へ沈んだ…';
     const promptText = this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER
       ? 'Enter / Space で再挑戦'
-      : 'Press Enter / Tap to return';
+      : 'Enter / Tap でタイトルへ';
 
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x120806, 0.94).setStrokeStyle(2, 0xd4af37, 0.82);
-    const title = this.add.text(0, -112, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '34px' : '28px', color: '#d4af37', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 4 }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -66, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#cdb98b', align: 'center', fontStyle: 'italic' }).setOrigin(0.5);
+    const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
+    const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.96).setStrokeStyle(3, borderColor, 0.9);
+    const title = this.add.text(0, -panelHeight / 2 + 60, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -panelHeight / 2 + 124, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
-    const recordText = this.add.text(0, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 8 : 22, [
+    const recordText = this.add.text(0, panelHeight / 2 - 190, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
       highScoreResult.isNewHighScore ? '新記録!' : '',
@@ -3338,18 +3418,18 @@ ${COMMIT_SHA}`, {
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
-    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '15px', color: '#eadfca', align: 'center', lineSpacing: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
+    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#eadfca', align: 'center', lineSpacing: 8, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0);
 
     const nodes=[panel,title,subtitle,recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
       const pyramid = this.createEndingPyramidVisualization(this.revivedSoulsCount, this.currentEndingType);
-      pyramid.setY(82);
+      pyramid.setY(-8);
       nodes.push(pyramid);
     }
 
-    const prompt = this.add.text(0, panelHeight / 2 - 28, promptText, { fontFamily: 'Arial, sans-serif', fontSize: '16px', color: '#f2d783', align: 'center', fontStyle: 'bold' }).setOrigin(0.5);
+    const prompt = this.add.text(0, panelHeight / 2 - 30, promptText, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#f2d783', align: 'center', fontStyle: 'bold' }).setOrigin(0.5);
     nodes.push(prompt);
 
     if (highScoreResult.isNewHighScore) { recordText.setColor('#f4d77a'); recordText.setFontStyle('bold'); }
@@ -3358,13 +3438,25 @@ ${COMMIT_SHA}`, {
     this.tweens.add({ targets: this.gameOverOverlay, alpha: 1, y: centerY - 6, duration: 650, ease: 'Sine.easeOut' });
     panel.setInteractive({ useHandCursor: true });
     prompt.setInteractive({ useHandCursor: true });
-    panel.on('pointerdown', () => this.restartGame());
-    prompt.on('pointerdown', () => this.restartGame());
+    panel.on('pointerdown', () => {
+      if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
+        this.restartGame();
+      } else {
+        this.returnToTitle();
+      }
+    });
+    prompt.on('pointerdown', () => {
+      if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
+        this.restartGame();
+      } else {
+        this.returnToTitle();
+      }
+    });
   }
 
   playRitualEndingAtmosphere() {
-    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.62, duration: 950, ease: 'Sine.easeOut' });
-    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.42, duration: 920, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.72, duration: 950, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.58, duration: 920, ease: 'Sine.easeOut' });
   }
 
   createEndingPyramidVisualization(revivedSoulsCount, endingType = ENDING_TYPES.TRUE_END) {
@@ -3399,7 +3491,7 @@ ${COMMIT_SHA}`, {
   }
 
   addRitualSouls(container, souls, tierCount, completeLayers, endingType) {
-    const visualSouls = Math.min(RITUAL_SOUL_CAP, Math.max(2, Math.floor(Math.sqrt(Math.max(1, souls)) * 4)));
+    const visualSouls = Math.min(ENDING_VISUAL_SOUL_CAP, Math.max(2, souls));
     const completedHeight = completeLayers * 8;
     const incompleteBuild = completeLayers < tierCount;
 
