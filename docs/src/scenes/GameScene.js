@@ -1054,6 +1054,8 @@ ${COMMIT_SHA}`, {
       lineSpacing: 7,
       wordWrap: { width: 600 },
     }).setOrigin(0, 0);
+    this.howToPlayBodyText.setAlpha(1);
+    this.howToPlayBodyText.setDepth(2);
 
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
@@ -1067,22 +1069,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayNextButton = this.createHowToPlayButton(0, 236, 120, '次へ', () => this.showNextHelpPage());
     this.howToPlayCloseButton = this.createHowToPlayButton(170, 236, 120, '閉じる', () => this.closeHowToPlay());
 
-
-    this.howToPlayBodyMaskGraphic = this.make.graphics({ x: 0, y: 0, add: false });
-    this.howToPlayBodyText.setMask(this.howToPlayBodyMaskGraphic.createGeometryMask());
-    this.howToPlayBodyText.setInteractive(new Phaser.Geom.Rectangle(0, 0, 1, 1), Phaser.Geom.Rectangle.Contains);
-    this.input.on('wheel', (pointer, _gameObjects, _deltaX, deltaY) => {
-      if (!this.isHowToPlayOpen || !this.isPointerInsideHowToPlayBody(pointer)) {
-        return;
-      }
-      this.scrollHowToPlayBody(deltaY);
-    });
-    this.input.on('pointermove', (pointer) => {
-      if (!this.isHowToPlayOpen || !pointer.isDown || !this.isPointerInsideHowToPlayBody(pointer)) {
-        return;
-      }
-      this.scrollHowToPlayBody(-pointer.velocity.y * 0.018);
-    });
     this.layoutHowToPlayOverlay();
 
     this.howToPlayOverlay.add([
@@ -1125,7 +1111,7 @@ ${COMMIT_SHA}`, {
 
 
   layoutHowToPlayOverlay() {
-    if (!this.howToPlayPanel || !this.howToPlayBodyMaskGraphic) {
+    if (!this.howToPlayPanel) {
       return;
     }
     const canvas = this.sys?.game?.canvas;
@@ -1146,12 +1132,19 @@ ${COMMIT_SHA}`, {
 
     this.howToPlayPageIndicatorText.setPosition(0, -panelHeight / 2 + 74);
 
-    this.howToPlayBodyViewportTop = -panelHeight / 2 + 104;
-    this.howToPlayBodyViewportHeight = panelHeight - 254;
+    const titleAreaBottom = this.howToPlayPageIndicatorText.y + 24;
+    const footerY = panelHeight / 2 - 84;
+    const bodyTopMargin = 12;
+    const bodyBottomMargin = 14;
+
+    this.howToPlayBodyViewportTop = titleAreaBottom + bodyTopMargin;
+    this.howToPlayBodyViewportHeight = Math.max(32, footerY - this.howToPlayBodyViewportTop - bodyBottomMargin);
     this.howToPlayBodyText.setPosition(-panelWidth / 2 + horizontalPadding, this.howToPlayBodyViewportTop);
     this.howToPlayBodyText.setWordWrapWidth(contentWidth);
     this.howToPlayBodyText.setFontSize(isMobilePortrait ? '15px' : '16px');
     this.howToPlayBodyText.setLineSpacing(isMobilePortrait ? 10 : 7);
+    this.howToPlayBodyText.setColor('#eadfca');
+    this.howToPlayBodyText.setAlpha(1);
 
     this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
@@ -1162,27 +1155,7 @@ ${COMMIT_SHA}`, {
     this.howToPlayNextButton.container.setPosition(0, buttonY);
     this.howToPlayCloseButton?.container.setPosition(panelWidth * 0.24, buttonY);
 
-    const maskLeft = -panelWidth / 2 + horizontalPadding;
-    this.howToPlayBodyMaskGraphic.clear();
-    this.howToPlayBodyMaskGraphic.fillStyle(0xffffff, 1);
-    this.howToPlayBodyMaskGraphic.fillRect(maskLeft, this.howToPlayBodyViewportTop, contentWidth, this.howToPlayBodyViewportHeight);
-    this.howToPlayBodyText.input.hitArea.setTo(maskLeft, this.howToPlayBodyViewportTop, contentWidth, this.howToPlayBodyViewportHeight);
     this.resetHowToPlayBodyScroll();
-  }
-
-  isPointerInsideHowToPlayBody(pointer) {
-    const localX = pointer.worldX - this.howToPlayOverlay.x;
-    const localY = pointer.worldY - this.howToPlayOverlay.y;
-    return localX >= this.howToPlayBodyText.x
-      && localX <= this.howToPlayBodyText.x + this.howToPlayBodyText.style.wordWrapWidth
-      && localY >= this.howToPlayBodyViewportTop
-      && localY <= this.howToPlayBodyViewportTop + this.howToPlayBodyViewportHeight;
-  }
-
-  scrollHowToPlayBody(deltaY) {
-    const minY = this.howToPlayBodyViewportTop - Math.max(0, this.howToPlayBodyText.height - this.howToPlayBodyViewportHeight);
-    const maxY = this.howToPlayBodyViewportTop;
-    this.howToPlayBodyText.y = Phaser.Math.Clamp(this.howToPlayBodyText.y - deltaY, minY, maxY);
   }
 
   resetHowToPlayBodyScroll() {
