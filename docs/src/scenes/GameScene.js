@@ -1057,10 +1057,18 @@ ${COMMIT_SHA}`, {
 
     this.howToPlayBodyVisibilityTestText = this.add.text(-300, this.howToPlayBodyViewportTop + 120, 'TEST HELP BODY VISIBLE', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
-      color: '#f4ead2',
+      fontSize: '20px',
+      color: '#fff2c6',
       fontStyle: 'bold',
-    }).setOrigin(0, 0).setAlpha(1).setDepth(3);
+    }).setOrigin(0, 0).setAlpha(1).setDepth(5);
+
+    this.howToPlayDebugText = this.add.text(-300, this.howToPlayBodyViewportTop + 150, '', {
+      fontFamily: 'Consolas, Menlo, monospace',
+      fontSize: '12px',
+      color: '#f7e7a8',
+      align: 'left',
+      wordWrap: { width: 600 },
+    }).setOrigin(0, 0).setAlpha(1).setDepth(5);
 
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
@@ -1084,6 +1092,7 @@ ${COMMIT_SHA}`, {
       this.howToPlayPageIndicatorText,
       this.howToPlayBodyText,
       this.howToPlayBodyVisibilityTestText,
+      this.howToPlayDebugText,
       this.howToPlayFooterText,
       this.howToPlayPreviousButton.container,
       this.howToPlayNextButton.container,
@@ -1168,8 +1177,12 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setAlpha(1);
 
     this.howToPlayBodyVisibilityTestText?.setPosition(-panelWidth / 2 + 40, -panelHeight / 2 + 180);
-    this.howToPlayBodyVisibilityTestText?.setDepth(3);
+    this.howToPlayBodyVisibilityTestText?.setDepth(5);
     this.howToPlayBodyVisibilityTestText?.setAlpha(1);
+
+    this.howToPlayDebugText?.setPosition(-panelWidth / 2 + 40, -panelHeight / 2 + 206);
+    this.howToPlayDebugText?.setDepth(5);
+    this.howToPlayDebugText?.setAlpha(1);
 
     this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
@@ -1196,11 +1209,9 @@ ${COMMIT_SHA}`, {
   }
   updateHowToPlayPage() {
     const page = HOW_TO_PLAY_PAGES[this.helpPageIndex];
-    const lines = Array.isArray(page.lines) ? page.lines : [];
-    const bodyText = lines.join('\n');
     this.howToPlayTitleText?.setText(page.title);
     this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
-    this.howToPlayBodyText?.setText(bodyText);
+    const lines = this.renderHowToPlayBody(page);
     this.fitHowToPlayBodyToViewport();
     this.resetHowToPlayBodyScroll();
     this.updateHowToPlayButtonState(this.howToPlayPreviousButton, this.helpPageIndex > 0);
@@ -1219,6 +1230,21 @@ ${COMMIT_SHA}`, {
         height: this.howToPlayBodyViewportHeight,
       },
     });
+  }
+
+
+  renderHowToPlayBody(page) {
+    const lines = page?.lines || [];
+    const bodyText = lines.join('\n');
+    this.howToPlayBodyText?.setVisible(true);
+    this.howToPlayBodyText?.setAlpha(1);
+    this.howToPlayBodyText?.setDepth(4);
+    this.howToPlayBodyText?.setText(bodyText);
+
+    const firstLine = lines[0] ?? '(empty)';
+    this.howToPlayDebugText?.setText(`Help debug: page=${this.helpPageIndex + 1}/${HOW_TO_PLAY_PAGES.length} title=${page?.title ?? ''} lines=${lines.length} first=${firstLine}`);
+
+    return lines;
   }
 
   fitHowToPlayBodyToViewport() {
