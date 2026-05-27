@@ -217,7 +217,7 @@ const BOMB_LABELS_JA = {
 const HOW_TO_PLAY_PAGES = [
   {
     title: '遊び方 1/6：操作',
-    body: [
+    lines: [
       '・← / →：移動',
       '・↓：ソフトドロップ',
       '・↑ / Z：回転',
@@ -226,56 +226,56 @@ const HOW_TO_PLAY_PAGES = [
       '・1〜4：ボム選択',
       '・Esc：選択解除',
       '・M：ミュート',
-    ].join('\n'),
+    ],
   },
   {
     title: '遊び方 2/6：基本ルール',
-    body: [
+    lines: [
       '・落ちてくる2つのピースを操作します。',
       '・同じ臓器を4つ以上つなげると消えます。',
       '・消えるとスコアと棺メーターが増えます。',
       '・連鎖すると得点が伸びます。',
-    ].join('\n'),
+    ],
   },
   {
     title: '遊び方 3/6：カノピックセット',
-    body: [
+    lines: [
       '・肝臓・肺・胃・腸を2×2でそろえると成立。',
       '・並び順は自由です。',
       '・心臓は足りない臓器1種類の代わりになります。',
       '・心臓は1つまでです。',
       '・心臓が2つ以上ある2×2では成立しません。',
-    ].join('\n'),
+    ],
   },
   {
     title: '遊び方 4/6：脳・冥界深度',
-    body: [
+    lines: [
       '・脳は障害ピースです。',
       '・脳は4つそろえても消えません。',
       '・カノピックセットには使えません。',
       '・ボムや一部の効果で消せます。',
       '・儀式を重ねると冥界深度が進みます。',
       '・深度はHUDで確認できます。',
-    ].join('\n'),
+    ],
   },
   {
     title: '遊び方 5/6：神々・ボム',
-    body: [
+    lines: [
       '・棺メーターが進むと神が目覚めます。',
       '・目覚めた神はHUDに記録されます。',
       '・神はボムを授けます。',
       '・1〜4でボムを選択します。',
       '・同じ番号/Enter/Spaceで発動します。',
       '・Escで選択解除できます。',
-    ].join('\n'),
+    ],
   },
   {
     title: '遊び方 6/6：エンディング',
-    body: [
+    lines: [
       '・アメンラー解放後、盤面を浄化するとTRUE END。',
       '・アメンラー解放後に力尽きるとNORMAL END。',
       '・復活した死者の数が演出に反映されます。',
-    ].join('\n'),
+    ],
   },
 ];
 
@@ -354,6 +354,7 @@ export class GameScene extends Phaser.Scene {
     this.howToPlayTitleText = null;
     this.howToPlayPageIndicatorText = null;
     this.howToPlayBodyText = null;
+    this.howToPlayBodyVisibilityTestText = null;
     this.howToPlayFooterText = null;
     this.howToPlayPreviousButton = null;
     this.howToPlayNextButton = null;
@@ -816,7 +817,7 @@ export class GameScene extends Phaser.Scene {
       '1〜4：ボム',
       'Esc：取消',
       'M：ミュート',
-    ].join('\n'), {
+    ], {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#d9c8a8',
@@ -1054,6 +1055,13 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setAlpha(1);
     this.howToPlayBodyText.setDepth(2);
 
+    this.howToPlayBodyVisibilityTestText = this.add.text(-300, this.howToPlayBodyViewportTop + 120, 'TEST HELP BODY VISIBLE', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '18px',
+      color: '#f4ead2',
+      fontStyle: 'bold',
+    }).setOrigin(0, 0).setAlpha(1).setDepth(3);
+
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
@@ -1075,6 +1083,7 @@ ${COMMIT_SHA}`, {
       this.howToPlayTitleText,
       this.howToPlayPageIndicatorText,
       this.howToPlayBodyText,
+      this.howToPlayBodyVisibilityTestText,
       this.howToPlayFooterText,
       this.howToPlayPreviousButton.container,
       this.howToPlayNextButton.container,
@@ -1158,6 +1167,10 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setColor('#eadfca');
     this.howToPlayBodyText.setAlpha(1);
 
+    this.howToPlayBodyVisibilityTestText?.setPosition(-panelWidth / 2 + 40, -panelHeight / 2 + 180);
+    this.howToPlayBodyVisibilityTestText?.setDepth(3);
+    this.howToPlayBodyVisibilityTestText?.setAlpha(1);
+
     this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
     this.howToPlayFooterText.setFontSize(isMobilePortrait ? '13px' : '14px');
@@ -1183,11 +1196,8 @@ ${COMMIT_SHA}`, {
   }
   updateHowToPlayPage() {
     const page = HOW_TO_PLAY_PAGES[this.helpPageIndex];
-    const bodyText = typeof page.body === 'string'
-      ? page.body
-      : Array.isArray(page.body)
-        ? page.body.join('\n')
-        : '';
+    const lines = Array.isArray(page.lines) ? page.lines : [];
+    const bodyText = lines.join('\n');
     this.howToPlayTitleText?.setText(page.title);
     this.howToPlayPageIndicatorText?.setText(`遊び方 ${this.helpPageIndex + 1} / ${HOW_TO_PLAY_PAGES.length}`);
     this.howToPlayBodyText?.setText(bodyText);
@@ -1198,7 +1208,10 @@ ${COMMIT_SHA}`, {
     console.debug('[HelpPage]', {
       pageIndex: this.helpPageIndex,
       title: page.title,
-      bodyLineCount: bodyText ? bodyText.split('\n').length : 0,
+      helpPagesLength: HOW_TO_PLAY_PAGES.length,
+      bodyFieldName: 'lines',
+      bodyLineCount: lines.length,
+      firstBodyLine: lines[0] ?? '',
       bodyArea: {
         x: this.howToPlayBodyText?.x ?? 0,
         y: this.howToPlayBodyViewportTop,
@@ -1279,6 +1292,7 @@ ${COMMIT_SHA}`, {
     this.isHowToPlayOpen = true;
     this.layoutHowToPlayOverlay();
     this.howToPlayOverlay?.setVisible(true);
+    this.updateLayoutDebugOverlay();
   }
 
   closeHowToPlay() {
@@ -1288,6 +1302,7 @@ ${COMMIT_SHA}`, {
 
     this.isHowToPlayOpen = false;
     this.howToPlayOverlay?.setVisible(false);
+    this.updateLayoutDebugOverlay();
   }
 
   createBestRecordsText() {
