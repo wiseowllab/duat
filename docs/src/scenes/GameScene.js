@@ -354,7 +354,6 @@ export class GameScene extends Phaser.Scene {
     this.howToPlayTitleText = null;
     this.howToPlayPageIndicatorText = null;
     this.howToPlayBodyText = null;
-    this.howToPlayBodyVisibilityTestText = null;
     this.howToPlayFooterText = null;
     this.howToPlayPreviousButton = null;
     this.howToPlayNextButton = null;
@@ -1016,7 +1015,7 @@ ${COMMIT_SHA}`, {
 
   createHowToPlayOverlay() {
     this.howToPlayOverlay = this.add.container(GAME_WIDTH / 2, GAME_HEIGHT / 2)
-      .setDepth(45)
+      .setDepth(260)
       .setVisible(false);
 
     const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050301, 0.78);
@@ -1055,21 +1054,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setAlpha(1);
     this.howToPlayBodyText.setDepth(2);
 
-    this.howToPlayBodyVisibilityTestText = this.add.text(-300, this.howToPlayBodyViewportTop + 120, 'TEST HELP BODY VISIBLE', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '20px',
-      color: '#fff2c6',
-      fontStyle: 'bold',
-    }).setOrigin(0, 0).setAlpha(1).setDepth(5);
-
-    this.howToPlayDebugText = this.add.text(-300, this.howToPlayBodyViewportTop + 150, '', {
-      fontFamily: 'Consolas, Menlo, monospace',
-      fontSize: '12px',
-      color: '#f7e7a8',
-      align: 'left',
-      wordWrap: { width: 600 },
-    }).setOrigin(0, 0).setAlpha(1).setDepth(5);
-
     this.howToPlayFooterText = this.add.text(0, 188, '←/→・A/D：ページ移動　Enter / Space：次へ　Esc：閉じる', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
@@ -1091,8 +1075,6 @@ ${COMMIT_SHA}`, {
       this.howToPlayTitleText,
       this.howToPlayPageIndicatorText,
       this.howToPlayBodyText,
-      this.howToPlayBodyVisibilityTestText,
-      this.howToPlayDebugText,
       this.howToPlayFooterText,
       this.howToPlayPreviousButton.container,
       this.howToPlayNextButton.container,
@@ -1176,14 +1158,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText.setColor('#eadfca');
     this.howToPlayBodyText.setAlpha(1);
 
-    this.howToPlayBodyVisibilityTestText?.setPosition(-panelWidth / 2 + 40, -panelHeight / 2 + 180);
-    this.howToPlayBodyVisibilityTestText?.setDepth(5);
-    this.howToPlayBodyVisibilityTestText?.setAlpha(1);
-
-    this.howToPlayDebugText?.setPosition(-panelWidth / 2 + 40, -panelHeight / 2 + 206);
-    this.howToPlayDebugText?.setDepth(5);
-    this.howToPlayDebugText?.setAlpha(1);
-
     this.howToPlayFooterText.setPosition(0, panelHeight / 2 - 84);
     this.howToPlayFooterText.setWordWrapWidth(contentWidth);
     this.howToPlayFooterText.setFontSize(isMobilePortrait ? '13px' : '14px');
@@ -1240,9 +1214,6 @@ ${COMMIT_SHA}`, {
     this.howToPlayBodyText?.setAlpha(1);
     this.howToPlayBodyText?.setDepth(4);
     this.howToPlayBodyText?.setText(bodyText);
-
-    const firstLine = lines[0] ?? '(empty)';
-    this.howToPlayDebugText?.setText(`Help debug: page=${this.helpPageIndex + 1}/${HOW_TO_PLAY_PAGES.length} title=${page?.title ?? ''} lines=${lines.length} first=${firstLine}`);
 
     return lines;
   }
