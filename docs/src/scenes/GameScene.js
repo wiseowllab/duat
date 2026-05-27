@@ -3587,9 +3587,9 @@ ${COMMIT_SHA}`, {
       : revivedSoulsCount <= 9 ? 3
         : revivedSoulsCount <= 15 ? 5
           : revivedSoulsCount <= 24 ? 7
-            : revivedSoulsCount <= 34 ? 9
-              : 11;
-    const buildCount = isTrueEnd ? tierCount : Math.max(2, tierCount - (tierCount >= 9 ? 2 : 1));
+            : revivedSoulsCount <= 34 ? 10
+              : 12;
+    const buildCount = isTrueEnd ? tierCount : Math.max(2, tierCount - (tierCount >= 10 ? 2 : 1));
     const tiers = [];
     console.log('[DebugEnding] createEndingPyramid called', {
       endingType,
@@ -3602,12 +3602,14 @@ ${COMMIT_SHA}`, {
       visualAreaHeight,
       pyramidBaseY,
     });
-    const tierHeight = buildCount >= 10 ? 14 : buildCount >= 7 ? 15 : 16;
-    const baseWidth = Math.min(panelWidth - 90, 260);
-    const apexWidth = 24;
+    const pyramidHeight = isTrueEnd ? 172 : 162;
+    const tierHeight = pyramidHeight / Math.max(1, buildCount);
+    const baseWidth = Math.min(panelWidth - 84, 290);
+    const apexWidth = isTrueEnd ? 12 : 18;
     const totalPyramidHeight = tierHeight * buildCount;
-    const pyramidTopY = pyramidBaseY - totalPyramidHeight + (tierHeight / 2);
-    const silhouette = this.add.triangle(
+    const pyramidTopY = pyramidBaseY - totalPyramidHeight;
+
+    const backingTriangle = this.add.triangle(
       panelCenterX,
       pyramidBaseY - (totalPyramidHeight / 2),
       -baseWidth / 2,
@@ -3616,29 +3618,56 @@ ${COMMIT_SHA}`, {
       totalPyramidHeight / 2,
       0,
       -totalPyramidHeight / 2,
-      isTrueEnd ? 0xd4b071 : 0x6a4b2f,
-      isTrueEnd ? 0.16 : 0.2,
+      isTrueEnd ? 0xdfbe84 : 0x5e432b,
+      isTrueEnd ? 0.22 : 0.18,
     ).setStrokeStyle(0);
-    pyramid.add(silhouette);
+    pyramid.add(backingTriangle);
+
     for (let i = 0; i < buildCount; i += 1) {
-      const ratio = buildCount <= 1 ? 1 : i / (buildCount - 1);
-      const tierWidth = Math.round(Phaser.Math.Linear(baseWidth, apexWidth, ratio));
-      const y = pyramidBaseY - i * tierHeight;
-      const tierColorA = isTrueEnd ? 0xe6bf74 : theme.stoneA;
-      const tierColorB = isTrueEnd ? 0xd9ae64 : theme.stoneB;
-      const tier = this.add.rectangle(panelCenterX, y, tierWidth, tierHeight, i % 2 === 0 ? tierColorA : tierColorB, 1)
-        .setStrokeStyle(2, theme.stroke, 0.9)
-        .setAlpha(1);
-      tiers.push(tier);
-      pyramid.add(tier);
-      console.log('[DebugEnding] pyramid tier', {
-        index: i,
-        x: tier.x,
-        y: tier.y,
-        w: tierWidth,
-        h: tierHeight,
-        pyramidLayerDepth: pyramid.depth,
-      });
+      const t0 = i / buildCount;
+      const t1 = (i + 1) / buildCount;
+      const bottomY = pyramidBaseY - t0 * totalPyramidHeight;
+      const topY = pyramidBaseY - t1 * totalPyramidHeight;
+      const bottomWidth = Phaser.Math.Linear(baseWidth, apexWidth, t0);
+      const topWidth = Phaser.Math.Linear(baseWidth, apexWidth, t1);
+      const tierColor = i % 2 === 0 ? (isTrueEnd ? 0xe6bf74 : theme.stoneA) : (isTrueEnd ? 0xd9ae64 : theme.stoneB);
+      const tier = this.add.polygon(
+        panelCenterX,
+        0,
+        [
+          -bottomWidth / 2, bottomY,
+          bottomWidth / 2, bottomY,
+          topWidth / 2, topY,
+          -topWidth / 2, topY,
+        ],
+        tierColor,
+        0,
+      ).setStrokeStyle(2, theme.stroke, 0.9).setAlpha(1);
+      const tierFillTweenTarget = isTrueEnd ? 1 : 0.94;
+      const tierFill = this.add.polygon(
+        panelCenterX,
+        0,
+        [
+          -bottomWidth / 2 + 1.5, bottomY - 0.5,
+          bottomWidth / 2 - 1.5, bottomY - 0.5,
+          topWidth / 2 - 1, topY + 0.5,
+          -topWidth / 2 + 1, topY + 0.5,
+        ],
+        tierColor,
+        tierFillTweenTarget,
+      );
+      const layerLine = this.add.line(panelCenterX, 0, -topWidth / 2, topY, topWidth / 2, topY, 0xf5ddb0, isTrueEnd ? 0.3 : 0.2).setLineWidth(1, 1);
+      const seamCount = Math.max(0, Math.floor(bottomWidth / 56));
+      const seamNodes = [];
+      for (let seamIndex = 1; seamIndex <= seamCount; seamIndex += 1) {
+        const seamT = seamIndex / (seamCount + 1);
+        const seamBottomX = Phaser.Math.Linear(-bottomWidth / 2, bottomWidth / 2, seamT);
+        const seamTopX = Phaser.Math.Linear(-topWidth / 2, topWidth / 2, seamT);
+        seamNodes.push(this.add.line(panelCenterX, 0, seamBottomX, bottomY - 1, seamTopX, topY + 1, theme.stroke, 0.2).setLineWidth(1, 1));
+      }
+      const tierNodes = [tier, tierFill, layerLine, ...seamNodes];
+      tiers.push({ nodes: tierNodes, y: bottomY, topY });
+      pyramid.add(tierNodes);
     }
     area.bringToTop(soulsRow);
     area.bringToTop(capstoneGlow);
@@ -3674,10 +3703,13 @@ ${COMMIT_SHA}`, {
       this.tweens.add({ targets: soul, alpha: 0.85, x: targetX, duration: gatherMs, delay: silenceMs + i * 35, ease: 'Sine.easeOut' });
     }
     sequence.tiers.forEach((tier, index) => {
-      tier.setAlpha(0);
+      tier.nodes.forEach((node) => {
+        node.setAlpha(0);
+        node.y -= 6;
+      });
       this.endingSequenceTimers.push(this.time.delayedCall(buildStartMs + (index * layerStepMs), () => {
-        this.tweens.add({ targets: tier, alpha: 1, duration: 220, ease: 'Sine.easeOut' });
-        const dust = this.add.ellipse(0, tier.y + 9, 56, 12, 0xd5b483, 0.45);
+        this.tweens.add({ targets: tier.nodes, alpha: 1, y: '+=6', duration: 230, ease: 'Sine.easeOut' });
+        const dust = this.add.ellipse(0, tier.y + 8, 56, 12, 0xd5b483, 0.45);
         sequence.dustLayer.add(dust);
         this.tweens.add({ targets: dust, alpha: 0, scaleX: 1.4, scaleY: 1.5, duration: 260, ease: 'Sine.easeOut', onComplete: () => dust.destroy() });
       }));
