@@ -3699,8 +3699,8 @@ ${COMMIT_SHA}`, {
       tiers.push({ nodes: tierNodes, y: topY + tierHeight, topY });
       pyramid.add(tierNodes);
     }
-    const topTierWidth = topRectangleWidth;
-    const capstoneBaseWidth = Math.round(Phaser.Math.Clamp(topTierWidth * 1.2, 18, 42));
+    const belowTopTierWidth = topRectangleWidth;
+    const capstoneBaseWidth = Math.round(belowTopTierWidth * 0.86);
     const capstoneHeight = Math.round(Phaser.Math.Clamp(tierHeight * 1.2, 10, 18));
     const capstoneBottomY = topRectangleTopY;
     const capstoneTopY = capstoneBottomY - capstoneHeight;
