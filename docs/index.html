@@ -93,6 +93,12 @@
         user-select: none;
       }
 
+      .touch-controls.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
       .touch-row,
       .touch-controls__top,
       .touch-controls__main,
@@ -358,6 +364,11 @@
       window.addEventListener('duat-touch-state', (event) => {
         const hasBombSelected = Boolean(event?.detail?.hasBombSelected);
         touchControlsRoot?.classList.toggle('touch-controls--bomb-selected', hasBombSelected);
+      });
+
+      window.addEventListener('duat-touch-visibility', (event) => {
+        const isVisible = event?.detail?.isVisible !== false;
+        touchControlsRoot?.classList.toggle('is-hidden', !isVisible);
       });
 
       document.querySelectorAll('[data-duat-action]').forEach((button) => {

@@ -1333,7 +1333,7 @@ ${COMMIT_SHA}`, {
     }).setOrigin(0.5);
     const prompt = this.add.text(0, 34, 'Enter / Space で再開', {
       fontFamily: 'Arial, sans-serif',
-      fontSize: '18px',
+      fontSize: '17px',
       color: '#eadfca',
       align: 'center',
     }).setOrigin(0.5);
@@ -1358,6 +1358,7 @@ ${COMMIT_SHA}`, {
     this.titleOverlay?.setVisible(false);
     this.closeHowToPlay();
     this.pauseOverlay?.setVisible(false);
+    this.setTouchControlsVisible(true);
     this.safeUpdateBgmForGameState();
     this.spawnPiece();
   }
@@ -1370,6 +1371,7 @@ ${COMMIT_SHA}`, {
     this.sfx.resume();
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
+    this.setTouchControlsVisible(true);
     this.safeUpdateBgmForGameState();
     this.spawnPiece();
   }
@@ -1381,6 +1383,7 @@ ${COMMIT_SHA}`, {
     this.titleOverlay?.setVisible(true);
     this.closeHowToPlay();
     this.pauseOverlay?.setVisible(false);
+    this.setTouchControlsVisible(true);
     this.safeUpdateBgmForGameState();
   }
 
@@ -1597,6 +1600,12 @@ ${COMMIT_SHA}`, {
   emitTouchControlState() {
     window.dispatchEvent(new CustomEvent('duat-touch-state', {
       detail: { hasBombSelected: this.selectedBombSlot !== null },
+    }));
+  }
+
+  setTouchControlsVisible(isVisible) {
+    window.dispatchEvent(new CustomEvent('duat-touch-visibility', {
+      detail: { isVisible: Boolean(isVisible) },
     }));
   }
 
@@ -2417,7 +2426,7 @@ ${COMMIT_SHA}`, {
 
     return {
       colors: [0xf4d77a, 0xcfa76a, 0xb38a50],
-      alpha: 0.72,
+      alpha: 0.82,
     };
   }
 
@@ -3411,6 +3420,7 @@ ${COMMIT_SHA}`, {
     this.activePiece = null;
     this.cancelBombSelection();
     this.pauseOverlay?.setVisible(false);
+    this.setTouchControlsVisible(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER);
     const highScoreResult = this.recordHighScoreForCurrentRun();
     this.hud.updateBestScore(highScoreResult.records.highScore);
     this.hud.showGameOver();
@@ -3472,7 +3482,7 @@ ${COMMIT_SHA}`, {
     const centerX = GAME_WIDTH / 2;
     const centerY = GAME_HEIGHT / 2;
     const panelWidth = Math.min(460, GAME_WIDTH - 24);
-    const panelHeight = Math.min(760, GAME_HEIGHT - 18);
+    const panelHeight = Math.min(810, GAME_HEIGHT - 12);
     this.gameOverOverlay = this.add.container(centerX, centerY).setDepth(25).setAlpha(0);
 
     const titleText = this.currentEndingType === ENDING_TYPES.TRUE_END
@@ -3492,20 +3502,20 @@ ${COMMIT_SHA}`, {
     const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
     const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.96).setStrokeStyle(3, borderColor, 0.9);
-    const title = this.add.text(0, -panelHeight / 2 + 56, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -panelHeight / 2 + 110, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
+    const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -panelHeight / 2 + 96, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
     const isRitualEnding = this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER;
-    const statsFontSize = isCompactPanel ? '12px' : '15px';
-    const statsLineSpacing = isCompactPanel ? 1 : 4;
-    const promptBottomInset = isCompactPanel ? 14 : 18;
+    const statsFontSize = isCompactPanel ? '11px' : '13px';
+    const statsLineSpacing = isCompactPanel ? 0 : 2;
+    const promptBottomInset = isCompactPanel ? 18 : 22;
     const promptY = panelHeight / 2 - promptBottomInset;
-    const promptReservedHeight = isCompactPanel ? 42 : 46;
-    const statsBottomGap = isCompactPanel ? 14 : 18;
+    const promptReservedHeight = isCompactPanel ? 52 : 56;
+    const statsBottomGap = isCompactPanel ? 12 : 14;
     const statsBlockBottomY = promptY - promptReservedHeight - statsBottomGap;
-    const ritualVisualBottomY = (isCompactPanel ? 92 : 108);
-    const statsTopMargin = isCompactPanel ? 14 : 18;
+    const ritualVisualBottomY = (isCompactPanel ? 56 : 74);
+    const statsTopMargin = isCompactPanel ? 10 : 12;
     const statsY = isRitualEnding ? ritualVisualBottomY + statsTopMargin : (promptY - (isCompactPanel ? 112 : 124));
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
@@ -3521,9 +3531,9 @@ ${COMMIT_SHA}`, {
     recordText.setWordWrapWidth(panelWidth - 44, true);
     const maxStatsHeight = Math.max(0, statsBlockBottomY - statsY);
     if (maxStatsHeight > 0 && recordText.height > maxStatsHeight) {
-      const compactStatsFont = isCompactPanel ? '11px' : '13px';
+      const compactStatsFont = isCompactPanel ? '10px' : '12px';
       recordText.setFontSize(compactStatsFont);
-      recordText.setLineSpacing(isCompactPanel ? 0 : 2);
+      recordText.setLineSpacing(0);
     }
 
     const nodes=[panel,title,subtitle,recordText];
@@ -3567,8 +3577,8 @@ ${COMMIT_SHA}`, {
   }
 
   playRitualEndingAtmosphere() {
-    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.72, duration: 950, ease: 'Sine.easeOut' });
-    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.58, duration: 920, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingBoardFade, alpha: 0.82, duration: 950, ease: 'Sine.easeOut' });
+    this.tweens.add({ targets: this.endingHudDimmer, alpha: 0.78, duration: 920, ease: 'Sine.easeOut' });
   }
 
   trySkipEndingSequence() {
@@ -3581,12 +3591,12 @@ ${COMMIT_SHA}`, {
   }
 
   createRitualEndingSequence(panelWidth, panelHeight, endingType, revivedSoulsCount) {
-    const area = this.add.container(0, -58).setDepth(28);
+    const area = this.add.container(0, -36).setDepth(28);
     const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
     const panelCenterX = 0;
     const pyramidCenterX = panelCenterX;
-    const visualAreaY = panelHeight <= 700 ? 12 : 8;
-    const visualAreaHeight = Math.floor(panelHeight * (panelHeight <= 700 ? 0.44 : 0.47));
+    const visualAreaY = panelHeight <= 700 ? -6 : -2;
+    const visualAreaHeight = Math.floor(panelHeight * (panelHeight <= 700 ? 0.46 : 0.49));
     const visualTop = visualAreaY - visualAreaHeight / 2;
     const visualBottom = visualAreaY + visualAreaHeight / 2;
     const soulsY = visualBottom - (panelHeight <= 700 ? 30 : 34);
