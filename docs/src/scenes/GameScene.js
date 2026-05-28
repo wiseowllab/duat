@@ -3496,12 +3496,17 @@ ${COMMIT_SHA}`, {
     const subtitle = this.add.text(0, -panelHeight / 2 + 110, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
-    const statsFontSize = isCompactPanel ? '13px' : '15px';
-    const statsLineSpacing = isCompactPanel ? 2 : 4;
-    const showExtendedEndingStats = !isCompactPanel;
-    const promptY = panelHeight / 2 - 18;
-    const statsBottomGap = isCompactPanel ? 92 : 98;
-    const statsY = promptY - statsBottomGap;
+    const isRitualEnding = this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER;
+    const statsFontSize = isCompactPanel ? '12px' : '15px';
+    const statsLineSpacing = isCompactPanel ? 1 : 4;
+    const promptBottomInset = isCompactPanel ? 14 : 18;
+    const promptY = panelHeight / 2 - promptBottomInset;
+    const promptReservedHeight = isCompactPanel ? 42 : 46;
+    const statsBottomGap = isCompactPanel ? 14 : 18;
+    const statsBlockBottomY = promptY - promptReservedHeight - statsBottomGap;
+    const ritualVisualBottomY = (isCompactPanel ? 92 : 108);
+    const statsTopMargin = isCompactPanel ? 14 : 18;
+    const statsY = isRitualEnding ? ritualVisualBottomY + statsTopMargin : (promptY - (isCompactPanel ? 112 : 124));
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
@@ -3510,9 +3515,16 @@ ${COMMIT_SHA}`, {
       `到達Tier: ${this.maxTierThisRun}`,
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
-      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER && showExtendedEndingStats ? `Deepest Depth: ${this.currentDepthLevel}` : '',
-      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER && showExtendedEndingStats ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
+      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
+      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
     ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: statsFontSize, color: '#eadfca', align: 'center', lineSpacing: statsLineSpacing, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0).setPosition(0, statsY).setAlpha(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : 0).setName('endingStats');
+    recordText.setWordWrapWidth(panelWidth - 44, true);
+    const maxStatsHeight = Math.max(0, statsBlockBottomY - statsY);
+    if (maxStatsHeight > 0 && recordText.height > maxStatsHeight) {
+      const compactStatsFont = isCompactPanel ? '11px' : '13px';
+      recordText.setFontSize(compactStatsFont);
+      recordText.setLineSpacing(isCompactPanel ? 0 : 2);
+    }
 
     const nodes=[panel,title,subtitle,recordText];
 
@@ -3569,11 +3581,11 @@ ${COMMIT_SHA}`, {
   }
 
   createRitualEndingSequence(panelWidth, panelHeight, endingType, revivedSoulsCount) {
-    const area = this.add.container(0, -32).setDepth(28);
+    const area = this.add.container(0, -58).setDepth(28);
     const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
     const panelCenterX = 0;
     const pyramidCenterX = panelCenterX;
-    const visualAreaY = panelHeight <= 700 ? 16 : 12;
+    const visualAreaY = panelHeight <= 700 ? 12 : 8;
     const visualAreaHeight = Math.floor(panelHeight * (panelHeight <= 700 ? 0.44 : 0.47));
     const visualTop = visualAreaY - visualAreaHeight / 2;
     const visualBottom = visualAreaY + visualAreaHeight / 2;
@@ -3619,10 +3631,6 @@ ${COMMIT_SHA}`, {
     const apexWidth = Math.max(34, Math.floor(baseWidth * 0.14));
     const totalPyramidHeight = tierHeight * buildCount;
     const pyramidTopY = pyramidBaseY - totalPyramidHeight;
-    const centerLine = this.add.line(pyramidCenterX, 0, 0, pyramidBaseY, 0, pyramidTopY - 18, 0x7ac6ff, 0.5)
-      .setLineWidth(1, 1);
-    pyramid.add(centerLine);
-
     for (let i = 0; i < buildCount; i += 1) {
       const t = buildCount <= 1 ? 0 : i / (buildCount - 1);
       const tierWidth = Phaser.Math.Linear(baseWidth, apexWidth, t);
