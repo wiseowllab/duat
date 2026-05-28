@@ -3638,8 +3638,8 @@ ${COMMIT_SHA}`, {
     const pyramid = this.add.container(0, 0);
     const soulsRow = this.add.container(0, soulsY);
     const dustLayer = this.add.container(0, visualAreaY + visualAreaHeight * 0.14);
-    const capstone = this.add.triangle(0, 0, 0, 0, 0, 0, 0, 0, 0xfff08a, 1)
-      .setStrokeStyle(3, 0x5d3615, 1)
+    const capstone = this.add.triangle(0, 0, 0, 0, 0, 0, 0, 0, 0xfff2a0, 1)
+      .setStrokeStyle(3, 0x4a2a10, 1)
       .setAlpha(0)
       .setDepth(7);
     const capstoneGlow = this.add.ellipse(0, -112, 58, 32, 0xffefb2, 0.26).setAlpha(0).setDepth(6);
@@ -3668,7 +3668,6 @@ ${COMMIT_SHA}`, {
     const tierHeight = panelHeight <= 700 ? 14 : 15;
     const baseWidth = Math.min(areaWidth - 28, Math.floor(panelWidth * 0.76));
     const apexWidth = Math.max(34, Math.floor(baseWidth * 0.14));
-    const trueEndCapstoneBaseWidth = Math.max(apexWidth + 4, Math.floor(apexWidth * 1.22));
     const totalPyramidHeight = tierHeight * buildCount;
     const rectangleTierCount = isTrueEnd ? Math.max(1, buildCount - 1) : buildCount;
     let topRectangleWidth = baseWidth;
@@ -3700,8 +3699,9 @@ ${COMMIT_SHA}`, {
       tiers.push({ nodes: tierNodes, y: topY + tierHeight, topY });
       pyramid.add(tierNodes);
     }
-    const capstoneBaseWidth = topRectangleWidth * 1.4;
-    const capstoneHeight = tierHeight * 1.5;
+    const topTierWidth = topRectangleWidth;
+    const capstoneBaseWidth = Math.round(Phaser.Math.Clamp(topTierWidth * 1.2, 18, 42));
+    const capstoneHeight = Math.round(Phaser.Math.Clamp(tierHeight * 1.2, 10, 18));
     const capstoneBottomY = topRectangleTopY;
     const capstoneTopY = capstoneBottomY - capstoneHeight;
     const pyramidTopY = isTrueEnd ? capstoneTopY : pyramidBaseY - totalPyramidHeight;
@@ -3723,7 +3723,7 @@ ${COMMIT_SHA}`, {
     area.bringToTop(capstone);
     area.bringToTop(finalText);
     return {
-      nodes: [area], soulsRow, dustLayer, capstone, capstoneGlow, sunriseGlow, finalText, sunDisk, horizonGlow, tiers, endingType, revivedSoulsCount, pyramidTopY, pyramidCenterX, trueEndCapstoneBaseWidth, panelHeight, capstoneBaseWidth, capstoneHeight, capstoneBottomY,
+      nodes: [area], soulsRow, dustLayer, capstone, capstoneGlow, sunriseGlow, finalText, sunDisk, horizonGlow, tiers, endingType, revivedSoulsCount, pyramidTopY, pyramidCenterX, panelHeight, capstoneBaseWidth, capstoneHeight, capstoneBottomY,
     };
   }
 
