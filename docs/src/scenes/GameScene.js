@@ -3638,8 +3638,11 @@ ${COMMIT_SHA}`, {
     const pyramid = this.add.container(0, 0);
     const soulsRow = this.add.container(0, soulsY);
     const dustLayer = this.add.container(0, visualAreaY + visualAreaHeight * 0.14);
-    const capstone = this.add.triangle(0, -112, -16, 10, 16, 10, 0, -14, 0xf6df95, 0).setStrokeStyle(1, 0xfff5cb, 0).setAlpha(0);
-    const capstoneGlow = this.add.ellipse(0, -112, 58, 32, 0xffefb2, 0.26).setAlpha(0);
+    const capstone = this.add.triangle(0, 0, 0, 0, 0, 0, 0, 0, 0xfff08a, 1)
+      .setStrokeStyle(3, 0x5d3615, 1)
+      .setAlpha(0)
+      .setDepth(7);
+    const capstoneGlow = this.add.ellipse(0, -112, 58, 32, 0xffefb2, 0.26).setAlpha(0).setDepth(6);
     const sunriseGlow = this.add.ellipse(panelCenterX, visualAreaY - 6, areaWidth * 0.8, visualAreaHeight * 0.42, 0xf8dc87, 0.22).setAlpha(0);
     const finalText = this.add.text(0, visualTop + 22, isTrueEnd ? 'THE SUN RISES\nAGAIN' : 'THE PYRAMID REMAINS\nUNFINISHED', { fontFamily: 'Georgia, serif', fontSize: panelWidth < 420 ? '16px' : '18px', color: isTrueEnd ? '#f7dc7c' : '#d59c66', fontStyle: 'bold', align: 'center', wordWrap: { width: areaWidth - 18 }, lineSpacing: 4 }).setOrigin(0.5).setAlpha(0);
     area.add([areaBg, horizonGlow, sunriseGlow, sunDisk, darkHaze, pyramid, dustLayer, soulsRow, capstoneGlow, capstone, finalText]);
@@ -3667,12 +3670,15 @@ ${COMMIT_SHA}`, {
     const apexWidth = Math.max(34, Math.floor(baseWidth * 0.14));
     const trueEndCapstoneBaseWidth = Math.max(apexWidth + 4, Math.floor(apexWidth * 1.22));
     const totalPyramidHeight = tierHeight * buildCount;
-    const pyramidTopY = pyramidBaseY - totalPyramidHeight;
-    for (let i = 0; i < buildCount; i += 1) {
+    const rectangleTierCount = isTrueEnd ? Math.max(1, buildCount - 1) : buildCount;
+    let topRectangleWidth = baseWidth;
+    let topRectangleTopY = pyramidBaseY - tierHeight;
+    for (let i = 0; i < rectangleTierCount; i += 1) {
       const t = buildCount <= 1 ? 0 : i / (buildCount - 1);
-      let tierWidth = Phaser.Math.Linear(baseWidth, apexWidth, t);
-      if (isTrueEnd && i === buildCount - 1) {
-        tierWidth = Math.max(trueEndCapstoneBaseWidth + 6, tierWidth + 8);
+      const tierWidth = Phaser.Math.Linear(baseWidth, apexWidth, t);
+      if (i === rectangleTierCount - 1) {
+        topRectangleWidth = tierWidth;
+        topRectangleTopY = pyramidBaseY - (i + 1) * tierHeight;
       }
       const topY = pyramidBaseY - (i + 1) * tierHeight;
       const tierCenterY = topY + (tierHeight / 2);
@@ -3694,12 +3700,30 @@ ${COMMIT_SHA}`, {
       tiers.push({ nodes: tierNodes, y: topY + tierHeight, topY });
       pyramid.add(tierNodes);
     }
+    const capstoneBaseWidth = topRectangleWidth * 1.4;
+    const capstoneHeight = tierHeight * 1.5;
+    const capstoneBottomY = topRectangleTopY;
+    const capstoneTopY = capstoneBottomY - capstoneHeight;
+    const pyramidTopY = isTrueEnd ? capstoneTopY : pyramidBaseY - totalPyramidHeight;
+    if (isTrueEnd) {
+      capstone.setPosition(pyramidCenterX, capstoneBottomY);
+      capstone.setTo(
+        -capstoneBaseWidth / 2,
+        0,
+        capstoneBaseWidth / 2,
+        0,
+        0,
+        -capstoneHeight,
+      );
+      capstoneGlow.setPosition(pyramidCenterX, capstoneBottomY - (capstoneHeight * 0.42));
+      capstoneGlow.setSize(capstoneBaseWidth * 1.35, capstoneHeight * 1.5);
+    }
     area.bringToTop(soulsRow);
     area.bringToTop(capstoneGlow);
     area.bringToTop(capstone);
     area.bringToTop(finalText);
     return {
-      nodes: [area], soulsRow, dustLayer, capstone, capstoneGlow, sunriseGlow, finalText, sunDisk, horizonGlow, tiers, endingType, revivedSoulsCount, pyramidTopY, pyramidCenterX, trueEndCapstoneBaseWidth, panelHeight,
+      nodes: [area], soulsRow, dustLayer, capstone, capstoneGlow, sunriseGlow, finalText, sunDisk, horizonGlow, tiers, endingType, revivedSoulsCount, pyramidTopY, pyramidCenterX, trueEndCapstoneBaseWidth, panelHeight, capstoneBaseWidth, capstoneHeight, capstoneBottomY,
     };
   }
 
@@ -3741,20 +3765,13 @@ ${COMMIT_SHA}`, {
     });
     if (sequence.endingType === ENDING_TYPES.TRUE_END) {
       this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs, () => {
-        const capstoneHeight = sequence.panelHeight <= 700 ? 16 : 18;
-        const apexY = sequence.pyramidTopY + 1;
-        sequence.capstone.setTo(
-          sequence.capstone.x,
-          apexY - (capstoneHeight / 2),
-          sequence.pyramidCenterX - (sequence.trueEndCapstoneBaseWidth / 2),
-          apexY,
-          sequence.pyramidCenterX + (sequence.trueEndCapstoneBaseWidth / 2),
-          apexY,
-          sequence.pyramidCenterX,
-          apexY - capstoneHeight,
-        );
-        sequence.capstone.setY(apexY - (capstoneHeight / 2));
-        sequence.capstoneGlow.setPosition(sequence.pyramidCenterX, apexY - (capstoneHeight * 0.42));
+        console.log('[DebugEnding] TRUE END capstone drawn:', {
+          centerX: sequence.pyramidCenterX,
+          bottomY: sequence.capstoneBottomY,
+          capstoneBaseWidth: sequence.capstoneBaseWidth,
+          capstoneHeight: sequence.capstoneHeight,
+          depth: sequence.capstone.depth,
+        });
         this.tweens.add({ targets: [sequence.capstone, sequence.sunDisk, sequence.horizonGlow], alpha: 1, duration: 420, ease: 'Sine.easeOut' });
         this.tweens.add({ targets: sequence.capstoneGlow, alpha: 0.42, duration: 420, ease: 'Sine.easeOut' });
         this.tweens.add({ targets: sequence.sunriseGlow, alpha: 0.55, duration: 480, ease: 'Sine.easeOut' });
