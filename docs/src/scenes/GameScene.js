@@ -3496,11 +3496,13 @@ ${COMMIT_SHA}`, {
     const subtitle = this.add.text(0, -panelHeight / 2 + 110, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
-    const statsFontSize = isCompactPanel ? '14px' : '16px';
-    const statsLineSpacing = isCompactPanel ? 4 : 6;
+    const statsFontSize = isCompactPanel ? '13px' : '15px';
+    const statsLineSpacing = isCompactPanel ? 2 : 4;
     const showExtendedEndingStats = !isCompactPanel;
-    const statsY = panelHeight / 2 - (isCompactPanel ? 198 : 212);
-    const recordText = this.add.text(0, panelHeight / 2 - 212, [
+    const promptY = panelHeight / 2 - 18;
+    const statsBottomGap = isCompactPanel ? 92 : 98;
+    const statsY = promptY - statsBottomGap;
+    const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
       highScoreResult.isNewHighScore ? '新記録!' : '',
@@ -3521,7 +3523,7 @@ ${COMMIT_SHA}`, {
       this.playRitualEndingSequence(ritualSequence, recordText);
     }
 
-    const prompt = this.add.text(0, panelHeight / 2 - 24, promptText, { fontFamily: 'Arial, sans-serif', fontSize: '20px', color: '#f2d783', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 32 } }).setOrigin(0.5, 1);
+    const prompt = this.add.text(0, promptY, promptText, { fontFamily: 'Arial, sans-serif', fontSize: isCompactPanel ? '18px' : '20px', color: '#f2d783', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 32 } }).setOrigin(0.5, 1);
     nodes.push(prompt);
 
     if (highScoreResult.isNewHighScore) { recordText.setColor('#f4d77a'); recordText.setFontStyle('bold'); }
@@ -3567,30 +3569,30 @@ ${COMMIT_SHA}`, {
   }
 
   createRitualEndingSequence(panelWidth, panelHeight, endingType, revivedSoulsCount) {
-    const area = this.add.container(0, 6).setDepth(28);
+    const area = this.add.container(0, -32).setDepth(28);
     const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
     const panelCenterX = 0;
     const pyramidCenterX = panelCenterX;
-    const visualAreaY = panelHeight <= 700 ? 24 : 22;
-    const visualAreaHeight = panelHeight <= 700 ? 232 : 244;
+    const visualAreaY = panelHeight <= 700 ? 16 : 12;
+    const visualAreaHeight = Math.floor(panelHeight * (panelHeight <= 700 ? 0.44 : 0.47));
     const visualTop = visualAreaY - visualAreaHeight / 2;
     const visualBottom = visualAreaY + visualAreaHeight / 2;
-    const soulsY = visualBottom - 36;
-    const pyramidBaseY = soulsY - 8;
+    const soulsY = visualBottom - (panelHeight <= 700 ? 30 : 34);
+    const pyramidBaseY = soulsY - 10;
     const theme = isTrueEnd
       ? { sky: 0x0d203f, haze: 0x8db9f7, stoneA: 0xd8b67a, stoneB: 0xc79f63, stroke: 0x7d5a2f }
       : { sky: 0x1a120f, haze: 0x4b3222, stoneA: 0x87623f, stoneB: 0x735233, stroke: 0x4f3821 };
-    const areaWidth = panelWidth - 44;
-    const areaBg = this.add.rectangle(panelCenterX, visualAreaY, areaWidth, visualAreaHeight, theme.sky, 0.7).setStrokeStyle(2, 0x21170f, 0.8);
-    const darkHaze = this.add.ellipse(panelCenterX, 48, 280, 96, 0x120a07, isTrueEnd ? 0 : 0.28);
-    const horizonGlow = this.add.ellipse(panelCenterX, 52, 286, 102, theme.haze, 0.42).setAlpha(isTrueEnd ? 1 : 0.35);
-    const sunDisk = this.add.circle(panelCenterX, 32, 54, isTrueEnd ? 0xf8df9c : 0x8e6d4f, isTrueEnd ? 0.42 : 0.24).setAlpha(isTrueEnd ? 1 : 0.5);
+    const areaWidth = Math.floor(panelWidth * 0.88);
+    const areaBg = this.add.rectangle(panelCenterX, visualAreaY, areaWidth, visualAreaHeight, theme.sky, 0.46).setStrokeStyle(1, isTrueEnd ? 0x7bb9f5 : 0x6e4f34, 0.42);
+    const darkHaze = this.add.ellipse(panelCenterX, visualAreaY + 8, areaWidth * 0.86, visualAreaHeight * 0.42, 0x120a07, isTrueEnd ? 0 : 0.26);
+    const horizonGlow = this.add.ellipse(panelCenterX, visualAreaY - 14, areaWidth * 0.92, visualAreaHeight * 0.46, theme.haze, 0.45).setAlpha(isTrueEnd ? 1 : 0.38);
+    const sunDisk = this.add.circle(panelCenterX, visualAreaY - 34, Math.floor(visualAreaHeight * 0.2), isTrueEnd ? 0xf8df9c : 0x8e6d4f, isTrueEnd ? 0.44 : 0.24).setAlpha(isTrueEnd ? 1 : 0.5);
     const pyramid = this.add.container(0, 0);
     const soulsRow = this.add.container(0, soulsY);
-    const dustLayer = this.add.container(0, 64);
-    const capstone = this.add.triangle(0, -112, -10, 10, 10, 10, 0, -10, 0xf4d77a, 0).setStrokeStyle(1, 0xfff3be, 0).setAlpha(0);
-    const capstoneGlow = this.add.ellipse(0, -112, 46, 26, 0xffefb2, 0.36).setAlpha(0);
-    const sunriseGlow = this.add.ellipse(panelCenterX, 56, 240, 90, 0xf8dc87, 0.22).setAlpha(0);
+    const dustLayer = this.add.container(0, visualAreaY + visualAreaHeight * 0.14);
+    const capstone = this.add.triangle(0, -112, -12, 11, 12, 11, 0, -11, 0xf4d77a, 0).setStrokeStyle(1, 0xfff3be, 0).setAlpha(0);
+    const capstoneGlow = this.add.ellipse(0, -112, 56, 30, 0xffefb2, 0.36).setAlpha(0);
+    const sunriseGlow = this.add.ellipse(panelCenterX, visualAreaY - 6, areaWidth * 0.8, visualAreaHeight * 0.42, 0xf8dc87, 0.22).setAlpha(0);
     const finalText = this.add.text(0, visualTop + 22, isTrueEnd ? 'THE SUN RISES\nAGAIN' : 'THE PYRAMID REMAINS\nUNFINISHED', { fontFamily: 'Georgia, serif', fontSize: panelWidth < 420 ? '16px' : '18px', color: isTrueEnd ? '#f7dc7c' : '#d59c66', fontStyle: 'bold', align: 'center', wordWrap: { width: areaWidth - 18 }, lineSpacing: 4 }).setOrigin(0.5).setAlpha(0);
     area.add([areaBg, horizonGlow, sunriseGlow, sunDisk, darkHaze, pyramid, dustLayer, soulsRow, capstoneGlow, capstone, finalText]);
     const tierCount = revivedSoulsCount <= 4 ? 2
@@ -3612,9 +3614,9 @@ ${COMMIT_SHA}`, {
       visualAreaHeight,
       pyramidBaseY,
     });
-    const tierHeight = 12;
-    const baseWidth = 240;
-    const apexWidth = 30;
+    const tierHeight = panelHeight <= 700 ? 14 : 15;
+    const baseWidth = Math.min(areaWidth - 28, Math.floor(panelWidth * 0.76));
+    const apexWidth = Math.max(34, Math.floor(baseWidth * 0.14));
     const totalPyramidHeight = tierHeight * buildCount;
     const pyramidTopY = pyramidBaseY - totalPyramidHeight;
     const centerLine = this.add.line(pyramidCenterX, 0, 0, pyramidBaseY, 0, pyramidTopY - 18, 0x7ac6ff, 0.5)
