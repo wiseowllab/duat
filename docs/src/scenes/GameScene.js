@@ -3507,16 +3507,24 @@ ${COMMIT_SHA}`, {
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
     const isRitualEnding = this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER;
-    const statsFontSize = isCompactPanel ? '11px' : '13px';
-    const statsLineSpacing = isCompactPanel ? 0 : 2;
     const promptBottomInset = isCompactPanel ? 18 : 22;
     const promptY = panelHeight / 2 - promptBottomInset;
-    const promptReservedHeight = isCompactPanel ? 52 : 56;
-    const statsBottomGap = isCompactPanel ? 12 : 14;
-    const statsBlockBottomY = promptY - promptReservedHeight - statsBottomGap;
-    const ritualVisualBottomY = (isCompactPanel ? 56 : 74);
-    const statsTopMargin = isCompactPanel ? 10 : 12;
-    const statsY = isRitualEnding ? ritualVisualBottomY + statsTopMargin : (promptY - (isCompactPanel ? 112 : 124));
+    const zoneTop = -panelHeight / 2;
+    const zoneBottom = panelHeight / 2;
+    const headlineZoneHeight = isCompactPanel ? 62 : 70;
+    const subtextZoneHeight = isCompactPanel ? 48 : 54;
+    const returnPromptZoneHeight = isCompactPanel ? 62 : 68;
+    const ceremonyZoneHeight = isRitualEnding
+      ? Math.floor(panelHeight * (isCompactPanel ? 0.47 : 0.5))
+      : 0;
+    const ceremonyZoneTop = zoneTop + headlineZoneHeight + subtextZoneHeight;
+    const ceremonyZoneBottom = ceremonyZoneTop + ceremonyZoneHeight;
+    const statsZoneTop = isRitualEnding ? ceremonyZoneBottom + (isCompactPanel ? 18 : 24) : (zoneTop + 172);
+    const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 10 : 14);
+    const statsZoneHeight = Math.max(50, statsZoneBottom - statsZoneTop);
+    const statsY = statsZoneTop;
+    const statsFontSize = isCompactPanel ? '10px' : '12px';
+    const statsLineSpacing = isCompactPanel ? -1 : 0;
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
@@ -3529,18 +3537,35 @@ ${COMMIT_SHA}`, {
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
     ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: statsFontSize, color: '#eadfca', align: 'center', lineSpacing: statsLineSpacing, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0).setPosition(0, statsY).setAlpha(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : 0).setName('endingStats');
     recordText.setWordWrapWidth(panelWidth - 44, true);
-    const maxStatsHeight = Math.max(0, statsBlockBottomY - statsY);
-    if (maxStatsHeight > 0 && recordText.height > maxStatsHeight) {
-      const compactStatsFont = isCompactPanel ? '10px' : '12px';
-      recordText.setFontSize(compactStatsFont);
-      recordText.setLineSpacing(0);
+    if (recordText.height > statsZoneHeight) {
+      recordText.setFontSize(isCompactPanel ? '9px' : '11px');
+      recordText.setLineSpacing(-2);
+    }
+    if (recordText.height > statsZoneHeight && isRitualEnding) {
+      const compactStatsRows = [
+        `最終スコア  ${this.score}    最大連鎖  ${this.bestChainThisRun}`,
+        `到達Tier  ${this.maxTierThisRun}    解放した神  ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+        `Revived Souls  ${this.revivedSoulsCount}    Deepest Depth  ${this.currentDepthLevel}`,
+        `PURE CANOPIC  ${this.totalPureCanopicCount}    ベスト  ${highScoreResult.records.highScore}`,
+        highScoreResult.isNewHighScore ? '新記録!' : '',
+      ].filter(Boolean);
+      recordText.setText(compactStatsRows.join('\n'));
+      recordText.setFontSize(isCompactPanel ? '9px' : '10px');
+      recordText.setLineSpacing(-2);
     }
 
     const nodes=[panel,title,subtitle,recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
-      const ritualSequence = this.createRitualEndingSequence(panelWidth, panelHeight, this.currentEndingType, this.revivedSoulsCount);
+      const ritualSequence = this.createRitualEndingSequence(
+        panelWidth,
+        panelHeight,
+        this.currentEndingType,
+        this.revivedSoulsCount,
+        ceremonyZoneTop,
+        ceremonyZoneBottom,
+      );
       nodes.push(...ritualSequence.nodes);
       this.playRitualEndingSequence(ritualSequence, recordText);
     }
@@ -3590,13 +3615,14 @@ ${COMMIT_SHA}`, {
     return true;
   }
 
-  createRitualEndingSequence(panelWidth, panelHeight, endingType, revivedSoulsCount) {
-    const area = this.add.container(0, -36).setDepth(28);
+  createRitualEndingSequence(panelWidth, panelHeight, endingType, revivedSoulsCount, ceremonyZoneTop, ceremonyZoneBottom) {
+    const ceremonyCenterY = (ceremonyZoneTop + ceremonyZoneBottom) / 2;
+    const area = this.add.container(0, ceremonyCenterY).setDepth(28);
     const isTrueEnd = endingType === ENDING_TYPES.TRUE_END;
     const panelCenterX = 0;
     const pyramidCenterX = panelCenterX;
-    const visualAreaY = panelHeight <= 700 ? -6 : -2;
-    const visualAreaHeight = Math.floor(panelHeight * (panelHeight <= 700 ? 0.46 : 0.49));
+    const visualAreaY = 0;
+    const visualAreaHeight = Math.max(220, Math.floor(ceremonyZoneBottom - ceremonyZoneTop));
     const visualTop = visualAreaY - visualAreaHeight / 2;
     const visualBottom = visualAreaY + visualAreaHeight / 2;
     const soulsY = visualBottom - (panelHeight <= 700 ? 30 : 34);
