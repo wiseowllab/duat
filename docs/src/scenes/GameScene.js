@@ -3776,8 +3776,15 @@ ${COMMIT_SHA}`, {
         this.tweens.add({ targets: sequence.capstoneGlow, alpha: 0.42, duration: 420, ease: 'Sine.easeOut' });
         this.tweens.add({ targets: sequence.sunriseGlow, alpha: 0.55, duration: 480, ease: 'Sine.easeOut' });
         this.tweens.add({ targets: sequence.finalText, alpha: 1, duration: 480, ease: 'Sine.easeOut', delay: 120 });
-        this.tweens.add({ targets: sequence.capstone, scaleX: 1.12, scaleY: 1.12, yoyo: true, repeat: -1, duration: 900 });
-        this.tweens.add({ targets: sequence.capstoneGlow, alpha: 0.48, scaleX: 1.18, scaleY: 1.12, yoyo: true, repeat: -1, duration: 1400 });
+        this.tweens.add({
+          targets: sequence.capstoneGlow,
+          alpha: { from: 0.3, to: 0.5 },
+          yoyo: true,
+          repeat: -1,
+          duration: 1400,
+          delay: 420,
+          ease: 'Sine.easeInOut',
+        });
       }));
     } else {
       this.endingSequenceTimers.push(this.time.delayedCall(finalRevealMs, () => {
