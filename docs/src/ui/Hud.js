@@ -1,4 +1,4 @@
-import { getCoffinAsset } from '../data/coffins.js';
+import { getCoffinAssetForStage } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
@@ -103,7 +103,10 @@ export class Hud {
     this.pureCanopicCoffinTween = null;
     this.pureCanopicTextTween = null;
     this.pureCanopicTextTimer = null;
-    this.currentCoffinSize = null;
+    this.currentCoffinVisualId = null;
+    this.currentCoffinTier = null;
+    this.currentCoffinGod = null;
+    this.isDebugMode = false;
     this.feedbackFadeTween = null;
     this.unlockBadgeContainer = null;
     this.unlockBadgeFadeTween = null;
@@ -113,6 +116,7 @@ export class Hud {
     this.revivedCount = 0;
     this.revivedIcons = [];
     this.revivedIconTweens = [];
+    this.scene.events?.on('coffin-assets-ready', this.refreshCoffinVisual, this);
     this.revivedEyeTimers = [];
     this.revivedDepthLevel = 1;
     this.depthAtmosphereTween = null;
@@ -564,6 +568,7 @@ export class Hud {
   }
 
   setDebugMode(isEnabled) {
+    this.isDebugMode = Boolean(isEnabled);
     this.debugText.setVisible(isEnabled);
   }
 
@@ -613,12 +618,12 @@ export class Hud {
       this.tierText.setText('棺 4 — DUAT COMPLETE');
       this.godText.setText('神: すべて覚醒');
       this.coffinText.setText('Meter: 完了');
-      this.drawCoffinVisual(currentTier);
+      this.drawCoffinVisual(currentTier, currentGod);
     } else {
       this.tierText.setText(`Tier ${currentTier.tier} / ${this.getCoffinTierLabel(currentTier)}`);
       this.godText.setText(`God: ${currentGod.name}`);
       this.coffinText.setText(`Meter: ${progress.value} / ${progress.required}`);
-      this.drawCoffinVisual(currentTier);
+      this.drawCoffinVisual(currentTier, currentGod);
     }
 
     this.unlockedText.setText(`Awake: ${unlockedCount} / ${totalGods}`);
@@ -775,10 +780,23 @@ export class Hud {
     });
   }
 
-  drawCoffinVisual(currentTier) {
-    const nextCoffinSize = currentTier.coffinSize ?? 'small';
+  refreshCoffinVisual() {
+    if (!this.currentCoffinTier) {
+      return;
+    }
 
-    if (this.coffinContainer && this.currentCoffinSize === nextCoffinSize) {
+    this.currentCoffinVisualId = null;
+    this.drawCoffinVisual(this.currentCoffinTier, this.currentCoffinGod);
+  }
+
+  drawCoffinVisual(currentTier, currentGod = null) {
+    this.currentCoffinTier = currentTier;
+    this.currentCoffinGod = currentGod;
+    const stage = currentGod?.stage ?? currentTier?.stage ?? 1;
+    const asset = getCoffinAssetForStage(stage, this.scene, { debug: this.isDebugMode });
+    const nextVisualId = `${stage}:${asset.key}`;
+
+    if (this.coffinContainer && this.currentCoffinVisualId === nextVisualId) {
       return;
     }
 
@@ -791,7 +809,6 @@ export class Hud {
       this.coffinContainer.destroy(true);
     }
 
-    const asset = getCoffinAsset(nextCoffinSize);
     const centerX = this.panelCenterX;
     const centerY = this.y + this.sectionLayout.coffin.y + 93;
     const container = this.scene.add.container(centerX, centerY).setDepth(HUD_LAYER_COFFIN);
@@ -805,7 +822,7 @@ export class Hud {
 
     container.add([backplate, this.coffinGlow, coffin]);
     this.coffinContainer = container;
-    this.currentCoffinSize = nextCoffinSize;
+    this.currentCoffinVisualId = nextVisualId;
   }
 
   createCoffinDisplay(asset, tier) {

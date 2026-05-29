@@ -69,8 +69,20 @@ export class CoffinMeter {
   getCurrentTier() {
     const currentGod = this.getCurrentGod();
     return currentGod
-      ? { tier: currentGod.tier, tierName: currentGod.tierName, coffinSize: currentGod.coffinSize }
-      : { tier: 4, tierName: 'Duat Complete', coffinSize: 'maximum' };
+      ? {
+        tier: currentGod.tier,
+        tierName: currentGod.tierName,
+        coffinSize: currentGod.coffinSize,
+        stage: currentGod.stage ?? this.currentGodIndex + 1,
+        godId: currentGod.id,
+      }
+      : {
+        tier: 4,
+        tierName: 'Duat Complete',
+        coffinSize: 'maximum',
+        stage: this.gods.length,
+        godId: this.gods.at(-1)?.id,
+      };
   }
 
   getProgress() {
