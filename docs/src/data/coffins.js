@@ -1,8 +1,10 @@
+import { resolveAssetPath } from './assetPaths.js';
+
 export const COFFIN_ASSETS = {
   small: {
     key: 'coffin-small',
     fileName: 'coffin_small.png',
-    path: 'assets/images/coffins/coffin_small.png',
+    path: resolveAssetPath('images/coffins/coffin_small.png'),
     tierName: 'Small Coffin',
     label: 'T1 Small',
     fallbackWidth: 76,
@@ -13,7 +15,7 @@ export const COFFIN_ASSETS = {
   medium: {
     key: 'coffin-medium',
     fileName: 'coffin_medium.png',
-    path: 'assets/images/coffins/coffin_medium.png',
+    path: resolveAssetPath('images/coffins/coffin_medium.png'),
     tierName: 'Medium Coffin',
     label: 'T2 Medium',
     fallbackWidth: 84,
@@ -24,7 +26,7 @@ export const COFFIN_ASSETS = {
   large: {
     key: 'coffin-large',
     fileName: 'coffin_large.png',
-    path: 'assets/images/coffins/coffin_large.png',
+    path: resolveAssetPath('images/coffins/coffin_large.png'),
     tierName: 'Large Coffin',
     label: 'T3 Large',
     fallbackWidth: 92,
@@ -35,7 +37,7 @@ export const COFFIN_ASSETS = {
   maximum: {
     key: 'coffin-maximum',
     fileName: 'coffin_maximum.png',
-    path: 'assets/images/coffins/coffin_maximum.png',
+    path: resolveAssetPath('images/coffins/coffin_maximum.png'),
     tierName: 'Maximum Coffin',
     label: 'T4 Max',
     fallbackWidth: 100,

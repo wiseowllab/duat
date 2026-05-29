@@ -1,4 +1,5 @@
 import { BRAIN_OBSTACLE_CHANCE, PIECE_WEIGHTS } from './balance.js';
+import { resolveAssetPath } from './assetPaths.js';
 
 export const CANOPIC_ORGAN_TYPES = [
   'liver',
@@ -45,27 +46,27 @@ export const PIECE_LABELS = {
 export const PIECE_ASSETS = {
   liver: {
     key: 'piece-liver',
-    path: 'assets/images/pieces/liver.png',
+    path: resolveAssetPath('images/pieces/liver.png'),
   },
   lung: {
     key: 'piece-lung',
-    path: 'assets/images/pieces/lung.png',
+    path: resolveAssetPath('images/pieces/lung.png'),
   },
   stomach: {
     key: 'piece-stomach',
-    path: 'assets/images/pieces/stomach.png',
+    path: resolveAssetPath('images/pieces/stomach.png'),
   },
   intestine: {
     key: 'piece-intestine',
-    path: 'assets/images/pieces/intestine.png',
+    path: resolveAssetPath('images/pieces/intestine.png'),
   },
   heart: {
     key: 'piece-heart',
-    path: 'assets/images/pieces/heart.png',
+    path: resolveAssetPath('images/pieces/heart.png'),
   },
   brain: {
     key: 'piece-brain',
-    path: 'assets/images/pieces/brain.png',
+    path: resolveAssetPath('images/pieces/brain.png'),
   },
 };
 

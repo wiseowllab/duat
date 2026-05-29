@@ -22,6 +22,27 @@ A local server is recommended because the prototype uses JavaScript modules.
 To test on a phone or tablet, run the same server on your development machine, make sure the phone is on the same network, then open `http://<your-computer-LAN-IP>:8000/docs/` in the mobile browser. You can also use browser devtools device emulation or a narrow desktop viewport for a quick layout check.
 
 
+
+## Public Test Build
+
+A lightweight public-test entrypoint is available at `docs/public-test/` so GitHub Pages can serve `/duat/public-test/` without duplicating large binary assets.
+
+Regenerate the public-test files after changing `docs/index.html` or the public-test bootstrap:
+
+```bash
+npm run build:public-test
+```
+
+The build keeps only `docs/public-test/index.html` and lightweight public-test source files in `docs/public-test/src/`. It deliberately removes any copied `assets/`, `images/`, or `audio/` folders below `docs/public-test/`; public-test loads shared assets from `../assets/` instead.
+
+Local check:
+
+```bash
+python3 -m http.server 8000 --directory docs
+```
+
+Then open <http://localhost:8000/public-test/>.
+
 ## Version / Build Label
 
 DUAT displays a small version/build label on the title screen and in the gameplay HUD so you can confirm deployed updates.
