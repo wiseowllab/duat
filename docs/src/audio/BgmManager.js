@@ -1,7 +1,9 @@
+import { resolveAssetPath } from '../data/assetPaths.js';
+
 export const BGM_VOLUME = 0.14;
 export const BGM_FADE_MS = 800;
 export const BGM_PAUSED_VOLUME = 0.03;
-export const BGM_BASE_PATH = 'assets/audio/bgm';
+export const BGM_BASE_PATH = resolveAssetPath('audio/bgm');
 
 export const BGM_TRACKS = {
   1: {

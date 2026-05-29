@@ -2,6 +2,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "build:info": "node scripts/generate-build-info.mjs"
+    "build:info": "node scripts/generate-build-info.mjs",
+    "build:public-test": "node scripts/build-public-preview.mjs"
   }
 }
