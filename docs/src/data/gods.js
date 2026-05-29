@@ -29,7 +29,7 @@ function createGod(id, name, tier, futureBombType, description) {
   };
 }
 
-export const GODS = [
+const GOD_DEFINITIONS = [
   createGod('imsety', 'Imsety', 1, 'vertical_clear', 'One of the Four Sons of Horus and guardian of the liver.'),
   createGod('hapy', 'Hapy', 1, 'horizontal_clear', 'One of the Four Sons of Horus and guardian of the lungs.'),
   createGod('duamutef', 'Duamutef', 1, 'cross_clear', 'One of the Four Sons of Horus and guardian of the stomach.'),
@@ -45,5 +45,10 @@ export const GODS = [
   createGod('ra', 'Ra', 4, 'full_board_clear', 'Sun god whose awakening points toward DUAT\'s ending.'),
   createGod('amun_ra', 'Amun-Ra', 4, 'maximum_coffin_burst', 'King of gods and the final maximum-coffin unlock.'),
 ];
+
+export const GODS = GOD_DEFINITIONS.map((god, index) => ({
+  ...god,
+  stage: index + 1,
+}));
 
 export const TOTAL_GOD_COUNT = GODS.length;

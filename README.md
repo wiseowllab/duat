@@ -150,9 +150,10 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - 14-god unlock progression.
 - Amun-Ra as the final god unlock.
 - Bomb stock generated from god unlocks.
-- Tier-based coffin PNGs for the HUD, displayed prominently in the current coffin panel so tier changes are easier to see.
+- Stage-based coffin asset mapping for all 14 god unlock stages. Future unique coffin PNGs should be placed at `docs/assets/images/coffins/coffin_01.png` through `docs/assets/images/coffins/coffin_14.png` (the project keeps coffin art under `assets/images/coffins/` rather than `assets/coffins/` so public-test builds can share the existing asset base).
+- The existing four tier-based coffin PNGs remain loaded as fallbacks until the 14 unique stage PNGs are added; the current coffin panel resolves each stage through the 14-stage map first, then falls back to the current tier image.
 - God unlock feedback shown in the right-side Current Coffin panel (with tier-strength coffin/panel glow) so the play board remains fully visible.
-- Debug mode for testing meter progress, god unlocks, coffin tier changes, bomb stock, and reset behavior.
+- Debug mode for testing meter progress, god unlocks, coffin stage mapping, coffin tier changes, bomb stock, and reset behavior.
 
 
 ## Balance Tuning
