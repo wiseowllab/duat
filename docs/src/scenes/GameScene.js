@@ -75,6 +75,12 @@ const GOD_UNLOCK_PRESENTATION_FADE_IN_MS = 250;
 const GOD_UNLOCK_PRESENTATION_HOLD_MS = 1050;
 const GOD_UNLOCK_PRESENTATION_FADE_OUT_MS = 350;
 const GOD_UNLOCK_PRESENTATION_FAILSAFE_MS = 2600;
+const GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA = 0.78;
+const GOD_UNLOCK_PRESENTATION_SHADE_ALPHA = 0.28;
+const GOD_UNLOCK_PRESENTATION_PANEL_ALPHA = 0.58;
+const GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA = 0.46;
+const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO = 0.52;
+const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO = 0.68;
 const SOUL_ASCENT_DEPTH = 45;
 const SOUL_FLOAT_UP_MS = 170;
 const SOUL_TO_HUD_MS = 300;
@@ -2914,11 +2920,11 @@ ${COMMIT_SHA}`, {
     const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
     const container = this.add.container(centerX, centerY).setDepth(GOD_UNLOCK_PRESENTATION_DEPTH);
 
-    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x020100, 0.34);
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x020100, GOD_UNLOCK_PRESENTATION_SHADE_ALPHA);
     const outerGlow = this.add.ellipse(0, 10, panelWidth + 80, panelHeight + 86, isAmunRa ? 0xffef9a : 0xd4af37, isAmunRa ? 0.14 : 0.09);
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x100a06, 0.96)
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x100a06, GOD_UNLOCK_PRESENTATION_PANEL_ALPHA)
       .setStrokeStyle(4, isAmunRa ? 0xffef9a : 0xd4af37, 0.94);
-    const innerPanel = this.add.rectangle(0, 0, panelWidth - 18, panelHeight - 18, 0x1b120a, 0.72)
+    const innerPanel = this.add.rectangle(0, 0, panelWidth - 18, panelHeight - 18, 0x1b120a, GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA)
       .setStrokeStyle(1, 0xf4d77a, 0.42);
     const topRule = this.add.rectangle(0, -panelHeight / 2 + 64, panelWidth - 54, 2, 0xd4af37, 0.64);
     const title = this.add.text(0, -panelHeight / 2 + 30, isAmunRa ? 'AMUN-RA AWAKENED!' : 'GOD UNLOCKED!', {
@@ -2964,12 +2970,13 @@ ${COMMIT_SHA}`, {
     }
 
     const source = this.textures.get(asset.key).getSourceImage();
-    const maxWidth = 168;
-    const maxHeight = 176;
+    const maxWidth = Math.min(158, GAME_WIDTH * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO);
+    const maxHeight = Math.min(166, GAME_HEIGHT * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO);
     const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
 
     return this.add.image(0, 0, asset.key)
-      .setDisplaySize(source.width * scale, source.height * scale);
+      .setDisplaySize(source.width * scale, source.height * scale)
+      .setAlpha(GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA);
   }
 
   createGodUnlockFallbackCoffin(tier = 1) {
@@ -2999,7 +3006,7 @@ ${COMMIT_SHA}`, {
     graphics.fillCircle(0, -height * 0.2, 5);
     graphics.lineBetween(-width * 0.25, height * 0.08, width * 0.25, height * 0.08);
     graphics.lineBetween(-width * 0.2, height * 0.28, width * 0.2, height * 0.28);
-    return graphics;
+    return graphics.setAlpha(GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA);
   }
 
   hideGodUnlockPresentation() {
