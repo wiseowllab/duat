@@ -150,10 +150,11 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - 14-god unlock progression.
 - Amun-Ra as the final god unlock.
 - Bomb stock generated from god unlocks.
-- Stage-based coffin asset mapping for all 14 god unlock stages. Future unique coffin PNGs should be placed at `docs/assets/images/coffins/coffin_01.png` through `docs/assets/images/coffins/coffin_14.png` (the project keeps coffin art under `assets/images/coffins/` rather than `assets/coffins/` so public-test builds can share the existing asset base).
-- The existing four tier-based coffin PNGs remain loaded as fallbacks until the 14 unique stage PNGs are added; the current coffin panel resolves each stage through the 14-stage map first, then falls back to the current tier image.
+- God-specific coffin asset mapping for all 14 god unlocks. Place the PNGs in `docs/assets/images/coffins/gods/` (the project keeps coffin art under `assets/images/coffins/` rather than `assets/coffins/` so public-test builds can share the existing asset base).
+- Required god coffin filenames are: `coffin_imsety.png`, `coffin_hapy.png`, `coffin_duamutef.png`, `coffin_qebehsenuef.png`, `coffin_anubis.png`, `coffin_thoth.png`, `coffin_maat.png`, `coffin_sekhmet.png`, `coffin_horus.png`, `coffin_isis.png`, `coffin_osiris.png`, `coffin_hathor.png`, `coffin_ra.png`, and `coffin_amun_ra.png`.
+- The existing four tier-based coffin PNGs remain loaded as fallbacks. If a god-specific PNG is missing or has not finished loading, the current coffin panel uses that god's tier image (`coffin_small.png`, `coffin_medium.png`, `coffin_large.png`, or `coffin_maximum.png`) without blocking gameplay.
 - God unlock feedback shown in the right-side Current Coffin panel (with tier-strength coffin/panel glow) so the play board remains fully visible.
-- Debug mode for testing meter progress, god unlocks, coffin stage mapping, coffin tier changes, bomb stock, and reset behavior.
+- Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, and reset behavior.
 
 
 ## Balance Tuning
@@ -173,7 +174,7 @@ To tune piece frequency later, adjust the relative `PIECE_WEIGHTS` numbers: high
 
 ## Current Desktop Layout
 
-The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses the existing tier-based coffin PNGs at a larger display size so Tier 1-4 changes are visibly distinct.
+The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses god-specific coffin PNGs when available, while the existing tier-based coffin PNGs remain fallback art so Tier 1-4 progression stays visible even if an optional god PNG is absent.
 
 God unlock presentation now appears in the right-side Current Coffin HUD panel (temporary awakening text + tier-based glow/pulse) so progression feedback does not cover the falling puzzle board, while final god illustration cinematics are still not implemented in this prototype.
 
@@ -338,12 +339,12 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   4. Qebehsenuef
   5. Anubis
   6. Thoth
-  7. Bastet
+  7. Maat
   8. Sekhmet
   9. Horus
   10. Isis
   11. Osiris
-  12. Set
+  12. Hathor
   13. Ra
   14. Amun-Ra
 - Amun-Ra is the final god.
@@ -352,7 +353,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - Tier 2: Medium Coffin
   - Tier 3: Large Coffin
   - Tier 4: Maximum Coffin
-- Tier-based coffin images update in the prominent current coffin panel as the current god tier changes.
+- God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image.
 - Each supported god unlock tries to add that god's bomb to the bomb stock.
 - Bomb stock is capped at four bombs.
 - Current meter requirements and scoring values are placeholder balance values.
