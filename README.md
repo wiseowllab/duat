@@ -153,7 +153,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - God-specific coffin asset mapping for all 14 god unlocks. Place the PNGs in `docs/assets/images/coffins/gods/` (the project keeps coffin art under `assets/images/coffins/` rather than `assets/coffins/` so public-test builds can share the existing asset base).
 - Required god coffin filenames are: `coffin_imsety.png`, `coffin_hapy.png`, `coffin_duamutef.png`, `coffin_qebehsenuef.png`, `coffin_anubis.png`, `coffin_thoth.png`, `coffin_maat.png`, `coffin_sekhmet.png`, `coffin_horus.png`, `coffin_isis.png`, `coffin_osiris.png`, `coffin_hathor.png`, `coffin_ra.png`, and `coffin_amun_ra.png`.
 - The existing four tier-based coffin PNGs remain loaded as fallbacks. If a god-specific PNG is missing or has not finished loading, the current coffin panel uses that god's tier image (`coffin_small.png`, `coffin_medium.png`, `coffin_large.png`, or `coffin_maximum.png`) without blocking gameplay.
-- God unlock feedback shown in the right-side Current Coffin panel (with tier-strength coffin/panel glow) so the play board remains fully visible.
+- God unlock feedback includes the right-side Current Coffin panel glow plus a centered dark-temple presentation showing `GOD UNLOCKED!`, the god name, tier, and the same god-specific coffin PNG used by the HUD. The presentation fades in, scales the coffin into place, holds briefly, then fades out automatically; board resolution waits for it before spawning the next active piece.
 - Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, and reset behavior.
 
 
@@ -176,7 +176,7 @@ To tune piece frequency later, adjust the relative `PIECE_WEIGHTS` numbers: high
 
 The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, and bomb stock. The current coffin panel uses god-specific coffin PNGs when available, while the existing tier-based coffin PNGs remain fallback art so Tier 1-4 progression stays visible even if an optional god PNG is absent.
 
-God unlock presentation now appears in the right-side Current Coffin HUD panel (temporary awakening text + tier-based glow/pulse) so progression feedback does not cover the falling puzzle board, while final god illustration cinematics are still not implemented in this prototype.
+God unlock presentation now appears as a centered dark temple panel in addition to the right-side Current Coffin HUD glow. It uses the same god-specific coffin PNG as the HUD, shows the awakened god name and tier, and automatically clears after a short fade/hold/fade sequence before the next active piece is spawned. If a single scoring or bomb event unlocks multiple gods, the prototype awards all unlocks and bombs but presents only the last/highest unlocked god to keep the flow simple and safe. Amun-Ra uses a stronger special presentation with `AMUN-RA AWAKENED!` and `DUAT COMPLETE!`, while the HUD remains clamped to `coffin_amun_ra.png` after final completion.
 
 ## Current Controls
 
@@ -347,13 +347,13 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   12. Hathor
   13. Ra
   14. Amun-Ra
-- Amun-Ra is the final god.
+- Amun-Ra is the final god and uses a special `AMUN-RA AWAKENED!` / `DUAT COMPLETE!` presentation when unlocked.
 - Gods are grouped into four coffin tiers:
   - Tier 1: Small Coffin
   - Tier 2: Medium Coffin
   - Tier 3: Large Coffin
   - Tier 4: Maximum Coffin
-- God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image. After all 14 gods are awakened, the HUD display is clamped to Amun-Ra and stays on `coffin_amun_ra.png` (or the Tier 4 maximum coffin fallback if that PNG is unavailable) instead of looping back to Imsety.
+- God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image. The centered god unlock presentation uses this same coffin asset selection. After all 14 gods are awakened, the HUD display is clamped to Amun-Ra and stays on `coffin_amun_ra.png` (or the Tier 4 maximum coffin fallback if that PNG is unavailable) instead of looping back to Imsety.
 - Each supported god unlock tries to add that god's bomb to the bomb stock.
 - Bomb stock is capped at four bombs.
 - Current meter requirements and scoring values are placeholder balance values.
