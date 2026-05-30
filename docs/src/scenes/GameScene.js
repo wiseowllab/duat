@@ -75,12 +75,13 @@ const GOD_UNLOCK_PRESENTATION_FADE_IN_MS = 250;
 const GOD_UNLOCK_PRESENTATION_HOLD_MS = 1050;
 const GOD_UNLOCK_PRESENTATION_FADE_OUT_MS = 350;
 const GOD_UNLOCK_PRESENTATION_FAILSAFE_MS = 2600;
-const GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA = 0.78;
-const GOD_UNLOCK_PRESENTATION_SHADE_ALPHA = 0.28;
-const GOD_UNLOCK_PRESENTATION_PANEL_ALPHA = 0.58;
-const GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA = 0.46;
-const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO = 0.52;
-const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO = 0.68;
+const GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA = 0.65;
+const GOD_UNLOCK_PRESENTATION_AMUN_RA_COFFIN_ALPHA = 0.75;
+const GOD_UNLOCK_PRESENTATION_SHADE_ALPHA = 0.18;
+const GOD_UNLOCK_PRESENTATION_PANEL_ALPHA = 0.44;
+const GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA = 0.32;
+const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO = 0.42;
+const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO = 0.54;
 const SOUL_ASCENT_DEPTH = 45;
 const SOUL_FLOAT_UP_MS = 170;
 const SOUL_TO_HUD_MS = 300;
@@ -2950,7 +2951,7 @@ ${COMMIT_SHA}`, {
     }).setOrigin(0.5).setStroke('#160d06', 3);
     const flash = this.add.ellipse(0, 33, 184, 220, isAmunRa ? 0xfff4b0 : 0xd4af37, 0.34)
       .setStrokeStyle(2, 0xffef9a, isAmunRa ? 0.44 : 0.24);
-    const coffin = this.createGodUnlockCoffinImage(asset, god.tier);
+    const coffin = this.createGodUnlockCoffinImage(asset, god.tier, isAmunRa);
     coffin.setPosition(0, 38);
     const footer = this.add.text(0, panelHeight / 2 - 34, isAmunRa ? 'DUAT COMPLETE!' : 'The coffin awakens.', {
       fontFamily: 'Georgia, Times New Roman, serif',
@@ -2964,25 +2965,31 @@ ${COMMIT_SHA}`, {
     return { container, coffin, flash };
   }
 
-  createGodUnlockCoffinImage(asset, tier) {
+  createGodUnlockCoffinImage(asset, tier, isAmunRa) {
+    const coffinAlpha = this.getGodUnlockCoffinAlpha(isAmunRa);
+
     if (!asset || !this.textures.exists(asset.key)) {
-      return this.createGodUnlockFallbackCoffin(tier);
+      return this.createGodUnlockFallbackCoffin(tier, coffinAlpha);
     }
 
     const source = this.textures.get(asset.key).getSourceImage();
-    const maxWidth = Math.min(158, GAME_WIDTH * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO);
-    const maxHeight = Math.min(166, GAME_HEIGHT * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO);
+    const maxWidth = Math.min(126, GAME_WIDTH * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO);
+    const maxHeight = Math.min(133, GAME_HEIGHT * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO);
     const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
 
     return this.add.image(0, 0, asset.key)
       .setDisplaySize(source.width * scale, source.height * scale)
-      .setAlpha(GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA);
+      .setAlpha(coffinAlpha);
   }
 
-  createGodUnlockFallbackCoffin(tier = 1) {
+  getGodUnlockCoffinAlpha(isAmunRa) {
+    return isAmunRa ? GOD_UNLOCK_PRESENTATION_AMUN_RA_COFFIN_ALPHA : GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA;
+  }
+
+  createGodUnlockFallbackCoffin(tier = 1, alpha = GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA) {
     const graphics = this.add.graphics();
-    const width = 92 + tier * 8;
-    const height = 142 + tier * 8;
+    const width = (92 + tier * 8) * 0.82;
+    const height = (142 + tier * 8) * 0.82;
     const halfW = width / 2;
     const halfH = height / 2;
     const bodyPoints = [
@@ -3006,7 +3013,7 @@ ${COMMIT_SHA}`, {
     graphics.fillCircle(0, -height * 0.2, 5);
     graphics.lineBetween(-width * 0.25, height * 0.08, width * 0.25, height * 0.08);
     graphics.lineBetween(-width * 0.2, height * 0.28, width * 0.2, height * 0.28);
-    return graphics.setAlpha(GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA);
+    return graphics.setAlpha(alpha);
   }
 
   hideGodUnlockPresentation() {
