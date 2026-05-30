@@ -612,23 +612,38 @@ export class Hud {
   }
 
   updateCoffin(state) {
-    const { currentGod, currentTier, progress, unlockedCount, totalGods, isComplete } = state;
+    const {
+      currentGod,
+      currentTier,
+      coffinDisplayGod,
+      currentDisplayGod,
+      coffinDisplayTier,
+      currentDisplayTier,
+      progress,
+      unlockedCount,
+      totalGods,
+      isComplete,
+      isDisplayComplete,
+    } = state;
+    const displayGod = coffinDisplayGod ?? currentDisplayGod ?? currentGod;
+    const displayTier = coffinDisplayTier ?? currentDisplayTier ?? currentTier;
+    const displayComplete = isDisplayComplete ?? isComplete;
 
-    if (isComplete) {
+    if (displayComplete) {
       this.tierText.setText('棺 4 — DUAT COMPLETE');
       this.godText.setText('神: すべて覚醒');
       this.coffinText.setText('Meter: 完了');
-      this.drawCoffinVisual(currentTier, currentGod);
+      this.drawCoffinVisual(displayTier, displayGod);
     } else {
-      this.tierText.setText(`Tier ${currentTier.tier} / ${this.getCoffinTierLabel(currentTier)}`);
-      this.godText.setText(`God: ${currentGod.name}`);
+      this.tierText.setText(`Tier ${displayTier.tier} / ${this.getCoffinTierLabel(displayTier)}`);
+      this.godText.setText(`God: ${displayGod.name}`);
       this.coffinText.setText(`Meter: ${progress.value} / ${progress.required}`);
-      this.drawCoffinVisual(currentTier, currentGod);
+      this.drawCoffinVisual(displayTier, displayGod);
     }
 
     this.unlockedText.setText(`Awake: ${unlockedCount} / ${totalGods}`);
     this.updateCoffinBar(progress.ratio);
-    this.pulseCoffinBarOnGain(currentGod, progress);
+    this.pulseCoffinBarOnGain(displayGod, progress);
     this.updateAwakenedCoffinPresence(unlockedCount);
   }
 

@@ -67,14 +67,17 @@ export class CoffinMeter {
   }
 
   getCurrentTier() {
-    const currentGod = this.getCurrentGod();
-    return currentGod
+    return this.createTierState(this.getCurrentGod(), this.currentGodIndex);
+  }
+
+  createTierState(god, index = this.currentGodIndex) {
+    return god
       ? {
-        tier: currentGod.tier,
-        tierName: currentGod.tierName,
-        coffinSize: currentGod.coffinSize,
-        stage: currentGod.stage ?? this.currentGodIndex + 1,
-        godId: currentGod.id,
+        tier: god.tier,
+        tierName: god.tierName,
+        coffinSize: god.coffinSize,
+        stage: god.stage ?? index + 1,
+        godId: god.id,
       }
       : {
         tier: 4,
@@ -83,6 +86,24 @@ export class CoffinMeter {
         stage: this.gods.length,
         godId: this.gods.at(-1)?.id,
       };
+  }
+
+  getCoffinDisplayGod() {
+    if (this.gods.length === 0) {
+      return null;
+    }
+
+    if (this.isDisplayComplete()) {
+      return this.gods.at(-1);
+    }
+
+    return this.getCurrentGod() ?? this.gods.at(-1);
+  }
+
+  getCoffinDisplayTier() {
+    const displayGod = this.getCoffinDisplayGod();
+    const displayIndex = displayGod ? this.gods.findIndex((god) => god.id === displayGod.id) : this.currentGodIndex;
+    return this.createTierState(displayGod, displayIndex >= 0 ? displayIndex : this.currentGodIndex);
   }
 
   getProgress() {
@@ -112,15 +133,24 @@ export class CoffinMeter {
     return this.currentGodIndex >= this.gods.length;
   }
 
+  isDisplayComplete() {
+    return this.isComplete() || this.getUnlockedCount() >= this.gods.length;
+  }
+
   getState() {
     return {
       currentGod: this.getCurrentGod(),
       currentTier: this.getCurrentTier(),
+      coffinDisplayGod: this.getCoffinDisplayGod(),
+      currentDisplayGod: this.getCoffinDisplayGod(),
+      coffinDisplayTier: this.getCoffinDisplayTier(),
+      currentDisplayTier: this.getCoffinDisplayTier(),
       progress: this.getProgress(),
       unlockedGods: this.getUnlockedGods(),
       unlockedCount: this.getUnlockedCount(),
       totalGods: this.gods.length,
       isComplete: this.isComplete(),
+      isDisplayComplete: this.isDisplayComplete(),
     };
   }
 }
