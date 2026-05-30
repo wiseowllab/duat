@@ -353,7 +353,7 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - Tier 2: Medium Coffin
   - Tier 3: Large Coffin
   - Tier 4: Maximum Coffin
-- God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image.
+- God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image. After all 14 gods are awakened, the HUD display is clamped to Amun-Ra and stays on `coffin_amun_ra.png` (or the Tier 4 maximum coffin fallback if that PNG is unavailable) instead of looping back to Imsety.
 - Each supported god unlock tries to add that god's bomb to the bomb stock.
 - Bomb stock is capped at four bombs.
 - Current meter requirements and scoring values are placeholder balance values.
@@ -421,7 +421,7 @@ Required coffin PNG filenames:
 - `coffin_large.png`
 - `coffin_maximum.png`
 
-The current prototype uses four tier-based coffin images, not one coffin image per god. Use transparent backgrounds for replacement coffin art.
+The current prototype loads god-specific coffin images for the 14-god progression and keeps the four tier-based coffin images as fallbacks. Use transparent backgrounds for replacement coffin art.
 
 ## Troubleshooting
 

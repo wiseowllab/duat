@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { CoffinMeter } from '../docs/src/core/CoffinMeter.js';
 import { ScoreSystem } from '../docs/src/core/ScoreSystem.js';
+import { GODS } from '../docs/src/data/gods.js';
 
 const TEST_GODS = [
   {
@@ -54,6 +55,37 @@ test('coffin meter can finish all placeholder gods without blocking play state',
   assert.equal(meter.isComplete(), true);
   assert.equal(meter.getState().currentGod, null);
   assert.equal(meter.getState().unlockedCount, 2);
+});
+
+
+test('coffin display god clamps to the final god after progression completes', () => {
+  const meter = new CoffinMeter(TEST_GODS);
+
+  meter.addPoints(1000);
+  const state = meter.getState();
+
+  assert.equal(state.currentGod, null);
+  assert.equal(state.coffinDisplayGod.name, 'Hapy');
+  assert.equal(state.currentDisplayGod.name, 'Hapy');
+  assert.equal(state.coffinDisplayTier.godId, 'hapy');
+  assert.equal(state.isDisplayComplete, true);
+});
+
+
+test('full 14-god coffin display stays on Amun-Ra even if gameplay index wraps', () => {
+  const meter = new CoffinMeter(GODS);
+
+  meter.addPoints(999999);
+  assert.equal(meter.getState().coffinDisplayGod.id, 'amun_ra');
+  assert.equal(meter.getState().coffinDisplayTier.godId, 'amun_ra');
+
+  meter.currentGodIndex = 0;
+  const wrappedState = meter.getState();
+
+  assert.equal(wrappedState.currentGod.id, 'imsety');
+  assert.equal(wrappedState.coffinDisplayGod.id, 'amun_ra');
+  assert.equal(wrappedState.coffinDisplayTier.godId, 'amun_ra');
+  assert.equal(wrappedState.isDisplayComplete, true);
 });
 
 test('canopic clears convert more score into coffin meter than same-type clears', () => {
