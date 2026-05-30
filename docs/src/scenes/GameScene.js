@@ -75,11 +75,11 @@ const GOD_UNLOCK_PRESENTATION_FADE_IN_MS = 250;
 const GOD_UNLOCK_PRESENTATION_HOLD_MS = 1050;
 const GOD_UNLOCK_PRESENTATION_FADE_OUT_MS = 350;
 const GOD_UNLOCK_PRESENTATION_FAILSAFE_MS = 2600;
-const GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA = 0.65;
-const GOD_UNLOCK_PRESENTATION_AMUN_RA_COFFIN_ALPHA = 0.75;
-const GOD_UNLOCK_PRESENTATION_SHADE_ALPHA = 0.18;
-const GOD_UNLOCK_PRESENTATION_PANEL_ALPHA = 0.44;
-const GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA = 0.32;
+const GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA = 0.4;
+const GOD_UNLOCK_PRESENTATION_AMUN_RA_COFFIN_ALPHA = 0.5;
+const GOD_UNLOCK_PRESENTATION_SHADE_ALPHA = 0.48;
+const GOD_UNLOCK_PRESENTATION_PANEL_ALPHA = 0.5;
+const GOD_UNLOCK_PRESENTATION_INNER_PANEL_ALPHA = 0.46;
 const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO = 0.42;
 const GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO = 0.54;
 const SOUL_ASCENT_DEPTH = 45;
@@ -2973,8 +2973,8 @@ ${COMMIT_SHA}`, {
     }
 
     const source = this.textures.get(asset.key).getSourceImage();
-    const maxWidth = Math.min(126, GAME_WIDTH * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO);
-    const maxHeight = Math.min(133, GAME_HEIGHT * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO);
+    const maxWidth = Math.min(108, GAME_WIDTH * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_WIDTH_RATIO);
+    const maxHeight = Math.min(114, GAME_HEIGHT * GOD_UNLOCK_PRESENTATION_MAX_COFFIN_HEIGHT_RATIO);
     const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
 
     return this.add.image(0, 0, asset.key)
@@ -2988,8 +2988,8 @@ ${COMMIT_SHA}`, {
 
   createGodUnlockFallbackCoffin(tier = 1, alpha = GOD_UNLOCK_PRESENTATION_COFFIN_ALPHA) {
     const graphics = this.add.graphics();
-    const width = (92 + tier * 8) * 0.82;
-    const height = (142 + tier * 8) * 0.82;
+    const width = (92 + tier * 8) * 0.7;
+    const height = (142 + tier * 8) * 0.7;
     const halfW = width / 2;
     const halfH = height / 2;
     const bodyPoints = [
