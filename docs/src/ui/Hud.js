@@ -1,4 +1,4 @@
-import { getCoffinAssetForStage } from '../data/coffins.js';
+import { getCoffinAssetForGod } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
@@ -793,8 +793,8 @@ export class Hud {
     this.currentCoffinTier = currentTier;
     this.currentCoffinGod = currentGod;
     const stage = currentGod?.stage ?? currentTier?.stage ?? 1;
-    const asset = getCoffinAssetForStage(stage, this.scene, { debug: this.isDebugMode });
-    const nextVisualId = `${stage}:${asset.key}`;
+    const asset = getCoffinAssetForGod(currentGod, this.scene, { debug: this.isDebugMode });
+    const nextVisualId = `${currentGod?.id ?? stage}:${asset.key}`;
 
     if (this.coffinContainer && this.currentCoffinVisualId === nextVisualId) {
       return;
