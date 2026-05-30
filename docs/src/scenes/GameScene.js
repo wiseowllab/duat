@@ -13,7 +13,7 @@ import {
   SOFT_DROP_FALL_MS,
 } from '../data/constants.js';
 import { createRandomPairTypes, getPieceAsset, PIECE_COLORS, preloadPieceAssets } from '../data/pieces.js';
-import { preloadCoffinAssets } from '../data/coffins.js';
+import { getCoffinAssetForGod, preloadCoffinAssets } from '../data/coffins.js';
 import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
@@ -70,6 +70,11 @@ const PURE_CANOPIC_PULSE_DURATION_MS = 320;
 const PURE_CANOPIC_HIT_STOP_MS = 210;
 const GOD_AWAKENING_PRESENCE_MS = 680;
 const GOD_AWAKENING_RIPPLE_MAX_RADIUS = 260;
+const GOD_UNLOCK_PRESENTATION_DEPTH = 72;
+const GOD_UNLOCK_PRESENTATION_FADE_IN_MS = 250;
+const GOD_UNLOCK_PRESENTATION_HOLD_MS = 1050;
+const GOD_UNLOCK_PRESENTATION_FADE_OUT_MS = 350;
+const GOD_UNLOCK_PRESENTATION_FAILSAFE_MS = 2600;
 const SOUL_ASCENT_DEPTH = 45;
 const SOUL_FLOAT_UP_MS = 170;
 const SOUL_TO_HUD_MS = 300;
@@ -363,6 +368,9 @@ export class GameScene extends Phaser.Scene {
     this.godAwakenHideTimer = null;
     this.godAwakenTween = null;
     this.godAwakenFlashTween = null;
+    this.godAwakenCoffinTween = null;
+    this.godAwakenResolve = null;
+    this.godAwakenFailsafeTimer = null;
     this.isDangerState = false;
     this.pendingBgmUpdateAfterResolution = false;
     this.lastBgmDebugState = null;
@@ -1436,6 +1444,7 @@ ${COMMIT_SHA}`, {
     this.clearChainPopup();
     this.clearPureCanopicPopup();
     this.clearPureCanopicPulse();
+    this.clearGodUnlockPresentation();
 
     if (this.feedbackTimer) {
       this.feedbackTimer.remove(false);
@@ -2017,7 +2026,7 @@ ${COMMIT_SHA}`, {
       this.hud.showClearFeedback(clearedSameType, clearedCanopicSet, this.chainCount);
     }
 
-    this.showUnlockEvents(unlockEvents);
+    await this.showUnlockEvents(unlockEvents);
 
     this.renderBoard();
   }
@@ -2136,7 +2145,7 @@ ${COMMIT_SHA}`, {
       this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
       this.hud.showBombUsed(result.bomb, changedCount);
       this.showBombFeedback(result.bomb, changedCount);
-      this.showUnlockEvents(unlockEvents);
+      await this.showUnlockEvents(unlockEvents);
       await this.resolveBoardClears();
     } finally {
       this.isResolvingClears = false;
@@ -2824,12 +2833,12 @@ ${COMMIT_SHA}`, {
     this.showDebugFeedback('デバッグ進行リセット');
   }
 
-  showUnlockEvents(unlockEvents) {
+  async showUnlockEvents(unlockEvents) {
     if (unlockEvents.length === 0) {
       return;
     }
 
-    this.bgm.duck(800, 0.4);
+    this.bgm.duck(1800, 0.34);
     this.sfx.playGodUnlock();
     const unlockEventsWithBombInfo = this.addBombsForUnlockEvents(unlockEvents);
     this.hud.showGodUnlocked(unlockEventsWithBombInfo);
@@ -2839,6 +2848,216 @@ ${COMMIT_SHA}`, {
         this.playGodAwakeningPresence(unlockEvent?.god?.id);
       });
     });
+
+    await this.showGodUnlockPresentation(unlockEventsWithBombInfo[unlockEventsWithBombInfo.length - 1]);
+  }
+
+  showGodUnlockPresentation(unlockEvent) {
+    const god = unlockEvent?.god;
+    if (!god) {
+      return Promise.resolve();
+    }
+
+    this.clearGodUnlockPresentation();
+
+    return new Promise((resolve) => {
+      this.godAwakenResolve = resolve;
+      const isAmunRa = god.id === 'amun_ra';
+      const overlay = this.createGodUnlockOverlay(god, isAmunRa);
+      this.godAwakenOverlay = overlay;
+
+      overlay.container.setAlpha(0);
+      overlay.coffin?.setScale(0.88);
+      overlay.flash?.setAlpha(isAmunRa ? 0.48 : 0.34);
+
+      this.godAwakenTween = this.tweens.add({
+        targets: overlay.container,
+        alpha: 1,
+        duration: GOD_UNLOCK_PRESENTATION_FADE_IN_MS,
+        ease: 'Sine.easeOut',
+      });
+
+      this.godAwakenCoffinTween = this.tweens.add({
+        targets: overlay.coffin,
+        scaleX: 1,
+        scaleY: 1,
+        duration: 360,
+        ease: 'Back.easeOut',
+      });
+
+      this.godAwakenFlashTween = this.tweens.add({
+        targets: overlay.flash,
+        alpha: 0.08,
+        scaleX: isAmunRa ? 1.22 : 1.12,
+        scaleY: isAmunRa ? 1.22 : 1.12,
+        duration: isAmunRa ? 620 : 460,
+        yoyo: true,
+        repeat: isAmunRa ? 1 : 0,
+        ease: 'Sine.easeInOut',
+      });
+
+      this.godAwakenHideTimer = this.time.delayedCall(GOD_UNLOCK_PRESENTATION_FADE_IN_MS + GOD_UNLOCK_PRESENTATION_HOLD_MS, () => {
+        this.hideGodUnlockPresentation();
+      });
+
+      this.godAwakenFailsafeTimer = this.time.delayedCall(GOD_UNLOCK_PRESENTATION_FAILSAFE_MS, () => {
+        this.clearGodUnlockPresentation();
+      });
+    });
+  }
+
+  createGodUnlockOverlay(god, isAmunRa) {
+    const centerX = GAME_WIDTH / 2;
+    const centerY = GAME_HEIGHT / 2;
+    const panelWidth = isAmunRa ? 334 : 304;
+    const panelHeight = isAmunRa ? 344 : 320;
+    const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
+    const container = this.add.container(centerX, centerY).setDepth(GOD_UNLOCK_PRESENTATION_DEPTH);
+
+    const shade = this.add.rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x020100, 0.34);
+    const outerGlow = this.add.ellipse(0, 10, panelWidth + 80, panelHeight + 86, isAmunRa ? 0xffef9a : 0xd4af37, isAmunRa ? 0.14 : 0.09);
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x100a06, 0.96)
+      .setStrokeStyle(4, isAmunRa ? 0xffef9a : 0xd4af37, 0.94);
+    const innerPanel = this.add.rectangle(0, 0, panelWidth - 18, panelHeight - 18, 0x1b120a, 0.72)
+      .setStrokeStyle(1, 0xf4d77a, 0.42);
+    const topRule = this.add.rectangle(0, -panelHeight / 2 + 64, panelWidth - 54, 2, 0xd4af37, 0.64);
+    const title = this.add.text(0, -panelHeight / 2 + 30, isAmunRa ? 'AMUN-RA AWAKENED!' : 'GOD UNLOCKED!', {
+      fontFamily: 'Georgia, Times New Roman, serif',
+      fontSize: isAmunRa ? '25px' : '24px',
+      color: '#ffe8a8',
+      fontStyle: 'bold',
+      letterSpacing: 2,
+      align: 'center',
+    }).setOrigin(0.5).setStroke('#2a1707', 5);
+    const name = this.add.text(0, -panelHeight / 2 + 88, god.name, {
+      fontFamily: 'Georgia, Times New Roman, serif',
+      fontSize: isAmunRa ? '27px' : '25px',
+      color: isAmunRa ? '#fff2b8' : '#f4d77a',
+      fontStyle: 'bold',
+      align: 'center',
+    }).setOrigin(0.5).setStroke('#160d06', 4);
+    const tier = this.add.text(0, -panelHeight / 2 + 116, `Tier ${god.tier} — ${god.tierName}`, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '13px',
+      color: '#e9d9b2',
+      align: 'center',
+    }).setOrigin(0.5).setStroke('#160d06', 3);
+    const flash = this.add.ellipse(0, 33, 184, 220, isAmunRa ? 0xfff4b0 : 0xd4af37, 0.34)
+      .setStrokeStyle(2, 0xffef9a, isAmunRa ? 0.44 : 0.24);
+    const coffin = this.createGodUnlockCoffinImage(asset, god.tier);
+    coffin.setPosition(0, 38);
+    const footer = this.add.text(0, panelHeight / 2 - 34, isAmunRa ? 'DUAT COMPLETE!' : 'The coffin awakens.', {
+      fontFamily: 'Georgia, Times New Roman, serif',
+      fontSize: isAmunRa ? '22px' : '15px',
+      color: isAmunRa ? '#fff2b8' : '#d7c7a4',
+      fontStyle: isAmunRa ? 'bold' : 'normal',
+      align: 'center',
+    }).setOrigin(0.5).setStroke('#160d06', isAmunRa ? 5 : 3);
+
+    container.add([shade, outerGlow, panel, innerPanel, topRule, title, name, tier, flash, coffin, footer]);
+    return { container, coffin, flash };
+  }
+
+  createGodUnlockCoffinImage(asset, tier) {
+    if (!asset || !this.textures.exists(asset.key)) {
+      return this.createGodUnlockFallbackCoffin(tier);
+    }
+
+    const source = this.textures.get(asset.key).getSourceImage();
+    const maxWidth = 168;
+    const maxHeight = 176;
+    const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
+
+    return this.add.image(0, 0, asset.key)
+      .setDisplaySize(source.width * scale, source.height * scale);
+  }
+
+  createGodUnlockFallbackCoffin(tier = 1) {
+    const graphics = this.add.graphics();
+    const width = 92 + tier * 8;
+    const height = 142 + tier * 8;
+    const halfW = width / 2;
+    const halfH = height / 2;
+    const bodyPoints = [
+      { x: -width * 0.22, y: -halfH },
+      { x: width * 0.22, y: -halfH },
+      { x: halfW, y: -height * 0.22 },
+      { x: halfW * 0.72, y: halfH - 8 },
+      { x: width * 0.24, y: halfH },
+      { x: -width * 0.24, y: halfH },
+      { x: -halfW * 0.72, y: halfH - 8 },
+      { x: -halfW, y: -height * 0.22 },
+    ];
+
+    graphics.fillStyle(0x3a2414, 1);
+    graphics.fillPoints(bodyPoints, true);
+    graphics.lineStyle(4, 0xd4af37, 0.95);
+    graphics.strokePoints(bodyPoints, true);
+    graphics.lineStyle(2, 0xf4d77a, 0.72);
+    graphics.strokeEllipse(0, -height * 0.18, width * 0.46, height * 0.2);
+    graphics.fillStyle(0xd4af37, 0.9);
+    graphics.fillCircle(0, -height * 0.2, 5);
+    graphics.lineBetween(-width * 0.25, height * 0.08, width * 0.25, height * 0.08);
+    graphics.lineBetween(-width * 0.2, height * 0.28, width * 0.2, height * 0.28);
+    return graphics;
+  }
+
+  hideGodUnlockPresentation() {
+    if (!this.godAwakenOverlay?.container) {
+      this.clearGodUnlockPresentation();
+      return;
+    }
+
+    if (this.godAwakenHideTimer) {
+      this.godAwakenHideTimer.remove(false);
+      this.godAwakenHideTimer = null;
+    }
+
+    if (this.godAwakenTween) {
+      this.godAwakenTween.stop();
+      this.godAwakenTween = null;
+    }
+
+    this.godAwakenTween = this.tweens.add({
+      targets: this.godAwakenOverlay.container,
+      alpha: 0,
+      duration: GOD_UNLOCK_PRESENTATION_FADE_OUT_MS,
+      ease: 'Sine.easeIn',
+      onComplete: () => this.clearGodUnlockPresentation(),
+    });
+  }
+
+  clearGodUnlockPresentation() {
+    if (this.godAwakenHideTimer) {
+      this.godAwakenHideTimer.remove(false);
+      this.godAwakenHideTimer = null;
+    }
+    if (this.godAwakenFailsafeTimer) {
+      this.godAwakenFailsafeTimer.remove(false);
+      this.godAwakenFailsafeTimer = null;
+    }
+    if (this.godAwakenTween) {
+      this.godAwakenTween.stop();
+      this.godAwakenTween = null;
+    }
+    if (this.godAwakenFlashTween) {
+      this.godAwakenFlashTween.stop();
+      this.godAwakenFlashTween = null;
+    }
+    if (this.godAwakenCoffinTween) {
+      this.godAwakenCoffinTween.stop();
+      this.godAwakenCoffinTween = null;
+    }
+    if (this.godAwakenOverlay?.container) {
+      this.godAwakenOverlay.container.destroy(true);
+    }
+    this.godAwakenOverlay = null;
+
+    const resolve = this.godAwakenResolve;
+    this.godAwakenResolve = null;
+    if (resolve) {
+      resolve();
+    }
   }
 
   playGodAwakeningPresence(godId) {
