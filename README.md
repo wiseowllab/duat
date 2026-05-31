@@ -142,7 +142,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Enter/Space confirm for selected bomb slots.
 - Esc cancel for bomb selection.
 - Bomb area previews and bomb area flashes.
-- Shrine panel v0.1 in the HUD: awakened gods appear as mini coffin PNGs, unlocked gods with bombs still in stock are full color, used/unstocked awakened gods stay visible but dim, and the selected bomb's god is highlighted when a bomb is selected. The Shrine is display-only for now and does not change bomb stock rules, selection, keyboard controls, or touch controls.
+- Shrine panel v0.1 in the HUD: awakened gods appear as mini coffin PNGs, unlocked unused gods are full color, unlocked used gods are dimmed, locked gods are hidden, and the selected bomb's god is highlighted when a bomb is selected. The Shrine is display-only for now and has no manual interaction.
 
 ### Assets, Progression, and Debug
 
@@ -175,7 +175,7 @@ To tune piece frequency later, adjust the relative `PIECE_WEIGHTS` numbers: high
 
 ## Current Desktop Layout
 
-The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, bomb stock, and a compact display-only Shrine panel. The current coffin panel uses god-specific coffin PNGs when available, while the existing tier-based coffin PNGs remain fallback art so Tier 1-4 progression stays visible even if an optional god PNG is absent. The Shrine uses the same per-god coffin PNGs at mini-icon size: locked gods are hidden, unlocked unused gods are shown in full color, and unlocked gods whose bombs are no longer in stock are dimmed. Shrine icons are not clickable in this version, so existing bomb stock limits and bomb selection behavior are unchanged.
+The desktop Phaser canvas is wider than the 6x12 board so the gameplay area and HUD do not compete for the same narrow sidebar. The board remains unchanged, while the HUD is split into readable sandstone-style panels for score/chain/level/sound, NEXT preview, current coffin progress, bomb stock, and a compact display-only Shrine panel. The current coffin panel uses god-specific coffin PNGs when available, while the existing tier-based coffin PNGs remain fallback art so Tier 1-4 progression stays visible even if an optional god PNG is absent. The Shrine uses the same per-god coffin PNGs at mini-icon size: locked gods are hidden, unlocked unused gods are shown in full color, and unlocked gods whose bombs have been activated are dimmed. Shrine icons are not clickable in this version, so existing bomb selection behavior is unchanged.
 
 God unlock presentation now appears as a centered dark temple panel in addition to the right-side Current Coffin HUD glow. It uses the same god-specific coffin PNG as the HUD, shows the awakened god name and tier, and automatically clears after a short fade/hold/fade sequence before the next active piece is spawned. The panel and coffin art are intentionally semi-transparent and slightly reduced in size so the board remains faintly visible behind the celebration while text stays readable. If a single scoring or bomb event unlocks multiple gods, the prototype awards all unlocks and bombs but presents only the last/highest unlocked god to keep the flow simple and safe. Amun-Ra uses a stronger special presentation with `AMUN-RA AWAKENED!` and `DUAT COMPLETE!`, while still allowing the board to show through and keeping the HUD clamped to `coffin_amun_ra.png` after final completion.
 
@@ -281,7 +281,7 @@ The page uses responsive CSS, canvas scaling, compact touch-control rows, and `t
 
 ## Current Bomb System
 
-Bombs are awarded from god unlocks and stored in a four-slot bomb stock. Selecting a bomb previews its area; confirming consumes the bomb and then runs gravity and normal clear resolution.
+Bombs are awarded from god unlocks and stored in a four-slot bomb stock. Selecting a bomb previews its area; confirming consumes the bomb, marks that god as used in the Shrine, and then runs gravity and normal clear resolution. When a new god unlocks while all four stock slots are full, the oldest unused stocked bomb is automatically removed, that god remains unlocked and unused in the Shrine, and the newly unlocked god's bomb is equipped immediately. The HUD shows a short `returned to Shrine` / `equipped` notice for this auto-replacement.
 
 ### Tier 1 Bombs
 
@@ -355,9 +355,9 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - Tier 3: Large Coffin
   - Tier 4: Maximum Coffin
 - God-specific coffin images update in the prominent current coffin panel as the current god changes; missing god PNGs fall back to the current tier image. The centered god unlock presentation uses this same coffin asset selection. After all 14 gods are awakened, the HUD display is clamped to Amun-Ra and stays on `coffin_amun_ra.png` (or the Tier 4 maximum coffin fallback if that PNG is unavailable) instead of looping back to Imsety.
-- Each supported god unlock tries to add that god's bomb to the bomb stock.
-- Bomb stock is capped at four bombs.
-- The Shrine panel infers each awakened god's unused/used visual state from current bomb stock: if that god's bomb is still stocked, the coffin appears full color; if not, the coffin remains visible but dimmed.
+- Each supported god unlock adds that god's bomb to the bomb stock.
+- Bomb stock is capped at four bombs. If stock is full, the oldest unused stocked bomb is pushed out, that god returns to the Shrine as unused, and the newest unlocked god's bomb is equipped immediately.
+- Shrine state meanings: locked gods are hidden; unlocked unused gods are visible in full color; unlocked used gods are visible but dimmed. A god can be unused even when its bomb is no longer in stock because auto-replacement returns unused bombs to the Shrine rather than marking them used.
 - Current meter requirements and scoring values are placeholder balance values.
 
 ## Current Audio

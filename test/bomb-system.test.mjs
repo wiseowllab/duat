@@ -149,12 +149,20 @@ test('using a bomb removes it from stock', () => {
   assert.deepEqual(bombs.getStock().map((bomb) => bomb.type), ['horizontal_clear']);
 });
 
-test('bomb stock holds at most four supported tier 1 bombs', () => {
+test('full bomb stock replaces the oldest unused bomb with the newest god bomb', () => {
   const bombs = new BombSystem();
 
-  [IMSETY, HAPY, IMSETY, HAPY, IMSETY].forEach((god) => bombs.addBombForGod(god));
+  [IMSETY, HAPY, ANUBIS, THOTH].forEach((god) => bombs.addBombForGod(god));
+  const grantedBomb = bombs.addBombForGod(SEKHMET);
 
   assert.equal(bombs.getStock().length, 4);
+  assert.deepEqual(bombs.getStock().map((bomb) => bomb.godId), ['hapy', 'anubis', 'thoth', 'sekhmet']);
+  assert.deepEqual(grantedBomb.replacedBomb, {
+    type: 'vertical_clear',
+    name: 'Vertical',
+    godId: 'imsety',
+    godName: 'Imsety',
+  });
 });
 
 test('anubis brain_clear clears only brain pieces in the target row and column', () => {
