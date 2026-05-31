@@ -36,13 +36,14 @@ const HUD_TOP_HEIGHT = 74;
 const HUD_NEXT_HEIGHT = 72;
 const HUD_COFFIN_HEIGHT = 200;
 const HUD_UNDERWORLD_HEIGHT = 56;
-const HUD_AWAKENED_HEIGHT = 64;
+const HUD_AWAKENED_HEIGHT = 58;
 const HUD_BOMB_HEIGHT = 82;
-const HUD_REVIVED_HEIGHT = 68;
+const HUD_SHRINE_HEIGHT = 58;
+const HUD_REVIVED_HEIGHT = 60;
 const HUD_SECTION_GAP = 6;
 const HUD_PANEL_INSET = 6;
 const HUD_STACK_START_Y = 40;
-const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_UNDERWORLD_HEIGHT + HUD_AWAKENED_HEIGHT + HUD_BOMB_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 6);
+const HUD_TOWER_HEIGHT = HUD_TOP_HEIGHT + HUD_NEXT_HEIGHT + HUD_COFFIN_HEIGHT + HUD_UNDERWORLD_HEIGHT + HUD_AWAKENED_HEIGHT + HUD_BOMB_HEIGHT + HUD_SHRINE_HEIGHT + HUD_REVIVED_HEIGHT + (HUD_SECTION_GAP * 7);
 const SECTION_X = 12;
 const SECTION_HEADER_Y = 5;
 
@@ -80,6 +81,11 @@ const AWAKENED_SIGILS_PER_ROW = 7;
 const AWAKENED_SIGIL_RADIUS = 4;
 const AWAKENED_SIGIL_SPACING_X = 18;
 const AWAKENED_SIGIL_SPACING_Y = 12;
+const SHRINE_ICON_SIZE = 20;
+const SHRINE_ICON_COLUMNS = 7;
+const SHRINE_ICON_SPACING_X = 19;
+const SHRINE_ICON_SPACING_Y = 19;
+const SHRINE_USED_ALPHA = 0.5;
 
 export class Hud {
   constructor(scene, x, y, width = HUD_WIDTH) {
@@ -117,6 +123,7 @@ export class Hud {
     this.revivedIcons = [];
     this.revivedIconTweens = [];
     this.scene.events?.on('coffin-assets-ready', this.refreshCoffinVisual, this);
+    this.scene.events?.on('coffin-assets-ready', this.renderShrine, this);
     this.revivedEyeTimers = [];
     this.revivedDepthLevel = 1;
     this.depthAtmosphereTween = null;
@@ -124,6 +131,11 @@ export class Hud {
     this.awakenedSigilNodes = [];
     this.awakenedSigilPulseTweens = [];
     this.awakenedGodIdSet = new Set();
+    this.shrineIcons = [];
+    this.shrinePulseTweens = [];
+    this.lastUnlockedGodsForShrine = [];
+    this.lastBombStockForShrine = [];
+    this.lastSelectedBombSlotForShrine = null;
 
     this.create();
   }
@@ -154,6 +166,7 @@ export class Hud {
     const coffinSectionY = this.y + this.sectionLayout.coffin.y;
     const underworldSectionY = this.y + this.sectionLayout.underworld.y;
     const bombSectionY = this.y + this.sectionLayout.bomb.y;
+    const shrineSectionY = this.y + this.sectionLayout.shrine.y;
     const awakenedSectionY = this.y + this.sectionLayout.awakened.y;
     const revivedSectionY = this.y + this.sectionLayout.revived.y;
 
@@ -220,6 +233,11 @@ export class Hud {
     this.bombStockText = this.createLabel(SECTION_X, bombSectionY + 21 - this.y, '1: 空\n2: 空\n3: 空\n4: 空', 8, -2);
     this.selectedBombText = this.createLabel(SECTION_X, bombSectionY + 64 - this.y, '選択: なし', 8, 0);
     this.selectedBombText.setColor('#9fdfe8');
+
+    this.scene.add.text(this.x + SECTION_X, shrineSectionY + SECTION_HEADER_Y, 'SHRINE', this.headingStyle(10)).setDepth(HUD_LAYER_TEXT);
+    this.shrineEmptyText = this.createLabel(SECTION_X, shrineSectionY + 24 - this.y, 'No awakened gods', 8, 0);
+    this.shrineEmptyText.setColor('#7f725f');
+    this.shrineIconContainer = this.scene.add.container(this.x + SECTION_X + 3, shrineSectionY + 30).setDepth(HUD_LAYER_TEXT);
 
     this.feedbackContainer = this.scene.add.container(this.panelCenterX + 8, coffinSectionY + 87)
       .setDepth(HUD_LAYER_UNLOCK_FEEDBACK);
@@ -457,7 +475,8 @@ export class Hud {
     const underworldY = coffinY + HUD_COFFIN_HEIGHT + HUD_SECTION_GAP;
     const awakenedY = underworldY + HUD_UNDERWORLD_HEIGHT + HUD_SECTION_GAP;
     const bombY = awakenedY + HUD_AWAKENED_HEIGHT + HUD_SECTION_GAP;
-    const revivedY = bombY + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
+    const shrineY = bombY + HUD_BOMB_HEIGHT + HUD_SECTION_GAP;
+    const revivedY = shrineY + HUD_SHRINE_HEIGHT + HUD_SECTION_GAP;
     return {
       score: { y: scoreY, height: HUD_TOP_HEIGHT },
       next: { y: nextY, height: HUD_NEXT_HEIGHT },
@@ -465,6 +484,7 @@ export class Hud {
       underworld: { y: underworldY, height: HUD_UNDERWORLD_HEIGHT },
       awakened: { y: awakenedY, height: HUD_AWAKENED_HEIGHT },
       bomb: { y: bombY, height: HUD_BOMB_HEIGHT },
+      shrine: { y: shrineY, height: HUD_SHRINE_HEIGHT },
       revived: { y: revivedY, height: HUD_REVIVED_HEIGHT },
       towerBottom: revivedY + HUD_REVIVED_HEIGHT,
     };
@@ -482,6 +502,7 @@ export class Hud {
     this.createPanel(8, this.sectionLayout.underworld.y, this.panelWidth, HUD_UNDERWORLD_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.awakened.y, this.panelWidth, HUD_AWAKENED_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.bomb.y, this.panelWidth, HUD_BOMB_HEIGHT, '');
+    this.createPanel(8, this.sectionLayout.shrine.y, this.panelWidth, HUD_SHRINE_HEIGHT, '');
     this.createPanel(8, this.sectionLayout.revived.y, this.panelWidth, HUD_REVIVED_HEIGHT, '');
 
     this.drawEgyptianAccents();
@@ -502,7 +523,7 @@ export class Hud {
   drawEgyptianAccents() {
     const graphics = this.scene.add.graphics();
     graphics.lineStyle(1, 0xf0d27a, 0.38);
-    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.underworld.y + 12, this.sectionLayout.awakened.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
+    [this.sectionLayout.score.y + 12, this.sectionLayout.next.y + 12, this.sectionLayout.coffin.y + 12, this.sectionLayout.underworld.y + 12, this.sectionLayout.awakened.y + 12, this.sectionLayout.bomb.y + 12, this.sectionLayout.shrine.y + 12, this.sectionLayout.revived.y + 12].forEach((offsetY) => {
       graphics.lineBetween(this.x + 22, this.y + offsetY, this.x + 68, this.y + offsetY);
       graphics.lineBetween(this.x + this.panelWidth - 26, this.y + offsetY, this.x + this.panelWidth + 20, this.y + offsetY);
     });
@@ -574,6 +595,10 @@ export class Hud {
 
 
   updateBombStock(stock, selectedSlot = null) {
+    this.lastBombStockForShrine = Array.isArray(stock) ? stock.map((bomb) => ({ ...bomb })) : [];
+    this.lastSelectedBombSlotForShrine = selectedSlot;
+    this.renderShrine();
+
     const selectedBomb = Number.isInteger(selectedSlot) ? stock[selectedSlot] : null;
     const lines = [0, 1, 2, 3].map((index) => {
       const bomb = stock[index];
@@ -649,6 +674,8 @@ export class Hud {
 
   updateAwakenedGodsPresence(awakenedGods) {
     const gods = Array.isArray(awakenedGods) ? awakenedGods : [];
+    this.lastUnlockedGodsForShrine = gods.map((god) => ({ ...god }));
+    this.renderShrine();
     if (!this.awakenedGodsText || !this.awakenedGodsSubText) {
       return;
     }
@@ -723,6 +750,90 @@ export class Hud {
         this.awakenedSigilPulseTweens.push(pulseTween);
       }
     });
+  }
+
+
+  renderShrine() {
+    if (!this.shrineIconContainer || !this.shrineEmptyText) {
+      return;
+    }
+
+    this.shrinePulseTweens.forEach((tween) => tween?.stop());
+    this.shrinePulseTweens = [];
+    this.shrineIconContainer.removeAll(true);
+    this.shrineIcons = [];
+
+    const unlockedGods = this.lastUnlockedGodsForShrine ?? [];
+    this.shrineEmptyText.setVisible(unlockedGods.length === 0);
+    if (unlockedGods.length === 0) {
+      return;
+    }
+
+    const stock = this.lastBombStockForShrine ?? [];
+    const selectedBomb = Number.isInteger(this.lastSelectedBombSlotForShrine)
+      ? stock[this.lastSelectedBombSlotForShrine]
+      : null;
+    const availableGodIds = new Set(stock.map((bomb) => bomb?.godId).filter(Boolean));
+
+    unlockedGods.slice(0, SHRINE_ICON_COLUMNS * 2).forEach((god, index) => {
+      const row = Math.floor(index / SHRINE_ICON_COLUMNS);
+      const col = index % SHRINE_ICON_COLUMNS;
+      const x = col * SHRINE_ICON_SPACING_X;
+      const y = row * SHRINE_ICON_SPACING_Y;
+      const isUnused = availableGodIds.has(god.id);
+      const isSelected = selectedBomb?.godId === god.id;
+      const icon = this.createShrineIcon(god, x, y, isUnused, isSelected);
+
+      this.shrineIconContainer.add(icon);
+      this.shrineIcons.push(icon);
+    });
+  }
+
+  createShrineIcon(god, x, y, isUnused, isSelected) {
+    const container = this.scene.add.container(x, y);
+    const backAlpha = isSelected ? 0.38 : 0.18;
+    const back = this.scene.add.rectangle(0, 0, SHRINE_ICON_SIZE + 4, SHRINE_ICON_SIZE + 4, 0x050402, backAlpha)
+      .setStrokeStyle(1, isSelected ? 0xffdf6e : 0xd4af37, isSelected ? 0.95 : 0.22);
+    const asset = getCoffinAssetForGod(god, this.scene, { debug: this.isDebugMode });
+    const coffin = this.createShrineCoffinDisplay(asset)
+      .setAlpha(isUnused ? 1 : SHRINE_USED_ALPHA);
+
+    if (!isUnused && typeof coffin.setTint === 'function') {
+      coffin.setTint(0x5f574c);
+    }
+
+    container.add([back, coffin]);
+
+    if (isSelected) {
+      const highlight = this.scene.add.rectangle(0, 0, SHRINE_ICON_SIZE + 8, SHRINE_ICON_SIZE + 8, 0xffdf6e, 0)
+        .setStrokeStyle(2, 0xffdf6e, 0.94);
+      container.addAt(highlight, 0);
+      this.shrinePulseTweens.push(this.scene.tweens.add({
+        targets: highlight,
+        alpha: { from: 0.86, to: 0.34 },
+        scaleX: { from: 1, to: 1.08 },
+        scaleY: { from: 1, to: 1.08 },
+        duration: 620,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      }));
+    }
+
+    return container;
+  }
+
+  createShrineCoffinDisplay(asset) {
+    if (!asset || !this.scene.textures.exists(asset.key)) {
+      const fallback = this.scene.add.rectangle(0, 0, SHRINE_ICON_SIZE * 0.58, SHRINE_ICON_SIZE, 0x3a2a1a, 1)
+        .setStrokeStyle(1, 0xd4af37, 0.85);
+      return fallback;
+    }
+
+    const source = this.scene.textures.get(asset.key).getSourceImage();
+    const scale = Math.min(SHRINE_ICON_SIZE / source.width, SHRINE_ICON_SIZE / source.height);
+    return this.scene.add.image(0, 0, asset.key)
+      .setDisplaySize(source.width * scale, source.height * scale);
   }
 
   updateAwakenedCoffinPresence(unlockedCount) {
