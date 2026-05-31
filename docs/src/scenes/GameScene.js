@@ -318,6 +318,7 @@ export class GameScene extends Phaser.Scene {
     this.maxGodsUnlockedThisRun = 0;
     this.revivedSoulsCount = 0;
     this.awakenedGodIdsThisRun = new Set();
+    this.usedGodIdsThisRun = new Set();
     this.totalPureCanopicCount = 0;
     this.currentDepthLevel = 1;
     this.level = INITIAL_LEVEL;
@@ -1415,6 +1416,7 @@ ${COMMIT_SHA}`, {
     this.level = INITIAL_LEVEL;
     this.revivedSoulsCount = 0;
     this.awakenedGodIdsThisRun = new Set();
+    this.usedGodIdsThisRun = new Set();
     this.totalPureCanopicCount = 0;
     this.currentDepthLevel = 1;
     this.activePiece = null;
@@ -2149,6 +2151,7 @@ ${COMMIT_SHA}`, {
         this.renderBoard();
       }
 
+      this.markGodBombUsed(result.bomb);
       this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
       this.hud.showBombUsed(result.bomb, changedCount);
       this.showBombFeedback(result.bomb, changedCount);
@@ -3144,26 +3147,36 @@ ${COMMIT_SHA}`, {
   addBombsForUnlockEvents(unlockEvents) {
     const unlockEventsWithBombInfo = unlockEvents.map((unlockEvent) => {
       const god = unlockEvent.god;
-      const wasFullBeforeAdd = this.bombSystem.isFull();
       const grantedBomb = this.bombSystem.addBombForGod(god);
+      const replacedBomb = grantedBomb?.replacedBomb ?? null;
 
       return {
         ...unlockEvent,
         grantedBomb,
+        replacedBomb,
         grantStatus: grantedBomb
-          ? 'granted'
-          : wasFullBeforeAdd
-            ? 'stock_full'
-            : this.bombSystem.isSupportedBombType(god?.futureBombType)
-              ? 'none'
-              : god?.futureBombType
-                ? 'unsupported'
-                : 'none',
+          ? replacedBomb
+            ? 'replaced'
+            : 'granted'
+          : this.bombSystem.isSupportedBombType(god?.futureBombType)
+            ? 'none'
+            : god?.futureBombType
+              ? 'unsupported'
+              : 'none',
       };
     });
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.validateBombSelection();
     return unlockEventsWithBombInfo;
+  }
+
+  markGodBombUsed(bomb) {
+    if (!bomb?.godId) {
+      return;
+    }
+
+    this.usedGodIdsThisRun.add(bomb.godId);
+    this.refreshAwakenedGodPresence();
   }
 
 
@@ -3435,7 +3448,7 @@ ${COMMIT_SHA}`, {
   refreshAwakenedGodPresence() {
     const unlockedGods = this.coffinMeter.getUnlockedGods();
     this.awakenedGodIdsThisRun = new Set(unlockedGods.map((god) => god.id));
-    this.hud?.updateAwakenedGodsPresence(unlockedGods);
+    this.hud?.updateAwakenedGodsPresence(unlockedGods, this.usedGodIdsThisRun);
     this.applyAwakenedGodBoardPresence();
   }
 

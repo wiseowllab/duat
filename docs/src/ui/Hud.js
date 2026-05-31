@@ -136,6 +136,7 @@ export class Hud {
     this.lastUnlockedGodsForShrine = [];
     this.lastBombStockForShrine = [];
     this.lastSelectedBombSlotForShrine = null;
+    this.lastUsedGodIdsForShrine = new Set();
 
     this.create();
   }
@@ -672,9 +673,10 @@ export class Hud {
     this.updateAwakenedCoffinPresence(unlockedCount);
   }
 
-  updateAwakenedGodsPresence(awakenedGods) {
+  updateAwakenedGodsPresence(awakenedGods, usedGodIds = new Set()) {
     const gods = Array.isArray(awakenedGods) ? awakenedGods : [];
     this.lastUnlockedGodsForShrine = gods.map((god) => ({ ...god }));
+    this.lastUsedGodIdsForShrine = this.normalizeGodIdSet(usedGodIds);
     this.renderShrine();
     if (!this.awakenedGodsText || !this.awakenedGodsSubText) {
       return;
@@ -773,20 +775,32 @@ export class Hud {
     const selectedBomb = Number.isInteger(this.lastSelectedBombSlotForShrine)
       ? stock[this.lastSelectedBombSlotForShrine]
       : null;
-    const availableGodIds = new Set(stock.map((bomb) => bomb?.godId).filter(Boolean));
+    const usedGodIds = this.lastUsedGodIdsForShrine ?? new Set();
 
     unlockedGods.slice(0, SHRINE_ICON_COLUMNS * 2).forEach((god, index) => {
       const row = Math.floor(index / SHRINE_ICON_COLUMNS);
       const col = index % SHRINE_ICON_COLUMNS;
       const x = col * SHRINE_ICON_SPACING_X;
       const y = row * SHRINE_ICON_SPACING_Y;
-      const isUnused = availableGodIds.has(god.id);
+      const isUnused = !usedGodIds.has(god.id);
       const isSelected = selectedBomb?.godId === god.id;
       const icon = this.createShrineIcon(god, x, y, isUnused, isSelected);
 
       this.shrineIconContainer.add(icon);
       this.shrineIcons.push(icon);
     });
+  }
+
+  normalizeGodIdSet(godIds) {
+    if (godIds instanceof Set) {
+      return new Set([...godIds].filter(Boolean));
+    }
+
+    if (Array.isArray(godIds)) {
+      return new Set(godIds.filter(Boolean));
+    }
+
+    return new Set();
   }
 
   createShrineIcon(god, x, y, isUnused, isSelected) {
@@ -1171,11 +1185,26 @@ export class Hud {
     const god = latestUnlock.god;
     const tier = god?.tier ?? 1;
     const bombName = this.getUnlockGrantedBombLabel(latestUnlock);
-    const badgeMessage = `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`;
+    const replacementNotice = this.getBombReplacementNotice(latestUnlock);
+    const badgeMessage = [
+      `神、目覚める\n${god?.name}\n授与ボム: ${bombName}`,
+      replacementNotice,
+    ].filter(Boolean).join('\n');
 
     this.flashCoffin(tier);
     this.flashCoffinPanel(tier);
-    this.showUnlockBadge(badgeMessage, 1900);
+    this.showUnlockBadge(badgeMessage, replacementNotice ? 2400 : 1900);
+  }
+
+  getBombReplacementNotice(unlockEvent) {
+    const returnedGodName = unlockEvent?.replacedBomb?.godName;
+    const equippedGodName = unlockEvent?.grantedBomb?.godName;
+
+    if (!returnedGodName || !equippedGodName) {
+      return '';
+    }
+
+    return `${returnedGodName} returned to Shrine\n${equippedGodName} equipped`;
   }
 
   getUnlockGrantedBombLabel(unlockEvent) {
@@ -1184,8 +1213,8 @@ export class Hud {
       return BOMB_LABELS_JA[grantedBombType] ?? grantedBombType;
     }
 
-    if (unlockEvent?.grantStatus === 'stock_full') {
-      return 'ストック満杯';
+    if (unlockEvent?.grantStatus === 'replaced') {
+      return '装備';
     }
 
     if (unlockEvent?.grantStatus === 'unsupported') {

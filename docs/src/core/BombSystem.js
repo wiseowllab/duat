@@ -127,10 +127,11 @@ export class BombSystem {
   }
 
   addBombForGod(god) {
-    if (!god || !this.isSupportedBombType(god.futureBombType) || this.isFull()) {
+    if (!god || !this.isSupportedBombType(god.futureBombType)) {
       return null;
     }
 
+    const replacedBomb = this.isFull() ? this.stock.shift() : null;
     const bomb = {
       type: god.futureBombType,
       name: SUPPORTED_BOMBS[god.futureBombType].name,
@@ -139,7 +140,10 @@ export class BombSystem {
     };
 
     this.stock.push(bomb);
-    return { ...bomb };
+    return {
+      ...bomb,
+      replacedBomb: replacedBomb ? { ...replacedBomb } : null,
+    };
   }
 
   useBomb(slotIndex, target, board) {
