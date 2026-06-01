@@ -37,9 +37,13 @@ const BOMB_COFFIN_EFFECT_DEPTH = 2.6;
 const BOMB_COFFIN_SELECTION_ALPHA = 0.13;
 const BOMB_COFFIN_SELECTION_FADE_MS = 950;
 const BOMB_COFFIN_SELECTION_SCALE = 0.9;
+const BOMB_COFFIN_SELECTION_CENTER_ROW = 3.2;
+const BOMB_COFFIN_SELECTION_NAME_ROW = 2.6;
 const BOMB_COFFIN_ACTIVATION_ALPHA = 0.32;
 const BOMB_COFFIN_ACTIVATION_FADE_MS = 1250;
 const BOMB_COFFIN_ACTIVATION_SCALE = 1.08;
+const BOMB_COFFIN_ACTIVATION_CENTER_ROW = 3.7;
+const BOMB_COFFIN_ACTIVATION_NAME_ROW = 3.1;
 const BOMB_COFFIN_NAME_SELECTION_ALPHA = 0.58;
 const BOMB_COFFIN_NAME_ACTIVATION_ALPHA = 0.82;
 const BOMB_COFFIN_NAME_DEPTH = 7;
@@ -2567,6 +2571,8 @@ ${COMMIT_SHA}`, {
       alpha: BOMB_COFFIN_SELECTION_ALPHA,
       duration: BOMB_COFFIN_SELECTION_FADE_MS,
       scale: BOMB_COFFIN_SELECTION_SCALE,
+      centerRow: BOMB_COFFIN_SELECTION_CENTER_ROW,
+      nameRow: BOMB_COFFIN_SELECTION_NAME_ROW,
       nameAlpha: BOMB_COFFIN_NAME_SELECTION_ALPHA,
     });
   }
@@ -2576,6 +2582,8 @@ ${COMMIT_SHA}`, {
       alpha: BOMB_COFFIN_ACTIVATION_ALPHA,
       duration: BOMB_COFFIN_ACTIVATION_FADE_MS,
       scale: BOMB_COFFIN_ACTIVATION_SCALE,
+      centerRow: BOMB_COFFIN_ACTIVATION_CENTER_ROW,
+      nameRow: BOMB_COFFIN_ACTIVATION_NAME_ROW,
       nameAlpha: BOMB_COFFIN_NAME_ACTIVATION_ALPHA,
     });
   }
@@ -2587,7 +2595,7 @@ ${COMMIT_SHA}`, {
     }
 
     const coffin = this.createBombCoffinEffectImage(god, config);
-    const nameText = this.createBombCoffinNameText(god.name, config.nameAlpha);
+    const nameText = this.createBombCoffinNameText(god.name, config);
     const targets = nameText ? [coffin, nameText] : [coffin];
 
     this.bombCoffinEffectSprites.push(...targets);
@@ -2620,12 +2628,11 @@ ${COMMIT_SHA}`, {
   }
 
   createBombCoffinEffectImage(god, config) {
-    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
-    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const { x: boardCenterX, y: coffinCenterY } = this.getBombCoffinEffectPosition(config.centerRow);
     const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
 
     if (!asset || !this.textures.exists(asset.key)) {
-      return this.createBombCoffinFallbackEffect(god, boardCenterX, boardCenterY, config);
+      return this.createBombCoffinFallbackEffect(god, boardCenterX, coffinCenterY, config);
     }
 
     const source = this.textures.get(asset.key).getSourceImage();
@@ -2633,7 +2640,7 @@ ${COMMIT_SHA}`, {
     const maxHeight = BOARD_ROWS * this.layout.cellSize * 0.88 * config.scale;
     const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
 
-    return this.add.image(boardCenterX, boardCenterY, asset.key)
+    return this.add.image(boardCenterX, coffinCenterY, asset.key)
       .setDisplaySize(source.width * scale, source.height * scale)
       .setAlpha(config.alpha)
       .setDepth(BOMB_COFFIN_EFFECT_DEPTH);
@@ -2655,15 +2662,14 @@ ${COMMIT_SHA}`, {
     return coffin;
   }
 
-  createBombCoffinNameText(godName, alpha) {
+  createBombCoffinNameText(godName, config) {
     if (!godName) {
       return null;
     }
 
-    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
-    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const { x: boardCenterX, y: nameY } = this.getBombCoffinEffectPosition(config.nameRow);
 
-    return this.add.text(boardCenterX, boardCenterY, godName.toUpperCase(), {
+    return this.add.text(boardCenterX, nameY, godName.toUpperCase(), {
       fontFamily: 'Georgia, Times New Roman, serif',
       fontSize: '24px',
       color: '#f4d77a',
@@ -2672,7 +2678,17 @@ ${COMMIT_SHA}`, {
       letterSpacing: 2,
       stroke: '#120c05',
       strokeThickness: 4,
-    }).setOrigin(0.5).setAlpha(alpha).setDepth(BOMB_COFFIN_NAME_DEPTH);
+    }).setOrigin(0.5).setAlpha(config.nameAlpha).setDepth(BOMB_COFFIN_NAME_DEPTH);
+  }
+
+  getBombCoffinEffectPosition(row) {
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const rowCenter = Number.isFinite(row) ? row : BOARD_ROWS / 2;
+
+    return {
+      x: boardCenterX,
+      y: this.layout.boardOriginY + (rowCenter + 0.5) * this.layout.cellSize,
+    };
   }
 
   clearBombCoffinEffects() {
