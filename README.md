@@ -155,6 +155,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Required god coffin filenames are: `coffin_imsety.png`, `coffin_hapy.png`, `coffin_duamutef.png`, `coffin_qebehsenuef.png`, `coffin_anubis.png`, `coffin_thoth.png`, `coffin_maat.png`, `coffin_sekhmet.png`, `coffin_horus.png`, `coffin_isis.png`, `coffin_osiris.png`, `coffin_hathor.png`, `coffin_ra.png`, and `coffin_amun_ra.png`.
 - The existing four tier-based coffin PNGs remain loaded as fallbacks. If a god-specific PNG is missing or has not finished loading, the current coffin panel uses that god's tier image (`coffin_small.png`, `coffin_medium.png`, `coffin_large.png`, or `coffin_maximum.png`) without blocking gameplay.
 - Result sky backgrounds are loaded from `docs/assets/images/result/sky/` and selected by the highest reached Tier: Tier 1 uses `sky_tier1_night.png`, Tier 2 uses `sky_tier2_starry.png`, Tier 3 uses `sky_tier3_dawn.png`, and Tier 4 uses `sky_tier4_sunrise.png`.
+- Result temple overlays are loaded from `docs/assets/images/result/temple/` and reflect the current run's unlocked god count: 0-2 gods shows ruins, 3-5 shows a small temple, 6-8 shows a medium temple, 9-12 shows a great temple, and 13-14 shows the complete temple.
 - God unlock feedback includes the right-side Current Coffin panel glow plus a centered dark-temple presentation showing `GOD UNLOCKED!`, the god name, tier, and the same god-specific coffin PNG used by the HUD. The presentation fades in, scales the coffin into place, holds briefly, then fades out automatically; board resolution waits for it before spawning the next active piece.
 - Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, and reset behavior.
 
@@ -443,6 +444,24 @@ Required result sky PNG filenames:
 - `sky_tier4_sunrise.png`
 
 The game-over/result panel selects the sky background from the highest Tier reached during the run. Keep the exact filenames above so the preload mapping and public-test shared asset path continue to work.
+
+### Result Temple PNG Assets
+
+Result temple overlays live in:
+
+```text
+docs/assets/images/result/temple/
+```
+
+Required result temple PNG filenames:
+
+- `temple_0_ruins.png`
+- `temple_1_small.png`
+- `temple_2_medium.png`
+- `temple_3_great.png`
+- `temple_4_complete.png`
+
+The game-over/result panel draws the selected temple layer over the tier-based result sky. The selected temple reflects how many gods were unlocked in the current run: 0-2 gods use `temple_0_ruins.png`, 3-5 use `temple_1_small.png`, 6-8 use `temple_2_medium.png`, 9-12 use `temple_3_great.png`, and 13-14 use `temple_4_complete.png`. Temple images are expected to be 900x1600 and are scaled uniformly to fit the result panel without stretching.
 
 ## Troubleshooting
 
