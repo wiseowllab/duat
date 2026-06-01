@@ -26,13 +26,23 @@ import { HighScoreManager } from '../core/HighScoreManager.js';
 import { Hud } from '../ui/Hud.js';
 import { SoundManager } from '../audio/SoundManager.js';
 import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js';
-import { TOTAL_GOD_COUNT } from '../data/gods.js';
+import { GODS, TOTAL_GOD_COUNT } from '../data/gods.js';
 import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
 const BOMB_PREVIEW_ALPHA_SCALE = 0.42;
+const BOMB_COFFIN_EFFECT_DEPTH = 2.6;
+const BOMB_COFFIN_SELECTION_ALPHA = 0.13;
+const BOMB_COFFIN_SELECTION_FADE_MS = 950;
+const BOMB_COFFIN_SELECTION_SCALE = 0.9;
+const BOMB_COFFIN_ACTIVATION_ALPHA = 0.32;
+const BOMB_COFFIN_ACTIVATION_FADE_MS = 1250;
+const BOMB_COFFIN_ACTIVATION_SCALE = 1.08;
+const BOMB_COFFIN_NAME_SELECTION_ALPHA = 0.58;
+const BOMB_COFFIN_NAME_ACTIVATION_ALPHA = 0.82;
+const BOMB_COFFIN_NAME_DEPTH = 7;
 const BOMB_AREA_FLASH_STYLES = {
   brain_clear: { fill: 0x4b5dff, stroke: 0x9b62c9, alpha: 0.28 },
   knowledge_convert: { fill: 0x62f4ff, stroke: 0xf4d77a, alpha: 0.3 },
@@ -350,6 +360,8 @@ export class GameScene extends Phaser.Scene {
     this.bombAreaFlashSprites = [];
     this.bombAreaFlashTween = null;
     this.bombPreviewSprites = [];
+    this.bombCoffinEffectSprites = [];
+    this.bombCoffinEffectTweens = [];
     this.selectedBombSlot = null;
     this.clearHighlightSprites = [];
     this.clearHighlightTween = null;
@@ -1447,6 +1459,7 @@ ${COMMIT_SHA}`, {
   clearTransientVisuals() {
     this.cancelBombSelection();
     this.clearBombAreaFlash();
+    this.clearBombCoffinEffects();
     this.clearClearHighlights();
     this.clearClearParticles();
     this.boardFeedbackText.setText('');
@@ -2060,6 +2073,7 @@ ${COMMIT_SHA}`, {
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.emitTouchControlState();
     this.updateBombPreview();
+    this.showSelectedBombCoffinPresence(this.bombSystem.getBombAt(slotIndex));
   }
 
   cancelBombSelection() {
@@ -2131,6 +2145,7 @@ ${COMMIT_SHA}`, {
     try {
       this.sfx.playBombUse();
       this.bgm.duck(700, 0.45);
+      this.showBombActivationCoffinPresence(result.bomb);
       this.showBombAreaFlash(result.bomb.type, target);
 
       const clearedCells = this.matchResolver.clearCells(result.affectedCells);
@@ -2545,6 +2560,127 @@ ${COMMIT_SHA}`, {
 
     this.bombAreaFlashSprites.forEach((sprite) => sprite.destroy());
     this.bombAreaFlashSprites = [];
+  }
+
+  showSelectedBombCoffinPresence(bomb) {
+    this.showBombCoffinPresence(bomb, {
+      alpha: BOMB_COFFIN_SELECTION_ALPHA,
+      duration: BOMB_COFFIN_SELECTION_FADE_MS,
+      scale: BOMB_COFFIN_SELECTION_SCALE,
+      nameAlpha: BOMB_COFFIN_NAME_SELECTION_ALPHA,
+    });
+  }
+
+  showBombActivationCoffinPresence(bomb) {
+    this.showBombCoffinPresence(bomb, {
+      alpha: BOMB_COFFIN_ACTIVATION_ALPHA,
+      duration: BOMB_COFFIN_ACTIVATION_FADE_MS,
+      scale: BOMB_COFFIN_ACTIVATION_SCALE,
+      nameAlpha: BOMB_COFFIN_NAME_ACTIVATION_ALPHA,
+    });
+  }
+
+  showBombCoffinPresence(bomb, config) {
+    const god = this.getGodForBomb(bomb);
+    if (!god) {
+      return;
+    }
+
+    const coffin = this.createBombCoffinEffectImage(god, config);
+    const nameText = this.createBombCoffinNameText(god.name, config.nameAlpha);
+    const targets = nameText ? [coffin, nameText] : [coffin];
+
+    this.bombCoffinEffectSprites.push(...targets);
+
+    const tween = this.tweens.add({
+      targets,
+      alpha: 0,
+      duration: config.duration,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        this.bombCoffinEffectTweens = this.bombCoffinEffectTweens.filter((item) => item !== tween);
+        targets.forEach((target) => {
+          this.bombCoffinEffectSprites = this.bombCoffinEffectSprites.filter((item) => item !== target);
+          target.destroy();
+        });
+      },
+    });
+
+    this.bombCoffinEffectTweens.push(tween);
+  }
+
+  getGodForBomb(bomb) {
+    if (!bomb) {
+      return null;
+    }
+
+    return GODS.find((god) => god.id === bomb.godId)
+      ?? GODS.find((god) => god.name === bomb.godName)
+      ?? null;
+  }
+
+  createBombCoffinEffectImage(god, config) {
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+    const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
+
+    if (!asset || !this.textures.exists(asset.key)) {
+      return this.createBombCoffinFallbackEffect(god, boardCenterX, boardCenterY, config);
+    }
+
+    const source = this.textures.get(asset.key).getSourceImage();
+    const maxWidth = BOARD_COLUMNS * this.layout.cellSize * 0.9 * config.scale;
+    const maxHeight = BOARD_ROWS * this.layout.cellSize * 0.88 * config.scale;
+    const scale = Math.min(maxWidth / source.width, maxHeight / source.height);
+
+    return this.add.image(boardCenterX, boardCenterY, asset.key)
+      .setDisplaySize(source.width * scale, source.height * scale)
+      .setAlpha(config.alpha)
+      .setDepth(BOMB_COFFIN_EFFECT_DEPTH);
+  }
+
+  createBombCoffinFallbackEffect(god, x, y, config) {
+    const tierScale = 1 + ((god.tier ?? 1) - 1) * 0.08;
+    const width = this.layout.cellSize * 2.4 * config.scale * tierScale;
+    const height = this.layout.cellSize * 4.8 * config.scale * tierScale;
+    const coffin = this.add.graphics().setDepth(BOMB_COFFIN_EFFECT_DEPTH).setAlpha(config.alpha);
+
+    coffin.fillStyle(0xd4af37, 1);
+    coffin.fillRoundedRect(x - width / 2, y - height / 2, width, height, 18);
+    coffin.lineStyle(3, 0xffe6a0, 1);
+    coffin.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 18);
+    coffin.lineStyle(1, 0x5b3514, 0.8);
+    coffin.lineBetween(x, y - height / 2 + 12, x, y + height / 2 - 12);
+
+    return coffin;
+  }
+
+  createBombCoffinNameText(godName, alpha) {
+    if (!godName) {
+      return null;
+    }
+
+    const boardCenterX = this.layout.boardOriginX + (BOARD_COLUMNS * this.layout.cellSize) / 2;
+    const boardCenterY = this.layout.boardOriginY + (BOARD_ROWS * this.layout.cellSize) / 2;
+
+    return this.add.text(boardCenterX, boardCenterY, godName.toUpperCase(), {
+      fontFamily: 'Georgia, Times New Roman, serif',
+      fontSize: '24px',
+      color: '#f4d77a',
+      fontStyle: 'bold',
+      align: 'center',
+      letterSpacing: 2,
+      stroke: '#120c05',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setAlpha(alpha).setDepth(BOMB_COFFIN_NAME_DEPTH);
+  }
+
+  clearBombCoffinEffects() {
+    this.bombCoffinEffectTweens.forEach((tween) => tween?.remove?.());
+    this.bombCoffinEffectTweens = [];
+
+    this.bombCoffinEffectSprites.forEach((sprite) => sprite.destroy());
+    this.bombCoffinEffectSprites = [];
   }
 
 
