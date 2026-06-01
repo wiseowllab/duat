@@ -32,6 +32,9 @@ import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 import { getResultSkyAsset, preloadResultSkyAssets } from '../data/resultSkies.js';
 import { getResultTempleAsset, preloadResultTempleAssets } from '../data/resultTemples.js';
 
+const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.78;
+const RESULT_TEMPLE_Y_OFFSET = -96;
+const RESULT_TEMPLE_ALPHA = 0.83;
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
 const BOMB_PREVIEW_ALPHA_SCALE = 0.42;
@@ -4036,11 +4039,11 @@ ${COMMIT_SHA}`, {
     const sourceImage = this.textures.get(templeAsset.key)?.getSourceImage?.();
     const sourceWidth = sourceImage?.width || 900;
     const sourceHeight = sourceImage?.height || 1600;
-    const scale = Math.min(panelWidth / sourceWidth, panelHeight / sourceHeight);
+    const scale = Math.min(panelWidth / sourceWidth, panelHeight / sourceHeight) * RESULT_TEMPLE_SCALE_MULTIPLIER;
 
-    return this.add.image(0, 0, templeAsset.key)
+    return this.add.image(0, RESULT_TEMPLE_Y_OFFSET, templeAsset.key)
       .setDisplaySize(sourceWidth * scale, sourceHeight * scale)
-      .setAlpha(0.96);
+      .setAlpha(RESULT_TEMPLE_ALPHA);
   }
 
   createResultSkyBackground(panelWidth, panelHeight) {
