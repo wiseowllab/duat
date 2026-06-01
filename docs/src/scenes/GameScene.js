@@ -30,6 +30,7 @@ import { GODS, TOTAL_GOD_COUNT } from '../data/gods.js';
 import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 import { getResultSkyAsset, preloadResultSkyAssets } from '../data/resultSkies.js';
+import { getResultTempleAsset, preloadResultTempleAssets } from '../data/resultTemples.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -313,6 +314,7 @@ export class GameScene extends Phaser.Scene {
     preloadCoffinAssets(this);
     preloadBgmAssets(this);
     preloadResultSkyAssets(this);
+    preloadResultTempleAssets(this);
   }
 
   create() {
@@ -3902,8 +3904,9 @@ ${COMMIT_SHA}`, {
     const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
     const sky = this.createResultSkyBackground(panelWidth, panelHeight);
-    const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.42 : 0.48);
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.58).setStrokeStyle(3, borderColor, 0.9);
+    const temple = this.createResultTempleLayer(panelWidth, panelHeight);
+    const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.26 : 0.34);
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.24 : 0.3).setStrokeStyle(3, borderColor, 0.9);
     const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
     const subtitle = this.add.text(0, -panelHeight / 2 + 96, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
@@ -3927,6 +3930,16 @@ ${COMMIT_SHA}`, {
     const statsY = statsZoneTop;
     const statsFontSize = isCompactPanel ? '10px' : '12px';
     const statsLineSpacing = isCompactPanel ? -1 : 0;
+    const statsPanelCenterY = statsZoneTop + (statsZoneHeight / 2);
+    const statsReadabilityPanel = this.add.rectangle(
+      0,
+      statsPanelCenterY,
+      panelWidth - 44,
+      statsZoneHeight,
+      0x030201,
+      this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.44 : 0.38,
+    ).setStrokeStyle(1, 0xd4af37, 0.18);
+
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
@@ -3956,7 +3969,7 @@ ${COMMIT_SHA}`, {
       recordText.setLineSpacing(-2);
     }
 
-    const nodes = [sky, skyReadabilityShade, panel, title, subtitle, recordText];
+    const nodes = [sky, temple, skyReadabilityShade, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -3972,8 +3985,17 @@ ${COMMIT_SHA}`, {
       this.playRitualEndingSequence(ritualSequence, recordText);
     }
 
+    const promptPanelHeight = isCompactPanel ? 44 : 48;
+    const promptReadabilityPanel = this.add.rectangle(
+      0,
+      promptY - (promptPanelHeight / 2) + 4,
+      panelWidth - 50,
+      promptPanelHeight,
+      0x030201,
+      0.46,
+    ).setStrokeStyle(1, 0xd4af37, 0.2);
     const prompt = this.add.text(0, promptY, promptText, { fontFamily: 'Arial, sans-serif', fontSize: isCompactPanel ? '18px' : '20px', color: '#f2d783', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 32 } }).setOrigin(0.5, 1);
-    nodes.push(prompt);
+    nodes.push(promptReadabilityPanel, prompt);
 
     if (highScoreResult.isNewHighScore) { recordText.setColor('#f4d77a'); recordText.setFontStyle('bold'); }
 
@@ -4003,6 +4025,23 @@ ${COMMIT_SHA}`, {
     });
   }
 
+
+  createResultTempleLayer(panelWidth, panelHeight) {
+    const templeAsset = getResultTempleAsset(this.maxGodsUnlockedThisRun);
+
+    if (!this.textures.exists(templeAsset.key)) {
+      return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0);
+    }
+
+    const sourceImage = this.textures.get(templeAsset.key)?.getSourceImage?.();
+    const sourceWidth = sourceImage?.width || 900;
+    const sourceHeight = sourceImage?.height || 1600;
+    const scale = Math.min(panelWidth / sourceWidth, panelHeight / sourceHeight);
+
+    return this.add.image(0, 0, templeAsset.key)
+      .setDisplaySize(sourceWidth * scale, sourceHeight * scale)
+      .setAlpha(0.96);
+  }
 
   createResultSkyBackground(panelWidth, panelHeight) {
     const skyAsset = getResultSkyAsset(this.maxTierThisRun);
