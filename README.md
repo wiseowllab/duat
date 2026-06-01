@@ -95,7 +95,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - **H** opens the title-screen Japanese paged **遊び方** overlay. **Left/Right** or **A/D** changes pages, **Enter** or **Space** advances to the next page, and **Esc** closes it back to the title screen without starting gameplay.
 - **Enter** pauses active gameplay when no bomb is selected; **P** remains an optional pause shortcut. Falling, movement, rotation, hard drop, bomb selection, and debug controls are disabled while paused.
 - **Enter**, **Space**, or tapping the pause overlay resumes from pause.
-- Game over now uses an atmospheric DUAT presentation: board darkening, a subtle sand-toned fade, reduced coffin glow, and a calm centered panel showing final score, best score, max chain, reached Tier, awakened gods, and restart guidance. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
+- Game over now uses an atmospheric DUAT presentation: board darkening, a subtle sand-toned fade, reduced coffin glow, and a calm centered result panel with a tier-based sky background behind the final score, best score, max chain, reached Tier, awakened gods, and restart guidance. **Enter**, **Space**, or tapping the restart prompt restarts with the board, score, chain, coffin meter, god progression, bomb stock, active pair, next pair, overlays, and debug mode reset while preserving local high score records. **R** remains an optional game-over restart shortcut.
 
 ### Board and Falling Pair
 
@@ -154,6 +154,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - God-specific coffin asset mapping for all 14 god unlocks. Place the PNGs in `docs/assets/images/coffins/gods/` (the project keeps coffin art under `assets/images/coffins/` rather than `assets/coffins/` so public-test builds can share the existing asset base).
 - Required god coffin filenames are: `coffin_imsety.png`, `coffin_hapy.png`, `coffin_duamutef.png`, `coffin_qebehsenuef.png`, `coffin_anubis.png`, `coffin_thoth.png`, `coffin_maat.png`, `coffin_sekhmet.png`, `coffin_horus.png`, `coffin_isis.png`, `coffin_osiris.png`, `coffin_hathor.png`, `coffin_ra.png`, and `coffin_amun_ra.png`.
 - The existing four tier-based coffin PNGs remain loaded as fallbacks. If a god-specific PNG is missing or has not finished loading, the current coffin panel uses that god's tier image (`coffin_small.png`, `coffin_medium.png`, `coffin_large.png`, or `coffin_maximum.png`) without blocking gameplay.
+- Result sky backgrounds are loaded from `docs/assets/images/result/sky/` and selected by the highest reached Tier: Tier 1 uses `sky_tier1_night.png`, Tier 2 uses `sky_tier2_starry.png`, Tier 3 uses `sky_tier3_dawn.png`, and Tier 4 uses `sky_tier4_sunrise.png`.
 - God unlock feedback includes the right-side Current Coffin panel glow plus a centered dark-temple presentation showing `GOD UNLOCKED!`, the god name, tier, and the same god-specific coffin PNG used by the HUD. The presentation fades in, scales the coffin into place, holds briefly, then fades out automatically; board resolution waits for it before spawning the next active piece.
 - Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, and reset behavior.
 
@@ -424,6 +425,24 @@ Required coffin PNG filenames:
 - `coffin_maximum.png`
 
 The current prototype loads god-specific coffin images for the 14-god progression and keeps the four tier-based coffin images as fallbacks. Use transparent backgrounds for replacement coffin art.
+
+
+### Result Sky PNG Assets
+
+Result sky PNGs live in:
+
+```text
+docs/assets/images/result/sky/
+```
+
+Required result sky PNG filenames:
+
+- `sky_tier1_night.png`
+- `sky_tier2_starry.png`
+- `sky_tier3_dawn.png`
+- `sky_tier4_sunrise.png`
+
+The game-over/result panel selects the sky background from the highest Tier reached during the run. Keep the exact filenames above so the preload mapping and public-test shared asset path continue to work.
 
 ## Troubleshooting
 

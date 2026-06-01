@@ -29,6 +29,7 @@ import { BgmManager, getBgmKey, preloadBgmAssets } from '../audio/BgmManager.js'
 import { GODS, TOTAL_GOD_COUNT } from '../data/gods.js';
 import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
+import { getResultSkyAsset, preloadResultSkyAssets } from '../data/resultSkies.js';
 
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -311,6 +312,7 @@ export class GameScene extends Phaser.Scene {
     preloadPieceAssets(this);
     preloadCoffinAssets(this);
     preloadBgmAssets(this);
+    preloadResultSkyAssets(this);
   }
 
   create() {
@@ -3899,7 +3901,9 @@ ${COMMIT_SHA}`, {
 
     const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.96).setStrokeStyle(3, borderColor, 0.9);
+    const sky = this.createResultSkyBackground(panelWidth, panelHeight);
+    const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.42 : 0.48);
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, 0.58).setStrokeStyle(3, borderColor, 0.9);
     const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
     const subtitle = this.add.text(0, -panelHeight / 2 + 96, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
@@ -3952,7 +3956,7 @@ ${COMMIT_SHA}`, {
       recordText.setLineSpacing(-2);
     }
 
-    const nodes=[panel,title,subtitle,recordText];
+    const nodes = [sky, skyReadabilityShade, panel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -3997,6 +4001,19 @@ ${COMMIT_SHA}`, {
         this.returnToTitle();
       }
     });
+  }
+
+
+  createResultSkyBackground(panelWidth, panelHeight) {
+    const skyAsset = getResultSkyAsset(this.maxTierThisRun);
+
+    if (!this.textures.exists(skyAsset.key)) {
+      return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x130b08, 1);
+    }
+
+    return this.add.image(0, 0, skyAsset.key)
+      .setDisplaySize(panelWidth, panelHeight)
+      .setAlpha(0.98);
   }
 
   playRitualEndingAtmosphere() {
