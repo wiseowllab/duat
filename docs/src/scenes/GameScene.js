@@ -39,10 +39,11 @@ import {
 
 const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.78;
 const RESULT_TEMPLE_Y_OFFSET = -96;
-const RESULT_TEMPLE_ALPHA = 0.83;
-const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.5;
-const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.58;
-const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.17;
+const RESULT_TEMPLE_ALPHA = 0.68;
+const RESULT_TEMPLE_TINT = 0xbaa06f;
+const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.56;
+const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.65;
+const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.14;
 const RESULT_PYRAMID_REVEAL_MS = 850;
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -4061,7 +4062,7 @@ ${COMMIT_SHA}`, {
     const pyramid = this.add.image(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
       .setOrigin(0.5, 1)
       .setScale(scale)
-      .setAlpha(0.93);
+      .setAlpha(0.98);
 
     this.applyResultPyramidCrop(pyramid, 0, sourceWidth, sourceHeight);
     const revealState = { ratio: 0 };
@@ -4112,6 +4113,7 @@ ${COMMIT_SHA}`, {
 
     return this.add.image(0, RESULT_TEMPLE_Y_OFFSET, templeAsset.key)
       .setDisplaySize(sourceWidth * scale, sourceHeight * scale)
+      .setTint(RESULT_TEMPLE_TINT)
       .setAlpha(RESULT_TEMPLE_ALPHA);
   }
 
