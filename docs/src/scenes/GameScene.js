@@ -37,13 +37,15 @@ import {
   RESULT_PYRAMID_COMPLETE_ASSET,
 } from '../data/resultPyramids.js';
 
-const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.78;
+const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.624;
 const RESULT_TEMPLE_Y_OFFSET = -96;
 const RESULT_TEMPLE_ALPHA = 0.68;
 const RESULT_TEMPLE_TINT = 0xbaa06f;
 const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.56;
 const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.65;
 const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.14;
+const RESULT_PYRAMID_Y_OFFSET = 96;
+const RESULT_PYRAMID_SAFE_BOTTOM_INSET = 18;
 const RESULT_PYRAMID_REVEAL_MS = 850;
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
@@ -4058,7 +4060,9 @@ ${COMMIT_SHA}`, {
       (panelWidth * RESULT_PYRAMID_SCALE_MULTIPLIER) / sourceWidth,
       maxDisplayHeight / sourceHeight,
     );
-    const bottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
+    const baseBottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
+    const safeBottomY = (panelHeight / 2) - RESULT_PYRAMID_SAFE_BOTTOM_INSET;
+    const bottomY = Math.min(baseBottomY + RESULT_PYRAMID_Y_OFFSET, safeBottomY);
     const pyramid = this.add.image(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
       .setOrigin(0.5, 1)
       .setScale(scale)
