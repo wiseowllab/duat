@@ -31,10 +31,19 @@ import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 import { getResultSkyAsset, preloadResultSkyAssets } from '../data/resultSkies.js';
 import { getResultTempleAsset, preloadResultTempleAssets } from '../data/resultTemples.js';
+import {
+  getResultPyramidRevealRatio,
+  preloadResultPyramidAssets,
+  RESULT_PYRAMID_COMPLETE_ASSET,
+} from '../data/resultPyramids.js';
 
 const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.78;
 const RESULT_TEMPLE_Y_OFFSET = -96;
 const RESULT_TEMPLE_ALPHA = 0.83;
+const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.5;
+const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.58;
+const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.17;
+const RESULT_PYRAMID_REVEAL_MS = 850;
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
 const BOMB_PREVIEW_ALPHA_SCALE = 0.42;
@@ -318,6 +327,7 @@ export class GameScene extends Phaser.Scene {
     preloadBgmAssets(this);
     preloadResultSkyAssets(this);
     preloadResultTempleAssets(this);
+    preloadResultPyramidAssets(this);
   }
 
   create() {
@@ -3908,6 +3918,7 @@ ${COMMIT_SHA}`, {
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
     const sky = this.createResultSkyBackground(panelWidth, panelHeight);
     const temple = this.createResultTempleLayer(panelWidth, panelHeight);
+    const pyramid = this.createResultPyramidRevealLayer(panelWidth, panelHeight);
     const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.26 : 0.34);
     const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.24 : 0.3).setStrokeStyle(3, borderColor, 0.9);
     const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
@@ -3972,7 +3983,7 @@ ${COMMIT_SHA}`, {
       recordText.setLineSpacing(-2);
     }
 
-    const nodes = [sky, temple, skyReadabilityShade, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, skyReadabilityShade, pyramid, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4028,6 +4039,64 @@ ${COMMIT_SHA}`, {
     });
   }
 
+
+
+  createResultPyramidRevealLayer(panelWidth, panelHeight) {
+    const preservedGodCount = this.getPreservedGodCountForResult();
+    const revealRatio = getResultPyramidRevealRatio(preservedGodCount);
+
+    if (revealRatio <= 0 || !this.textures.exists(RESULT_PYRAMID_COMPLETE_ASSET.key)) {
+      return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0);
+    }
+
+    const sourceImage = this.textures.get(RESULT_PYRAMID_COMPLETE_ASSET.key)?.getSourceImage?.();
+    const sourceWidth = sourceImage?.width || 941;
+    const sourceHeight = sourceImage?.height || 1672;
+    const maxDisplayHeight = panelHeight * RESULT_PYRAMID_MAX_HEIGHT_RATIO;
+    const scale = Math.min(
+      (panelWidth * RESULT_PYRAMID_SCALE_MULTIPLIER) / sourceWidth,
+      maxDisplayHeight / sourceHeight,
+    );
+    const bottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
+    const pyramid = this.add.image(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
+      .setOrigin(0.5, 1)
+      .setScale(scale)
+      .setAlpha(0.93);
+
+    this.applyResultPyramidCrop(pyramid, 0, sourceWidth, sourceHeight);
+    const revealState = { ratio: 0 };
+    this.tweens.add({
+      targets: revealState,
+      ratio: revealRatio,
+      duration: RESULT_PYRAMID_REVEAL_MS,
+      ease: 'Sine.easeOut',
+      onUpdate: () => this.applyResultPyramidCrop(pyramid, revealState.ratio, sourceWidth, sourceHeight),
+      onComplete: () => this.applyResultPyramidCrop(pyramid, revealRatio, sourceWidth, sourceHeight),
+    });
+
+    return pyramid;
+  }
+
+  applyResultPyramidCrop(pyramid, revealRatio, sourceWidth, sourceHeight) {
+    const ratio = Phaser.Math.Clamp(Number(revealRatio) || 0, 0, 1);
+    const cropHeight = Math.round(sourceHeight * ratio);
+
+    pyramid.setVisible(cropHeight > 0);
+    if (cropHeight <= 0) {
+      return;
+    }
+
+    pyramid.setCrop(0, sourceHeight - cropHeight, sourceWidth, cropHeight);
+  }
+
+  getPreservedGodCountForResult() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    const usedGodIds = this.usedGodIdsThisRun instanceof Set
+      ? this.usedGodIdsThisRun
+      : new Set(this.usedGodIdsThisRun ?? []);
+
+    return unlockedGods.filter((god) => god?.id && !usedGodIds.has(god.id)).length;
+  }
 
   createResultTempleLayer(panelWidth, panelHeight) {
     const templeAsset = getResultTempleAsset(this.maxGodsUnlockedThisRun);
