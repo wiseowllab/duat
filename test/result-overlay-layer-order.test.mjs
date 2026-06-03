@@ -24,7 +24,7 @@ test('result overlay keeps god coffin icons with temple layer and pyramid foregr
   );
 });
 
-test('result god coffin icon positions anchor to the temple bottom edge', () => {
+test('result god coffin icon positions anchor to the temple entrance sides', () => {
   assert.match(
     gameSceneSource,
     /templeBottomY: templeLayout\.visibleBottomY/,
@@ -32,12 +32,32 @@ test('result god coffin icon positions anchor to the temple bottom edge', () => 
   );
   assert.match(
     gameSceneSource,
-    /const baseY = Math\.min\(templeBottomY - basePadding, maxIconY\)/,
-    'result coffin rows should be anchored from the temple bottom, with only stats overlap clamping',
+    /const rearY = Math\.min\(templeBottomY - basePadding, maxIconY\)/,
+    'rear guardian rows should stand on the temple base and only clamp for stats overlap',
+  );
+  assert.match(
+    gameSceneSource,
+    /const frontY = Math\.min\(rearY \+ \(iconMaxHeight \* RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO\), maxIconY\)/,
+    'front guardian rows should stand slightly forward while remaining grounded',
+  );
+  assert.match(
+    gameSceneSource,
+    /getResultGodIconSidePositions\('left'/,
+    'result coffin icons should include a left-side guardian group',
+  );
+  assert.match(
+    gameSceneSource,
+    /getResultGodIconSidePositions\('right'/,
+    'result coffin icons should include a right-side guardian group',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_GOD_ICON_DOORWAY_CLEAR_WIDTH_RATIO/,
+    'result coffin icons should reserve the central temple doorway',
   );
   assert.doesNotMatch(
     gameSceneSource,
-    /createResultGodIconSideGroup/,
-    'result coffin icons should no longer be split into side groups around the pyramid',
+    /\(index - \(\(rowCount - 1\) \/ 2\)\) \* spacing/,
+    'result coffin icons should not be centered in front of the temple doorway',
   );
 });

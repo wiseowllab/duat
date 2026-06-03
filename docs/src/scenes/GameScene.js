@@ -248,7 +248,9 @@ const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
 const RESULT_GOD_ICON_GLOW_COLOR = 0xf4d77a;
 const RESULT_GOD_ICON_PANEL_MARGIN_X = 28;
-const RESULT_GOD_ICON_ROW_GAP_RATIO = { compact: 0.82, standard: 0.9 };
+const RESULT_GOD_ICON_DOORWAY_CLEAR_WIDTH_RATIO = 0.15;
+const RESULT_GOD_ICON_SIDE_GROUP_OUTER_PADDING_RATIO = 0.36;
+const RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO = 0.58;
 const RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO = 0.08;
 
 const BOMB_LABELS_JA = {
@@ -4319,46 +4321,70 @@ ${COMMIT_SHA}`, {
   getResultGodIconPositions(count, panelWidth, panelHeight, options = {}) {
     const iconMaxHeight = options.iconMaxHeight ?? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT;
     const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * 0.24);
-    const isCompactPanel = Boolean(options.isCompactPanel);
     const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
     const templeBottomY = Number(options.templeBottomY) || 0;
     const basePadding = iconMaxHeight * RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO;
-    const baseY = Math.min(templeBottomY - basePadding, maxIconY);
-    const rowCounts = this.getResultGodIconTempleRowCounts(count);
-    const maxRowCount = Math.max(...rowCounts);
-    const availableWidth = panelWidth - (RESULT_GOD_ICON_PANEL_MARGIN_X * 2) - iconMaxHeight;
-    const rowGap = iconMaxHeight * (isCompactPanel
-      ? RESULT_GOD_ICON_ROW_GAP_RATIO.compact
-      : RESULT_GOD_ICON_ROW_GAP_RATIO.standard);
-    const spacing = maxRowCount <= 1
-      ? 0
-      : Phaser.Math.Clamp(iconMaxHeight * 1.08, 20, availableWidth / (maxRowCount - 1));
-    const topRowOffset = (rowCounts.length - 1) * rowGap;
+    const rearY = Math.min(templeBottomY - basePadding, maxIconY);
+    const frontY = Math.min(rearY + (iconMaxHeight * RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO), maxIconY);
+    const sideCounts = this.getResultGodIconSideCounts(count);
 
-    return rowCounts.flatMap((rowCount, rowIndex) => {
-      const y = baseY - topRowOffset + (rowIndex * rowGap);
-
-      return Array.from({ length: rowCount }, (_, index) => {
-        const x = (index - ((rowCount - 1) / 2)) * spacing;
-
-        return { x, y };
-      });
-    });
+    return [
+      ...this.getResultGodIconSidePositions('left', sideCounts.left, panelWidth, iconMaxHeight, rearY, frontY),
+      ...this.getResultGodIconSidePositions('right', sideCounts.right, panelWidth, iconMaxHeight, rearY, frontY),
+    ];
   }
 
-  getResultGodIconTempleRowCounts(count) {
-    if (count <= 0) return [];
-    if (count <= 4) return [count];
-    if (count === 5) return [2, 3];
-    if (count === 6) return [3, 3];
-    if (count === 7) return [3, 4];
-    if (count === 8) return [4, 4];
-    if (count === 9) return [3, 3, 3];
-    if (count === 10) return [3, 4, 3];
-    if (count === 11) return [3, 4, 4];
-    if (count === 12) return [4, 4, 4];
-    if (count === 13) return [4, 5, 4];
-    return [4, 5, 5];
+  getResultGodIconSideCounts(count) {
+    return {
+      left: Math.ceil(count / 2),
+      right: Math.floor(count / 2),
+    };
+  }
+
+  getResultGodIconSidePositions(side, count, panelWidth, iconMaxHeight, rearY, frontY) {
+    if (count <= 0) {
+      return [];
+    }
+
+    const rows = this.getResultGodIconGuardianRows(count);
+
+    return [
+      ...this.getResultGodIconSideRowPositions(side, rows.rear, panelWidth, iconMaxHeight, rearY, 'rear'),
+      ...this.getResultGodIconSideRowPositions(side, rows.front, panelWidth, iconMaxHeight, frontY, 'front'),
+    ];
+  }
+
+  getResultGodIconGuardianRows(count) {
+    return {
+      rear: Math.ceil(count / 2),
+      front: Math.floor(count / 2),
+    };
+  }
+
+  getResultGodIconSideRowPositions(side, count, panelWidth, iconMaxHeight, y, depth) {
+    if (count <= 0) {
+      return [];
+    }
+
+    const sign = side === 'left' ? -1 : 1;
+    const doorwayClearHalfWidth = Math.max(
+      panelWidth * RESULT_GOD_ICON_DOORWAY_CLEAR_WIDTH_RATIO,
+      iconMaxHeight * 1.6,
+    );
+    const outerX = (panelWidth / 2) - RESULT_GOD_ICON_PANEL_MARGIN_X - (iconMaxHeight / 2);
+    const rowInset = iconMaxHeight * (depth === 'front' ? 0.65 : 1.35);
+    const innerX = Math.min(
+      doorwayClearHalfWidth + rowInset,
+      Math.max(doorwayClearHalfWidth, outerX - (iconMaxHeight * RESULT_GOD_ICON_SIDE_GROUP_OUTER_PADDING_RATIO)),
+    );
+    const spacing = count <= 1
+      ? 0
+      : Math.max(iconMaxHeight * 0.92, (outerX - innerX) / (count - 1));
+
+    return Array.from({ length: count }, (_, index) => ({
+      x: sign * (innerX + (index * spacing)),
+      y,
+    }));
   }
 
   createResultGodIcon(god, config) {
