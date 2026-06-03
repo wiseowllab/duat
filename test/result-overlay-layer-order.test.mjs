@@ -65,13 +65,23 @@ test('result god coffin icon positions anchor to the temple entrance sides', () 
 test('result god coffin icons render as grounded statues without circular halos', () => {
   assert.match(
     gameSceneSource,
-    /RESULT_GOD_ICON_SHADOW_ALPHA = 0\.28/,
-    'result god statues should use a subtle ground shadow opacity',
+    /RESULT_GOD_ICON_SHADOW_ALPHA = 0\.48/,
+    'result god statues should use a darker subtle ground shadow opacity',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_GOD_ICON_SHADOW_WIDTH_RATIO = 0\.96/,
+    'result god statue shadow should be almost as wide as the coffin image',
   );
   assert.match(
     gameSceneSource,
     /image\.displayWidth \* RESULT_GOD_ICON_SHADOW_WIDTH_RATIO/,
     'result god statue shadow width should scale from the coffin image width',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO = 0\.3/,
+    'result god statue shadow should remain a grounded oval relative to the coffin image height',
   );
   assert.match(
     gameSceneSource,
