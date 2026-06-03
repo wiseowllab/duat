@@ -242,6 +242,10 @@ const ENDING_TYPES = {
   TRUE_END: 'true_end',
 };
 const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
+const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 28;
+const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 34;
+const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
+const RESULT_GOD_ICON_GLOW_COLOR = 0xf4d77a;
 
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
@@ -4155,8 +4159,12 @@ ${COMMIT_SHA}`, {
       recordText.setLineSpacing(-2);
     }
 
+    const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {
+      isCompactPanel,
+      statsZoneTop,
+    });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount);
-    const nodes = [sky, temple, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, skyReadabilityShade, resultGodIcons, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4261,6 +4269,144 @@ ${COMMIT_SHA}`, {
       : new Set(this.usedGodIdsThisRun ?? []);
 
     return unlockedGods.filter((god) => god?.id && !usedGodIds.has(god.id)).length;
+  }
+
+  createResultGodIconsLayer(panelWidth, panelHeight, options = {}) {
+    const unlockedGods = this.coffinMeter.getUnlockedGods().filter((god) => god?.id);
+    const container = this.add.container(0, 0).setName('resultGodIcons');
+
+    if (unlockedGods.length === 0) {
+      return container;
+    }
+
+    const usedGodIds = this.usedGodIdsThisRun instanceof Set
+      ? this.usedGodIdsThisRun
+      : new Set(this.usedGodIdsThisRun ?? []);
+    const isCompactPanel = Boolean(options.isCompactPanel);
+    const iconMaxHeight = isCompactPanel
+      ? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT
+      : Math.min(RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT, Math.max(RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT, panelWidth * 0.072));
+    const iconPositions = this.getResultGodIconPositions(unlockedGods.length, panelWidth, panelHeight, {
+      ...options,
+      iconMaxHeight,
+    });
+
+    unlockedGods.forEach((god, index) => {
+      const position = iconPositions[index];
+      const isPreserved = !usedGodIds.has(god.id);
+      const icon = this.createResultGodIcon(god, {
+        x: position.x,
+        y: position.y,
+        maxHeight: iconMaxHeight,
+        isPreserved,
+        isCompleteTemple: unlockedGods.length >= TOTAL_GOD_COUNT,
+      });
+
+      if (icon) {
+        container.add(icon);
+      }
+    });
+
+    return container;
+  }
+
+  getResultGodIconPositions(count, panelWidth, panelHeight, options = {}) {
+    const iconMaxHeight = options.iconMaxHeight ?? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT;
+    const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * 0.24);
+    const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
+    const lowerArcY = Math.min(panelHeight * (options.isCompactPanel ? 0.17 : 0.18), maxIconY);
+    const rowGap = iconMaxHeight * (options.isCompactPanel ? 1.08 : 1.18);
+
+    if (count <= 7) {
+      return this.createResultGodIconArc(count, panelWidth, lowerArcY, iconMaxHeight, 0);
+    }
+
+    const upperCount = Math.ceil(count / 2);
+    const lowerCount = count - upperCount;
+    const upperY = lowerArcY - rowGap;
+    const upperArc = this.createResultGodIconArc(upperCount, panelWidth, upperY, iconMaxHeight, -iconMaxHeight * 0.08);
+    const lowerArc = this.createResultGodIconArc(lowerCount, panelWidth, lowerArcY, iconMaxHeight, iconMaxHeight * 0.1);
+
+    return upperArc.concat(lowerArc);
+  }
+
+  createResultGodIconArc(count, panelWidth, centerY, iconMaxHeight, verticalOffset = 0) {
+    if (count <= 0) {
+      return [];
+    }
+
+    const usableWidth = panelWidth - 72;
+    const maxSpread = Math.min(usableWidth * 0.43, iconMaxHeight * Math.max(2.4, count * 0.72));
+    const centerIndex = (count - 1) / 2;
+    const divisor = Math.max(1, centerIndex);
+
+    return Array.from({ length: count }, (_, index) => {
+      const normalized = (index - centerIndex) / divisor;
+      const x = normalized * maxSpread;
+      const arcLift = (1 - Math.abs(normalized)) * iconMaxHeight * 0.32;
+
+      return {
+        x,
+        y: centerY + verticalOffset - arcLift,
+      };
+    });
+  }
+
+  createResultGodIcon(god, config) {
+    const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
+    const textureKey = asset.key ?? asset.assetKey;
+
+    if (!textureKey || !this.textures.exists(textureKey)) {
+      return null;
+    }
+
+    const container = this.add.container(config.x, config.y).setName(`resultGodIcon-${god.id}`);
+    const image = this.add.image(0, 0, textureKey).setOrigin(0.5, 1);
+    const sourceImage = this.textures.get(textureKey)?.getSourceImage?.();
+    const sourceHeight = sourceImage?.height || asset.fallbackHeight || 116;
+    const scale = config.maxHeight / sourceHeight;
+    const style = this.getResultGodIconStyle(config.isPreserved, config.isCompleteTemple);
+
+    image.setScale(scale).setAlpha(style.alpha);
+    if (style.tint) {
+      image.setTint(style.tint);
+    }
+
+    if (style.glowAlpha > 0) {
+      const glowWidth = Math.max(18, image.displayWidth + 12);
+      const glowHeight = Math.max(20, image.displayHeight + 8);
+      const glow = this.add.ellipse(0, -image.displayHeight * 0.5, glowWidth, glowHeight, RESULT_GOD_ICON_GLOW_COLOR, style.glowAlpha)
+        .setStrokeStyle(1, RESULT_GOD_ICON_GLOW_COLOR, style.glowStrokeAlpha);
+      container.add(glow);
+    }
+
+    container.add(image);
+    return container;
+  }
+
+  getResultGodIconStyle(isPreserved, isCompleteTemple) {
+    if (!isPreserved) {
+      return {
+        alpha: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.36 : 0.46,
+        tint: 0x777777,
+        glowAlpha: 0,
+        glowStrokeAlpha: 0,
+      };
+    }
+
+    if (this.currentEndingType === ENDING_TYPES.TRUE_END) {
+      return { alpha: 1, tint: null, glowAlpha: 0.18, glowStrokeAlpha: 0.7 };
+    }
+
+    if (isCompleteTemple) {
+      return { alpha: 0.94, tint: null, glowAlpha: 0.12, glowStrokeAlpha: 0.5 };
+    }
+
+    if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
+      return { alpha: 0.72, tint: null, glowAlpha: 0.04, glowStrokeAlpha: 0.25 };
+    }
+
+    return { alpha: 0.88, tint: null, glowAlpha: 0.08, glowStrokeAlpha: 0.36 };
   }
 
   createResultTempleLayer(panelWidth, panelHeight) {
