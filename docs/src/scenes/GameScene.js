@@ -242,10 +242,13 @@ const ENDING_TYPES = {
   TRUE_END: 'true_end',
 };
 const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
-const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 28;
-const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 34;
+const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
+const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
 const RESULT_GOD_ICON_GLOW_COLOR = 0xf4d77a;
+const RESULT_GOD_ICON_PANEL_MARGIN_X = 28;
+const RESULT_GOD_ICON_CENTER_CLEAR_RATIO = { compact: 0.285, standard: 0.29 };
+const RESULT_GOD_ICON_BASE_Y_RATIO = { compact: 0.175, standard: 0.19 };
 
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
@@ -4313,43 +4316,68 @@ ${COMMIT_SHA}`, {
   getResultGodIconPositions(count, panelWidth, panelHeight, options = {}) {
     const iconMaxHeight = options.iconMaxHeight ?? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT;
     const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * 0.24);
+    const isCompactPanel = Boolean(options.isCompactPanel);
     const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
-    const lowerArcY = Math.min(panelHeight * (options.isCompactPanel ? 0.17 : 0.18), maxIconY);
-    const rowGap = iconMaxHeight * (options.isCompactPanel ? 1.08 : 1.18);
+    const preferredBaseY = panelHeight * (isCompactPanel
+      ? RESULT_GOD_ICON_BASE_Y_RATIO.compact
+      : RESULT_GOD_ICON_BASE_Y_RATIO.standard);
+    const baseY = Math.min(preferredBaseY, maxIconY);
+    const leftCount = Math.ceil(count / 2);
+    const rightCount = count - leftCount;
 
-    if (count <= 7) {
-      return this.createResultGodIconArc(count, panelWidth, lowerArcY, iconMaxHeight, 0);
-    }
-
-    const upperCount = Math.ceil(count / 2);
-    const lowerCount = count - upperCount;
-    const upperY = lowerArcY - rowGap;
-    const upperArc = this.createResultGodIconArc(upperCount, panelWidth, upperY, iconMaxHeight, -iconMaxHeight * 0.08);
-    const lowerArc = this.createResultGodIconArc(lowerCount, panelWidth, lowerArcY, iconMaxHeight, iconMaxHeight * 0.1);
-
-    return upperArc.concat(lowerArc);
+    return [
+      ...this.createResultGodIconSideGroup(leftCount, -1, panelWidth, baseY, iconMaxHeight, isCompactPanel),
+      ...this.createResultGodIconSideGroup(rightCount, 1, panelWidth, baseY, iconMaxHeight, isCompactPanel),
+    ];
   }
 
-  createResultGodIconArc(count, panelWidth, centerY, iconMaxHeight, verticalOffset = 0) {
+  createResultGodIconSideGroup(count, side, panelWidth, baseY, iconMaxHeight, isCompactPanel) {
     if (count <= 0) {
       return [];
     }
 
-    const usableWidth = panelWidth - 72;
-    const maxSpread = Math.min(usableWidth * 0.43, iconMaxHeight * Math.max(2.4, count * 0.72));
-    const centerIndex = (count - 1) / 2;
-    const divisor = Math.max(1, centerIndex);
+    const clearRatio = isCompactPanel
+      ? RESULT_GOD_ICON_CENTER_CLEAR_RATIO.compact
+      : RESULT_GOD_ICON_CENTER_CLEAR_RATIO.standard;
+    const centerClearX = Math.max(panelWidth * clearRatio, iconMaxHeight * 4.6);
+    const halfPanel = panelWidth / 2;
+    const outerLimitX = Math.max(centerClearX, halfPanel - RESULT_GOD_ICON_PANEL_MARGIN_X - (iconMaxHeight * 0.5));
+    const sideLaneWidth = Math.max(iconMaxHeight * 1.2, outerLimitX - centerClearX);
+    const sideCenterX = side * (centerClearX + (sideLaneWidth * 0.5));
+    const rowCounts = this.getResultGodIconSideRowCounts(count);
+    const maxRowCount = Math.max(...rowCounts);
+    const rowGap = iconMaxHeight * (isCompactPanel ? 0.82 : 0.9);
+    const spacing = maxRowCount <= 1
+      ? 0
+      : Phaser.Math.Clamp(iconMaxHeight * 0.9, 18, sideLaneWidth / (maxRowCount - 1));
+    const topRowOffset = (rowCounts.length - 1) * rowGap;
 
-    return Array.from({ length: count }, (_, index) => {
-      const normalized = (index - centerIndex) / divisor;
-      const x = normalized * maxSpread;
-      const arcLift = (1 - Math.abs(normalized)) * iconMaxHeight * 0.32;
+    return rowCounts.flatMap((rowCount, rowIndex) => {
+      const y = baseY - topRowOffset + (rowIndex * rowGap);
+      const rowCenterNudge = rowCounts.length >= 3 && rowIndex % 2 === 1 ? side * iconMaxHeight * 0.18 : 0;
 
-      return {
-        x,
-        y: centerY + verticalOffset - arcLift,
-      };
+      return Array.from({ length: rowCount }, (_, index) => {
+        const offset = (index - ((rowCount - 1) / 2)) * spacing;
+        const unclampedX = sideCenterX + rowCenterNudge + offset;
+        const x = side * Phaser.Math.Clamp(
+          Math.abs(unclampedX),
+          centerClearX,
+          outerLimitX,
+        );
+
+        return { x, y };
+      });
     });
+  }
+
+  getResultGodIconSideRowCounts(count) {
+    if (count <= 1) return [1];
+    if (count === 2) return [2];
+    if (count === 3) return [1, 2];
+    if (count === 4) return [2, 2];
+    if (count === 5) return [2, 3];
+    if (count === 6) return [2, 2, 2];
+    return [2, 3, 2];
   }
 
   createResultGodIcon(god, config) {
@@ -4372,9 +4400,12 @@ ${COMMIT_SHA}`, {
       image.setTint(style.tint);
     }
 
+    const footShadow = this.add.ellipse(0, 1.5, image.displayWidth * 0.72, Math.max(3, image.displayHeight * 0.12), 0x050302, 0.28);
+    container.add(footShadow);
+
     if (style.glowAlpha > 0) {
-      const glowWidth = Math.max(18, image.displayWidth + 12);
-      const glowHeight = Math.max(20, image.displayHeight + 8);
+      const glowWidth = Math.max(12, image.displayWidth + 5);
+      const glowHeight = Math.max(16, image.displayHeight + 4);
       const glow = this.add.ellipse(0, -image.displayHeight * 0.5, glowWidth, glowHeight, RESULT_GOD_ICON_GLOW_COLOR, style.glowAlpha)
         .setStrokeStyle(1, RESULT_GOD_ICON_GLOW_COLOR, style.glowStrokeAlpha);
       container.add(glow);
@@ -4395,18 +4426,18 @@ ${COMMIT_SHA}`, {
     }
 
     if (this.currentEndingType === ENDING_TYPES.TRUE_END) {
-      return { alpha: 1, tint: null, glowAlpha: 0.18, glowStrokeAlpha: 0.7 };
+      return { alpha: 1, tint: null, glowAlpha: 0.08, glowStrokeAlpha: 0.28 };
     }
 
     if (isCompleteTemple) {
-      return { alpha: 0.94, tint: null, glowAlpha: 0.12, glowStrokeAlpha: 0.5 };
+      return { alpha: 0.94, tint: null, glowAlpha: 0.06, glowStrokeAlpha: 0.22 };
     }
 
     if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
-      return { alpha: 0.72, tint: null, glowAlpha: 0.04, glowStrokeAlpha: 0.25 };
+      return { alpha: 0.72, tint: null, glowAlpha: 0.025, glowStrokeAlpha: 0.14 };
     }
 
-    return { alpha: 0.88, tint: null, glowAlpha: 0.08, glowStrokeAlpha: 0.36 };
+    return { alpha: 0.88, tint: null, glowAlpha: 0.04, glowStrokeAlpha: 0.18 };
   }
 
   createResultTempleLayer(panelWidth, panelHeight) {
