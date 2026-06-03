@@ -38,7 +38,8 @@ import {
 } from '../data/resultPyramids.js';
 
 const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.4992;
-const RESULT_TEMPLE_Y_OFFSET = -46;
+// Keep the temple base and its guardian coffins above the separate foreground pyramid.
+const RESULT_TEMPLE_Y_OFFSET = -112;
 const RESULT_TEMPLE_ALPHA = 0.68;
 const RESULT_TEMPLE_TINT = 0xbaa06f;
 const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.84;
@@ -247,8 +248,8 @@ const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
 const RESULT_GOD_ICON_GLOW_COLOR = 0xf4d77a;
 const RESULT_GOD_ICON_PANEL_MARGIN_X = 28;
-const RESULT_GOD_ICON_CENTER_CLEAR_RATIO = { compact: 0.285, standard: 0.29 };
-const RESULT_GOD_ICON_BASE_Y_RATIO = { compact: 0.175, standard: 0.19 };
+const RESULT_GOD_ICON_ROW_GAP_RATIO = { compact: 0.82, standard: 0.9 };
+const RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO = 0.08;
 
 const BOMB_LABELS_JA = {
   vertical_clear: '縦消し',
@@ -4097,7 +4098,8 @@ ${COMMIT_SHA}`, {
     const panelColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x0c1630 : 0x130b08;
     const borderColor = this.currentEndingType === ENDING_TYPES.TRUE_END ? 0x8ecbff : 0xd4af37;
     const sky = this.createResultSkyBackground(panelWidth, panelHeight);
-    const temple = this.createResultTempleLayer(panelWidth, panelHeight);
+    const templeLayout = this.getResultTempleLayout(panelWidth, panelHeight);
+    const temple = this.createResultTempleLayer(panelWidth, panelHeight, templeLayout);
     const pyramid = this.createResultPyramidRevealLayer(panelWidth, panelHeight);
     const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_SHADE_ALPHA.standard : RESULT_PANEL_SHADE_ALPHA.ritual);
     const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_FILL_ALPHA.standard : RESULT_PANEL_FILL_ALPHA.ritual).setStrokeStyle(3, borderColor, 0.9);
@@ -4165,9 +4167,10 @@ ${COMMIT_SHA}`, {
     const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {
       isCompactPanel,
       statsZoneTop,
+      templeBottomY: templeLayout.visibleBottomY,
     });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount);
-    const nodes = [sky, temple, skyReadabilityShade, pyramid, resultGodIcons, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4318,66 +4321,44 @@ ${COMMIT_SHA}`, {
     const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * 0.24);
     const isCompactPanel = Boolean(options.isCompactPanel);
     const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
-    const preferredBaseY = panelHeight * (isCompactPanel
-      ? RESULT_GOD_ICON_BASE_Y_RATIO.compact
-      : RESULT_GOD_ICON_BASE_Y_RATIO.standard);
-    const baseY = Math.min(preferredBaseY, maxIconY);
-    const leftCount = Math.ceil(count / 2);
-    const rightCount = count - leftCount;
-
-    return [
-      ...this.createResultGodIconSideGroup(leftCount, -1, panelWidth, baseY, iconMaxHeight, isCompactPanel),
-      ...this.createResultGodIconSideGroup(rightCount, 1, panelWidth, baseY, iconMaxHeight, isCompactPanel),
-    ];
-  }
-
-  createResultGodIconSideGroup(count, side, panelWidth, baseY, iconMaxHeight, isCompactPanel) {
-    if (count <= 0) {
-      return [];
-    }
-
-    const clearRatio = isCompactPanel
-      ? RESULT_GOD_ICON_CENTER_CLEAR_RATIO.compact
-      : RESULT_GOD_ICON_CENTER_CLEAR_RATIO.standard;
-    const centerClearX = Math.max(panelWidth * clearRatio, iconMaxHeight * 4.6);
-    const halfPanel = panelWidth / 2;
-    const outerLimitX = Math.max(centerClearX, halfPanel - RESULT_GOD_ICON_PANEL_MARGIN_X - (iconMaxHeight * 0.5));
-    const sideLaneWidth = Math.max(iconMaxHeight * 1.2, outerLimitX - centerClearX);
-    const sideCenterX = side * (centerClearX + (sideLaneWidth * 0.5));
-    const rowCounts = this.getResultGodIconSideRowCounts(count);
+    const templeBottomY = Number(options.templeBottomY) || 0;
+    const basePadding = iconMaxHeight * RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO;
+    const baseY = Math.min(templeBottomY - basePadding, maxIconY);
+    const rowCounts = this.getResultGodIconTempleRowCounts(count);
     const maxRowCount = Math.max(...rowCounts);
-    const rowGap = iconMaxHeight * (isCompactPanel ? 0.82 : 0.9);
+    const availableWidth = panelWidth - (RESULT_GOD_ICON_PANEL_MARGIN_X * 2) - iconMaxHeight;
+    const rowGap = iconMaxHeight * (isCompactPanel
+      ? RESULT_GOD_ICON_ROW_GAP_RATIO.compact
+      : RESULT_GOD_ICON_ROW_GAP_RATIO.standard);
     const spacing = maxRowCount <= 1
       ? 0
-      : Phaser.Math.Clamp(iconMaxHeight * 0.9, 18, sideLaneWidth / (maxRowCount - 1));
+      : Phaser.Math.Clamp(iconMaxHeight * 1.08, 20, availableWidth / (maxRowCount - 1));
     const topRowOffset = (rowCounts.length - 1) * rowGap;
 
     return rowCounts.flatMap((rowCount, rowIndex) => {
       const y = baseY - topRowOffset + (rowIndex * rowGap);
-      const rowCenterNudge = rowCounts.length >= 3 && rowIndex % 2 === 1 ? side * iconMaxHeight * 0.18 : 0;
 
       return Array.from({ length: rowCount }, (_, index) => {
-        const offset = (index - ((rowCount - 1) / 2)) * spacing;
-        const unclampedX = sideCenterX + rowCenterNudge + offset;
-        const x = side * Phaser.Math.Clamp(
-          Math.abs(unclampedX),
-          centerClearX,
-          outerLimitX,
-        );
+        const x = (index - ((rowCount - 1) / 2)) * spacing;
 
         return { x, y };
       });
     });
   }
 
-  getResultGodIconSideRowCounts(count) {
-    if (count <= 1) return [1];
-    if (count === 2) return [2];
-    if (count === 3) return [1, 2];
-    if (count === 4) return [2, 2];
+  getResultGodIconTempleRowCounts(count) {
+    if (count <= 0) return [];
+    if (count <= 4) return [count];
     if (count === 5) return [2, 3];
-    if (count === 6) return [2, 2, 2];
-    return [2, 3, 2];
+    if (count === 6) return [3, 3];
+    if (count === 7) return [3, 4];
+    if (count === 8) return [4, 4];
+    if (count === 9) return [3, 3, 3];
+    if (count === 10) return [3, 4, 3];
+    if (count === 11) return [3, 4, 4];
+    if (count === 12) return [4, 4, 4];
+    if (count === 13) return [4, 5, 4];
+    return [4, 5, 5];
   }
 
   createResultGodIcon(god, config) {
@@ -4440,22 +4421,33 @@ ${COMMIT_SHA}`, {
     return { alpha: 0.88, tint: null, glowAlpha: 0.04, glowStrokeAlpha: 0.18 };
   }
 
-  createResultTempleLayer(panelWidth, panelHeight) {
-    const templeAsset = getResultTempleAsset(this.maxGodsUnlockedThisRun);
-
-    if (!this.textures.exists(templeAsset.key)) {
+  createResultTempleLayer(panelWidth, panelHeight, layout = this.getResultTempleLayout(panelWidth, panelHeight)) {
+    if (!this.textures.exists(layout.asset.key)) {
       return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0);
     }
 
-    const sourceImage = this.textures.get(templeAsset.key)?.getSourceImage?.();
-    const sourceWidth = sourceImage?.width || 900;
-    const sourceHeight = sourceImage?.height || 1600;
-    const scale = Math.min(panelWidth / sourceWidth, panelHeight / sourceHeight) * RESULT_TEMPLE_SCALE_MULTIPLIER;
-
-    return this.add.image(0, RESULT_TEMPLE_Y_OFFSET, templeAsset.key)
-      .setDisplaySize(sourceWidth * scale, sourceHeight * scale)
+    return this.add.image(0, layout.centerY, layout.asset.key)
+      .setDisplaySize(layout.displayWidth, layout.displayHeight)
       .setTint(RESULT_TEMPLE_TINT)
       .setAlpha(RESULT_TEMPLE_ALPHA);
+  }
+
+  getResultTempleLayout(panelWidth, panelHeight) {
+    const asset = getResultTempleAsset(this.maxGodsUnlockedThisRun);
+    const sourceImage = this.textures.get(asset.key)?.getSourceImage?.();
+    const sourceWidth = sourceImage?.width || 941;
+    const sourceHeight = sourceImage?.height || 1672;
+    const scale = Math.min(panelWidth / sourceWidth, panelHeight / sourceHeight) * RESULT_TEMPLE_SCALE_MULTIPLIER;
+    const visibleBottomSourceY = asset.visibleBounds?.bottom ?? sourceHeight;
+    const visibleBottomY = RESULT_TEMPLE_Y_OFFSET + ((visibleBottomSourceY - (sourceHeight / 2)) * scale);
+
+    return {
+      asset,
+      centerY: RESULT_TEMPLE_Y_OFFSET,
+      displayWidth: sourceWidth * scale,
+      displayHeight: sourceHeight * scale,
+      visibleBottomY,
+    };
   }
 
   createResultSkyBackground(panelWidth, panelHeight) {

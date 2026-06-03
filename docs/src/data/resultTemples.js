@@ -7,6 +7,7 @@ export const RESULT_TEMPLE_ASSETS = [
     path: resolveAssetPath('images/result/temple/temple_0_ruins.png'),
     minGods: 0,
     maxGods: 2,
+    visibleBounds: { left: 13, top: 805, right: 927, bottom: 1473 },
   },
   {
     key: 'result-temple-1-small',
@@ -14,6 +15,7 @@ export const RESULT_TEMPLE_ASSETS = [
     path: resolveAssetPath('images/result/temple/temple_1_small.png'),
     minGods: 3,
     maxGods: 5,
+    visibleBounds: { left: 108, top: 821, right: 836, bottom: 1496 },
   },
   {
     key: 'result-temple-2-medium',
@@ -21,6 +23,7 @@ export const RESULT_TEMPLE_ASSETS = [
     path: resolveAssetPath('images/result/temple/temple_2_medium.png'),
     minGods: 6,
     maxGods: 8,
+    visibleBounds: { left: 34, top: 714, right: 908, bottom: 1457 },
   },
   {
     key: 'result-temple-3-great',
@@ -28,6 +31,7 @@ export const RESULT_TEMPLE_ASSETS = [
     path: resolveAssetPath('images/result/temple/temple_3_great.png'),
     minGods: 9,
     maxGods: 12,
+    visibleBounds: { left: 3, top: 642, right: 940, bottom: 1477 },
   },
   {
     key: 'result-temple-4-complete',
@@ -35,6 +39,7 @@ export const RESULT_TEMPLE_ASSETS = [
     path: resolveAssetPath('images/result/temple/temple_4_complete.png'),
     minGods: 13,
     maxGods: 14,
+    visibleBounds: { left: 0, top: 619, right: 940, bottom: 1470 },
   },
 ];
 
