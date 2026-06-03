@@ -243,6 +243,15 @@ const ENDING_TYPES = {
   TRUE_END: 'true_end',
 };
 const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
+const RESULT_SOUL_PROCESSION_OPACITY_MIN = 0.65;
+const RESULT_SOUL_PROCESSION_OPACITY_MAX = 0.85;
+const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.46;
+const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 0.68;
+const RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0.12;
+const RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0.2;
+const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.39;
+const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.11;
+const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.34;
 const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
 const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
@@ -4512,34 +4521,26 @@ ${COMMIT_SHA}`, {
       return procession;
     }
 
-    const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
-    const pathCenterY = (panelHeight / 2) - (isCompactPanel ? 170 : 190);
-    const pathWidth = Math.min(panelWidth * 0.76, isCompactPanel ? 270 : 330);
-    const iconScale = Phaser.Math.Clamp(0.76 - (displayCount * 0.012), 0.56, 0.72);
-    const centerOffset = (displayCount - 1) / 2;
-    const spacing = displayCount <= 1 ? 0 : Math.min(pathWidth / Math.max(1, displayCount - 1), 28);
+    const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight);
 
-    for (let index = 0; index < displayCount; index += 1) {
-      const normalized = displayCount <= 1 ? 0.5 : index / (displayCount - 1);
-      const rowWave = Math.sin(index * 1.7) * (isCompactPanel ? 5 : 7);
-      const pathDepth = Math.sin(normalized * Math.PI) * (isCompactPanel ? 18 : 24);
-      const xVariation = Math.sin(index * 2.3) * (isCompactPanel ? 4 : 7);
-      const x = ((index - centerOffset) * spacing) + xVariation;
-      const y = pathCenterY - pathDepth + rowWave;
-      const soul = this.createResultMummyIcon(index).setPosition(x, y).setScale(iconScale).setAlpha(0.88);
+    iconPositions.forEach((position, index) => {
+      const soul = this.createResultMummyIcon(index)
+        .setPosition(position.x, position.y)
+        .setScale(position.scale)
+        .setAlpha(position.alpha);
       procession.add(soul);
 
       this.tweens.add({
         targets: soul,
-        y: y - (index % 2 === 0 ? 3 : 4),
-        alpha: 0.96,
+        y: position.y - (index % 2 === 0 ? 2 : 3),
+        alpha: Math.min(RESULT_SOUL_PROCESSION_OPACITY_MAX, position.alpha + 0.06),
         yoyo: true,
         repeat: -1,
-        duration: 1700 + (index % 5) * 140,
-        delay: index * 85,
+        duration: 1800 + (index % 5) * 130,
+        delay: index * 75,
         ease: 'Sine.easeInOut',
       });
-    }
+    });
 
     return procession;
   }
@@ -4549,9 +4550,76 @@ ${COMMIT_SHA}`, {
 
     if (count <= 0) return 0;
     if (count <= 5) return count;
-    if (count <= 15) return Math.min(9, count);
-    if (count <= 30) return Math.min(13, count);
+    if (count <= 15) return Math.min(10, count);
+    if (count <= 30) return Math.min(14, count);
     return RESULT_SOUL_PROCESSION_MAX_ICONS;
+  }
+
+  getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight) {
+    const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
+    const rearY = panelHeight * RESULT_SOUL_PROCESSION_REAR_Y_RATIO;
+    const foregroundY = panelHeight * (isCompactPanel ? 0.31 : RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO);
+    const centerClearHalfWidth = Math.max(panelWidth * RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO, isCompactPanel ? 36 : 44);
+    const sideMinX = Math.max(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO, centerClearHalfWidth + 18);
+    const sideMaxX = Math.min(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO, (panelWidth / 2) - (isCompactPanel ? 34 : 42));
+    const rowCounts = this.getResultSoulProcessionSideCounts(displayCount);
+
+    return this.interleaveResultSoulProcessionSides([
+      ...this.getResultSoulProcessionSidePositions('left', rowCounts.left, {
+        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: 0,
+      }),
+      ...this.getResultSoulProcessionSidePositions('right', rowCounts.right, {
+        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: rowCounts.left,
+      }),
+    ]).slice(0, displayCount);
+  }
+
+  getResultSoulProcessionSideCounts(displayCount) {
+    return {
+      left: Math.ceil(displayCount / 2),
+      right: Math.floor(displayCount / 2),
+    };
+  }
+
+  getResultSoulProcessionSidePositions(side, count, options) {
+    if (count <= 0) {
+      return [];
+    }
+
+    const sign = side === 'left' ? -1 : 1;
+    const denominator = Math.max(1, count - 1);
+
+    return Array.from({ length: count }, (_, rowIndex) => {
+      const depthRatio = count <= 1 ? 0.82 : rowIndex / denominator;
+      const yJitter = Math.sin((rowIndex + options.startIndex) * 1.73) * (options.isCompactPanel ? 4 : 6);
+      const xJitter = Math.sin((rowIndex + options.startIndex) * 2.17) * (options.isCompactPanel ? 5 : 8);
+      const ceremonialOffset = rowIndex % 2 === 0 ? 0 : (options.isCompactPanel ? 8 : 12);
+      const xBase = Phaser.Math.Linear(options.sideMinX, options.sideMaxX, Math.pow(depthRatio, 0.9));
+      const x = sign * (xBase + ceremonialOffset + xJitter);
+      const y = Phaser.Math.Linear(options.rearY, options.foregroundY, depthRatio) + yJitter;
+      const scale = Phaser.Math.Linear(
+        RESULT_SOUL_PROCESSION_TEMPLE_SCALE,
+        RESULT_SOUL_PROCESSION_FOREGROUND_SCALE,
+        depthRatio,
+      ) * (options.isCompactPanel ? 0.94 : 1);
+      const alpha = Phaser.Math.Linear(
+        RESULT_SOUL_PROCESSION_OPACITY_MIN,
+        RESULT_SOUL_PROCESSION_OPACITY_MAX,
+        depthRatio,
+      );
+
+      return { x, y, scale, alpha, side, rowIndex };
+    });
+  }
+
+  interleaveResultSoulProcessionSides(positions) {
+    return positions.sort((a, b) => {
+      if (a.rowIndex !== b.rowIndex) {
+        return a.rowIndex - b.rowIndex;
+      }
+
+      return a.side === 'left' ? -1 : 1;
+    });
   }
 
   createResultMummyIcon(index) {
