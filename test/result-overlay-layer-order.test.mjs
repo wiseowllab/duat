@@ -133,8 +133,8 @@ test('result soul procession preserves pre-procession result landmark layout con
 test('result soul procession caps icons and keeps rescued souls in side rows', () => {
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_MAX_ICONS = 16/,
-    'result soul procession should cap large revival totals at 16 visible mummies',
+    /RESULT_SOUL_PROCESSION_MAX_ICONS = 10/,
+    'result soul procession should cap large revival totals at 10 readable mummies',
   );
   assert.match(
     gameSceneSource,
@@ -143,18 +143,18 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 5\) return count;/,
-    'small revival totals should show one icon per rescued soul',
+    /if \(count <= 4\) return count;/,
+    'small revival totals should show one readable icon per rescued soul',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 15\) return Math\.min\(10, count\);/,
-    'medium revival totals should form capped loose side rows',
+    /if \(count <= 12\) return Math\.min\(6, count\);/,
+    'medium revival totals should reduce to readable side rows',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 30\) return Math\.min\(14, count\);/,
-    'large revival totals should widen without filling the whole result art',
+    /if \(count <= 30\) return Math\.min\(8, count\);/,
+    'large revival totals should prioritize fewer readable figures over quantity',
   );
   assert.match(
     gameSceneSource,
@@ -209,7 +209,7 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   assert.match(
     gameSceneSource,
     /RESULT_SOUL_PROCESSION_OPACITY_MIN,\n        RESULT_SOUL_PROCESSION_OPACITY_MAX/s,
-    'mummies should use subdued perspective opacity values',
+    'mummies should keep strong enough opacity for ground contrast',
   );
   assert.doesNotMatch(
     gameSceneSource,
