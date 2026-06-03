@@ -47,6 +47,13 @@ const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.14;
 const RESULT_PYRAMID_Y_OFFSET = 20;
 const RESULT_PYRAMID_SAFE_BOTTOM_INSET = 18;
 const RESULT_PYRAMID_REVEAL_MS = 850;
+const RESULT_PANEL_SHADE_ALPHA = { standard: 0.16, ritual: 0.18 };
+const RESULT_PANEL_FILL_ALPHA = { standard: 0.08, ritual: 0.1 };
+const RESULT_STATS_PANEL_FILL_ALPHA = 0.12;
+const RESULT_STATS_PANEL_STROKE_ALPHA = 0.3;
+const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.24, compact: 0.2 };
+const RESULT_PROMPT_PANEL_FILL_ALPHA = 0.18;
+const RESULT_PROMPT_PANEL_STROKE_ALPHA = 0.3;
 const BOMB_AREA_FLASH_MS = 400;
 const BOMB_AREA_FLASH_COLOR = 0xd4af37;
 const BOMB_PREVIEW_ALPHA_SCALE = 0.42;
@@ -4085,10 +4092,10 @@ ${COMMIT_SHA}`, {
     const sky = this.createResultSkyBackground(panelWidth, panelHeight);
     const temple = this.createResultTempleLayer(panelWidth, panelHeight);
     const pyramid = this.createResultPyramidRevealLayer(panelWidth, panelHeight);
-    const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.26 : 0.34);
-    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.24 : 0.3).setStrokeStyle(3, borderColor, 0.9);
+    const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_SHADE_ALPHA.standard : RESULT_PANEL_SHADE_ALPHA.ritual);
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_FILL_ALPHA.standard : RESULT_PANEL_FILL_ALPHA.ritual).setStrokeStyle(3, borderColor, 0.9);
     const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
-    const subtitle = this.add.text(0, -panelHeight / 2 + 96, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
+    const subtitle = this.add.text(0, -panelHeight / 2 + 92, subtitleText, { fontFamily: 'Arial, sans-serif', fontSize: '17px', color: '#f0e3cc', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 34 } }).setOrigin(0.5);
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
     const isRitualEnding = this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER;
@@ -4104,10 +4111,16 @@ ${COMMIT_SHA}`, {
       : 0;
     const ceremonyZoneTop = zoneTop + headlineZoneHeight + subtextZoneHeight;
     const ceremonyZoneBottom = ceremonyZoneTop + ceremonyZoneHeight;
-    const statsZoneTop = isRitualEnding ? ceremonyZoneBottom + (isCompactPanel ? 18 : 24) : (zoneTop + 172);
-    const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 10 : 14);
+    const statsPanelHeight = isRitualEnding
+      ? (isCompactPanel ? 108 : 116)
+      : (isCompactPanel ? 94 : 108);
+    const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
+    const preferredStatsZoneTop = panelHeight * (isCompactPanel ? RESULT_STATS_PANEL_TOP_RATIO.compact : RESULT_STATS_PANEL_TOP_RATIO.standard);
+    const statsZoneTop = Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
     const statsZoneHeight = Math.max(50, statsZoneBottom - statsZoneTop);
-    const statsY = statsZoneTop;
+    const statsTextPaddingY = isCompactPanel ? 8 : 10;
+    const statsY = statsZoneTop + statsTextPaddingY;
+    const statsTextHeight = Math.max(36, statsZoneHeight - (statsTextPaddingY * 2));
     const statsFontSize = isCompactPanel ? '10px' : '12px';
     const statsLineSpacing = isCompactPanel ? -1 : 0;
     const statsPanelCenterY = statsZoneTop + (statsZoneHeight / 2);
@@ -4117,8 +4130,8 @@ ${COMMIT_SHA}`, {
       panelWidth - 44,
       statsZoneHeight,
       0x030201,
-      this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.44 : 0.38,
-    ).setStrokeStyle(1, 0xd4af37, 0.18);
+      RESULT_STATS_PANEL_FILL_ALPHA,
+    ).setStrokeStyle(1, 0xd4af37, RESULT_STATS_PANEL_STROKE_ALPHA).setAlpha(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : 0).setName('endingStatsPanel');
 
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
@@ -4132,11 +4145,11 @@ ${COMMIT_SHA}`, {
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
     ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: statsFontSize, color: '#eadfca', align: 'center', lineSpacing: statsLineSpacing, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0).setPosition(0, statsY).setAlpha(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : 0).setName('endingStats');
     recordText.setWordWrapWidth(panelWidth - 44, true);
-    if (recordText.height > statsZoneHeight) {
+    if (recordText.height > statsTextHeight) {
       recordText.setFontSize(isCompactPanel ? '9px' : '11px');
       recordText.setLineSpacing(-2);
     }
-    if (recordText.height > statsZoneHeight && isRitualEnding) {
+    if (recordText.height > statsTextHeight && isRitualEnding) {
       const compactStatsRows = [
         `最終スコア  ${this.score}    最大連鎖  ${this.bestChainThisRun}`,
         `到達Tier  ${this.maxTierThisRun}    解放した神  ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
@@ -4162,7 +4175,7 @@ ${COMMIT_SHA}`, {
         ceremonyZoneBottom,
       );
       nodes.push(...ritualSequence.nodes);
-      this.playRitualEndingSequence(ritualSequence, recordText);
+      this.playRitualEndingSequence(ritualSequence, recordText, statsReadabilityPanel);
     }
 
     const promptPanelHeight = isCompactPanel ? 44 : 48;
@@ -4172,8 +4185,8 @@ ${COMMIT_SHA}`, {
       panelWidth - 50,
       promptPanelHeight,
       0x030201,
-      0.46,
-    ).setStrokeStyle(1, 0xd4af37, 0.2);
+      RESULT_PROMPT_PANEL_FILL_ALPHA,
+    ).setStrokeStyle(1, 0xd4af37, RESULT_PROMPT_PANEL_STROKE_ALPHA);
     const prompt = this.add.text(0, promptY, promptText, { fontFamily: 'Arial, sans-serif', fontSize: isCompactPanel ? '18px' : '20px', color: '#f2d783', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 32 } }).setOrigin(0.5, 1);
     nodes.push(promptReadabilityPanel, prompt);
 
@@ -4306,7 +4319,9 @@ ${COMMIT_SHA}`, {
     this.clearEndingSequenceTimers();
     this.isEndingSequenceRunning = false;
     this.isEndingStatsVisible = true;
-    this.gameOverOverlay?.iterate((node) => { if (node?.name === 'endingStats') node.setAlpha(1); });
+    this.gameOverOverlay?.iterate((node) => {
+      if (node?.name === 'endingStats' || node?.name === 'endingStatsPanel') node.setAlpha(1);
+    });
     return true;
   }
 
@@ -4422,7 +4437,7 @@ ${COMMIT_SHA}`, {
     };
   }
 
-  playRitualEndingSequence(sequence, recordText) {
+  playRitualEndingSequence(sequence, recordText, statsReadabilityPanel) {
     this.isEndingSequenceRunning = true;
     this.isEndingStatsVisible = false;
     const visualSouls = Math.min(8, Math.max(2, sequence.revivedSoulsCount));
@@ -4488,6 +4503,7 @@ ${COMMIT_SHA}`, {
     }
     this.endingSequenceTimers.push(this.time.delayedCall(statsRevealMs, () => {
       recordText.setAlpha(1);
+      statsReadabilityPanel?.setAlpha(1);
       this.isEndingSequenceRunning = false;
       this.isEndingStatsVisible = true;
       this.clearEndingSequenceTimers();
