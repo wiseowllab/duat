@@ -242,11 +242,11 @@ const ENDING_TYPES = {
   NORMAL_END: 'normal_end',
   TRUE_END: 'true_end',
 };
-const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
-const RESULT_SOUL_PROCESSION_OPACITY_MIN = 0.65;
-const RESULT_SOUL_PROCESSION_OPACITY_MAX = 0.85;
-const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.42;
-const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 0.78;
+const RESULT_SOUL_PROCESSION_MAX_ICONS = 10;
+const RESULT_SOUL_PROCESSION_OPACITY_MIN = 0.78;
+const RESULT_SOUL_PROCESSION_OPACITY_MAX = 0.96;
+const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.58;
+const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 1.06;
 const RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0.26;
 const RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0.39;
 const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.47;
@@ -4552,9 +4552,9 @@ ${COMMIT_SHA}`, {
     const count = Math.max(0, revivedSoulsCount);
 
     if (count <= 0) return 0;
-    if (count <= 5) return count;
-    if (count <= 15) return Math.min(10, count);
-    if (count <= 30) return Math.min(14, count);
+    if (count <= 4) return count;
+    if (count <= 12) return Math.min(6, count);
+    if (count <= 30) return Math.min(8, count);
     return RESULT_SOUL_PROCESSION_MAX_ICONS;
   }
 
@@ -4633,17 +4633,22 @@ ${COMMIT_SHA}`, {
 
   createResultMummyIcon(index) {
     const mummy = this.add.container(0, 0);
-    const wrapColor = index % 3 === 0 ? 0xf1e7c9 : 0xe2d5b9;
-    const shadow = this.add.ellipse(0, 17, 18, 6, 0x050302, 0.28);
-    const body = this.add.rectangle(0, 4, 12, 22, wrapColor, 0.96).setStrokeStyle(1, 0x4f3c2a, 0.9);
-    const head = this.add.circle(0, -10, 6, 0xf2eacb, 0.98).setStrokeStyle(1, 0x4f3c2a, 0.9);
-    const eyeGlow = this.add.circle(2, -11, 1.4, 0x9feaff, 0.95);
-    const bandA = this.add.rectangle(-1, -2, 12, 1.2, 0xb9ae93, 0.9).setRotation(-0.18);
-    const bandB = this.add.rectangle(1, 5, 12, 1.2, 0xb9ae93, 0.9).setRotation(0.16);
-    const bandC = this.add.rectangle(0, 11, 10, 1.1, 0xb9ae93, 0.82).setRotation(-0.1);
-    const arm = this.add.line(0, 0, -8, 2, -13, 7, 0xe2d5b9, 0.82).setLineWidth(2, 2);
+    const wrapColor = index % 3 === 0 ? 0xf7ecd0 : 0xe8dcc2;
+    const outlineColor = 0x2d2119;
+    const bandColor = 0x9f9177;
+    const shadow = this.add.ellipse(0, 24, 28, 9, 0x030201, 0.5);
+    const shoulderWrap = this.add.ellipse(0, -3, 20, 11, wrapColor, 0.98).setStrokeStyle(1.4, outlineColor, 0.95);
+    const body = this.add.rectangle(0, 7, 15, 28, wrapColor, 0.98).setStrokeStyle(1.4, outlineColor, 0.95);
+    const head = this.add.circle(0, -16, 8, 0xf8efcf, 1).setStrokeStyle(1.4, outlineColor, 0.96);
+    const brow = this.add.rectangle(0, -17, 13, 2, 0x6f604b, 0.72).setRotation(-0.08);
+    const eyeGlow = this.add.circle(2.5, -17, 1.6, 0xaef2ff, 0.98);
+    const bandA = this.add.rectangle(-1, -5, 18, 1.7, bandColor, 0.9).setRotation(-0.2);
+    const bandB = this.add.rectangle(1, 4, 16, 1.7, bandColor, 0.9).setRotation(0.16);
+    const bandC = this.add.rectangle(0, 13, 14, 1.6, bandColor, 0.84).setRotation(-0.1);
+    const armLeft = this.add.line(0, 0, -8, -2, -13, 9, wrapColor, 0.9).setLineWidth(3.2, 2.4);
+    const armRight = this.add.line(0, 0, 8, -2, 13, 9, wrapColor, 0.78).setLineWidth(2.6, 2);
 
-    mummy.add([shadow, arm, body, head, eyeGlow, bandA, bandB, bandC]);
+    mummy.add([shadow, armLeft, armRight, shoulderWrap, body, head, brow, eyeGlow, bandA, bandB, bandC]);
     return mummy;
   }
 
