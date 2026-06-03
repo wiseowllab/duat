@@ -4164,7 +4164,7 @@ ${COMMIT_SHA}`, {
       statsZoneTop,
     });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount);
-    const nodes = [sky, temple, skyReadabilityShade, resultGodIcons, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, skyReadabilityShade, pyramid, resultGodIcons, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
