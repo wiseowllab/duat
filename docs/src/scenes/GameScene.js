@@ -42,17 +42,17 @@ const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.4992;
 const RESULT_TEMPLE_Y_OFFSET = -52;
 const RESULT_TEMPLE_ALPHA = 0.68;
 const RESULT_TEMPLE_TINT = 0xbaa06f;
-const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.84;
-const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.98;
-const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.14;
-const RESULT_PYRAMID_Y_OFFSET = 20;
+const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.62;
+const RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0.58;
+const RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0.37;
+const RESULT_PYRAMID_Y_OFFSET = 0;
 const RESULT_PYRAMID_SAFE_BOTTOM_INSET = 18;
 const RESULT_PYRAMID_REVEAL_MS = 850;
 const RESULT_PANEL_SHADE_ALPHA = { standard: 0.16, ritual: 0.18 };
 const RESULT_PANEL_FILL_ALPHA = { standard: 0.08, ritual: 0.1 };
 const RESULT_STATS_PANEL_FILL_ALPHA = 0.12;
 const RESULT_STATS_PANEL_STROKE_ALPHA = 0.3;
-const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.24, compact: 0.2 };
+const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.31, compact: 0.28 };
 const RESULT_PROMPT_PANEL_FILL_ALPHA = 0.18;
 const RESULT_PROMPT_PANEL_STROKE_ALPHA = 0.3;
 const BOMB_AREA_FLASH_MS = 400;
@@ -245,13 +245,15 @@ const ENDING_TYPES = {
 const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
 const RESULT_SOUL_PROCESSION_OPACITY_MIN = 0.65;
 const RESULT_SOUL_PROCESSION_OPACITY_MAX = 0.85;
-const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.46;
-const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 0.68;
-const RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0.12;
-const RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0.2;
-const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.39;
-const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.11;
-const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.34;
+const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.42;
+const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 0.78;
+const RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0.26;
+const RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0.39;
+const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.47;
+const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.18;
+const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.29;
+const RESULT_SOUL_PROCESSION_PYRAMID_GAP = 28;
+const RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP = 26;
 const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
 const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
@@ -4115,7 +4117,8 @@ ${COMMIT_SHA}`, {
     const sky = this.createResultSkyBackground(panelWidth, panelHeight);
     const templeLayout = this.getResultTempleLayout(panelWidth, panelHeight);
     const temple = this.createResultTempleLayer(panelWidth, panelHeight, templeLayout);
-    const pyramid = this.createResultPyramidRevealLayer(panelWidth, panelHeight);
+    const pyramidLayout = this.getResultPyramidLayout(panelWidth, panelHeight);
+    const pyramid = this.createResultPyramidRevealLayer(panelWidth, panelHeight, pyramidLayout);
     const skyReadabilityShade = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x030201, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_SHADE_ALPHA.standard : RESULT_PANEL_SHADE_ALPHA.ritual);
     const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, panelColor, this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? RESULT_PANEL_FILL_ALPHA.standard : RESULT_PANEL_FILL_ALPHA.ritual).setStrokeStyle(3, borderColor, 0.9);
     const title = this.add.text(0, -panelHeight / 2 + 48, titleText, { fontFamily: 'Georgia, serif', fontSize: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? '32px' : '34px', color: this.currentEndingType === ENDING_TYPES.TRUE_END ? '#f7dc7c' : '#f1c47a', fontStyle: 'bold', align: 'center', stroke: '#1a1006', strokeThickness: 5, wordWrap: { width: panelWidth - 36 } }).setOrigin(0.5);
@@ -4129,8 +4132,8 @@ ${COMMIT_SHA}`, {
     const zoneBottom = panelHeight / 2;
     const returnPromptZoneHeight = isCompactPanel ? 62 : 68;
     const statsPanelHeight = isRitualEnding
-      ? (isCompactPanel ? 108 : 116)
-      : (isCompactPanel ? 94 : 108);
+      ? (isCompactPanel ? 78 : 86)
+      : (isCompactPanel ? 86 : 96);
     const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
     const preferredStatsZoneTop = panelHeight * (isCompactPanel ? RESULT_STATS_PANEL_TOP_RATIO.compact : RESULT_STATS_PANEL_TOP_RATIO.standard);
     const statsZoneTop = Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
@@ -4184,7 +4187,10 @@ ${COMMIT_SHA}`, {
       statsZoneTop,
       templeBottomY: templeLayout.visibleBottomY,
     });
-    const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount);
+    const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount, {
+      pyramidLayout,
+      statsZoneTop,
+    });
     const nodes = [sky, temple, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
@@ -4233,7 +4239,7 @@ ${COMMIT_SHA}`, {
 
 
 
-  createResultPyramidRevealLayer(panelWidth, panelHeight) {
+  createResultPyramidRevealLayer(panelWidth, panelHeight, layout = this.getResultPyramidLayout(panelWidth, panelHeight)) {
     const preservedGodCount = this.getPreservedGodCountForResult();
     const revealRatio = getResultPyramidRevealRatio(preservedGodCount);
 
@@ -4241,17 +4247,7 @@ ${COMMIT_SHA}`, {
       return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0);
     }
 
-    const sourceImage = this.textures.get(RESULT_PYRAMID_COMPLETE_ASSET.key)?.getSourceImage?.();
-    const sourceWidth = sourceImage?.width || 941;
-    const sourceHeight = sourceImage?.height || 1672;
-    const maxDisplayHeight = panelHeight * RESULT_PYRAMID_MAX_HEIGHT_RATIO;
-    const scale = Math.min(
-      (panelWidth * RESULT_PYRAMID_SCALE_MULTIPLIER) / sourceWidth,
-      maxDisplayHeight / sourceHeight,
-    );
-    const baseBottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
-    const safeBottomY = (panelHeight / 2) - RESULT_PYRAMID_SAFE_BOTTOM_INSET;
-    const bottomY = Math.min(baseBottomY + RESULT_PYRAMID_Y_OFFSET, safeBottomY);
+    const { sourceWidth, sourceHeight, scale, bottomY } = layout;
     const pyramid = this.add.image(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
       .setOrigin(0.5, 1)
       .setScale(scale)
@@ -4269,6 +4265,30 @@ ${COMMIT_SHA}`, {
     });
 
     return pyramid;
+  }
+
+  getResultPyramidLayout(panelWidth, panelHeight) {
+    const sourceImage = this.textures.get(RESULT_PYRAMID_COMPLETE_ASSET.key)?.getSourceImage?.();
+    const sourceWidth = sourceImage?.width || 941;
+    const sourceHeight = sourceImage?.height || 1672;
+    const maxDisplayHeight = panelHeight * RESULT_PYRAMID_MAX_HEIGHT_RATIO;
+    const scale = Math.min(
+      (panelWidth * RESULT_PYRAMID_SCALE_MULTIPLIER) / sourceWidth,
+      maxDisplayHeight / sourceHeight,
+    );
+    const baseBottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
+    const safeBottomY = (panelHeight / 2) - RESULT_PYRAMID_SAFE_BOTTOM_INSET;
+    const bottomY = Math.min(baseBottomY + RESULT_PYRAMID_Y_OFFSET, safeBottomY);
+
+    return {
+      sourceWidth,
+      sourceHeight,
+      scale,
+      bottomY,
+      topY: bottomY - (sourceHeight * scale),
+      displayWidth: sourceWidth * scale,
+      displayHeight: sourceHeight * scale,
+    };
   }
 
   applyResultPyramidCrop(pyramid, revealRatio, sourceWidth, sourceHeight) {
@@ -4513,7 +4533,7 @@ ${COMMIT_SHA}`, {
     return true;
   }
 
-  createResultSoulProcessionLayer(panelWidth, panelHeight, revivedSoulsCount) {
+  createResultSoulProcessionLayer(panelWidth, panelHeight, revivedSoulsCount, options = {}) {
     const procession = this.add.container(0, 0).setName('resultSoulProcession');
     const displayCount = this.getResultSoulProcessionIconCount(revivedSoulsCount);
 
@@ -4521,7 +4541,7 @@ ${COMMIT_SHA}`, {
       return procession;
     }
 
-    const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight);
+    const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options);
 
     iconPositions.forEach((position, index) => {
       const soul = this.createResultMummyIcon(index)
@@ -4555,13 +4575,19 @@ ${COMMIT_SHA}`, {
     return RESULT_SOUL_PROCESSION_MAX_ICONS;
   }
 
-  getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight) {
+  getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options = {}) {
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
-    const rearY = panelHeight * RESULT_SOUL_PROCESSION_REAR_Y_RATIO;
-    const foregroundY = panelHeight * (isCompactPanel ? 0.31 : RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO);
-    const centerClearHalfWidth = Math.max(panelWidth * RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO, isCompactPanel ? 36 : 44);
-    const sideMinX = Math.max(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO, centerClearHalfWidth + 18);
-    const sideMaxX = Math.min(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO, (panelWidth / 2) - (isCompactPanel ? 34 : 42));
+    const fallbackRearY = panelHeight * RESULT_SOUL_PROCESSION_REAR_Y_RATIO;
+    const pyramidBottomY = options.pyramidLayout?.bottomY ?? fallbackRearY;
+    const scorePanelTopY = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
+    const rearY = Math.max(fallbackRearY, pyramidBottomY + RESULT_SOUL_PROCESSION_PYRAMID_GAP);
+    const foregroundLimitY = scorePanelTopY - RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP;
+    const preferredForegroundY = panelHeight * (isCompactPanel ? 0.27 : RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO);
+    const minimumForegroundY = rearY + (isCompactPanel ? 34 : 42);
+    const foregroundY = Math.max(rearY, Math.min(Math.max(preferredForegroundY, minimumForegroundY), foregroundLimitY));
+    const centerClearHalfWidth = Math.max(panelWidth * RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO, isCompactPanel ? 88 : 108);
+    const sideMinX = Math.max(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO, centerClearHalfWidth + (isCompactPanel ? 20 : 26));
+    const sideMaxX = Math.min(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO, (panelWidth / 2) - (isCompactPanel ? 22 : 28));
     const rowCounts = this.getResultSoulProcessionSideCounts(displayCount);
 
     return this.interleaveResultSoulProcessionSides([
@@ -4569,7 +4595,7 @@ ${COMMIT_SHA}`, {
         panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: 0,
       }),
       ...this.getResultSoulProcessionSidePositions('right', rowCounts.right, {
-        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: rowCounts.left,
+        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: 0,
       }),
     ]).slice(0, displayCount);
   }
@@ -4591,12 +4617,13 @@ ${COMMIT_SHA}`, {
 
     return Array.from({ length: count }, (_, rowIndex) => {
       const depthRatio = count <= 1 ? 0.82 : rowIndex / denominator;
-      const yJitter = Math.sin((rowIndex + options.startIndex) * 1.73) * (options.isCompactPanel ? 4 : 6);
-      const xJitter = Math.sin((rowIndex + options.startIndex) * 2.17) * (options.isCompactPanel ? 5 : 8);
-      const ceremonialOffset = rowIndex % 2 === 0 ? 0 : (options.isCompactPanel ? 8 : 12);
-      const xBase = Phaser.Math.Linear(options.sideMinX, options.sideMaxX, Math.pow(depthRatio, 0.9));
+      const spacingRatio = Math.pow(depthRatio, 1.18);
+      const yJitter = Math.sin((rowIndex + options.startIndex) * 1.73) * (options.isCompactPanel ? 2.5 : 4);
+      const xJitter = Math.sin((rowIndex + options.startIndex) * 2.17) * (options.isCompactPanel ? 4 : 6);
+      const ceremonialOffset = rowIndex % 2 === 0 ? 0 : (options.isCompactPanel ? 7 : 10);
+      const xBase = Phaser.Math.Linear(options.sideMinX, options.sideMaxX, Math.pow(depthRatio, 0.72));
       const x = sign * (xBase + ceremonialOffset + xJitter);
-      const y = Phaser.Math.Linear(options.rearY, options.foregroundY, depthRatio) + yJitter;
+      const y = Phaser.Math.Linear(options.rearY, options.foregroundY, spacingRatio) + yJitter;
       const scale = Phaser.Math.Linear(
         RESULT_SOUL_PROCESSION_TEMPLE_SCALE,
         RESULT_SOUL_PROCESSION_FOREGROUND_SCALE,
