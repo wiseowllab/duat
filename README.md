@@ -154,7 +154,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - The existing four tier-based coffin PNGs remain loaded as fallbacks. If a god-specific PNG is missing or has not finished loading, the current coffin panel uses that god's tier image (`coffin_small.png`, `coffin_medium.png`, `coffin_large.png`, or `coffin_maximum.png`) without blocking gameplay.
 - Result sky backgrounds are loaded from `docs/assets/images/result/sky/` and selected by the highest reached Tier: Tier 1 uses `sky_tier1_night.png`, Tier 2 uses `sky_tier2_starry.png`, Tier 3 uses `sky_tier3_dawn.png`, and Tier 4 uses `sky_tier4_sunrise.png`.
 - Result temple overlays are loaded from `docs/assets/images/result/temple/` and reflect the current run's unlocked god count: 0-2 gods shows ruins, 3-5 shows a small temple, 6-8 shows a medium temple, 9-12 shows a great temple, and 13-14 shows the complete temple.
-- Result pyramid art is loaded from `docs/assets/images/result/pyramid/pyramid_complete.png`. The result screen uses this single completed pyramid PNG and reveals it from the bottom up based on preserved gods: gods that were unlocked and whose bombs were not used reveal more of the pyramid, while used-god bombs do not count as preserved.
+- Result pyramid art is loaded from `docs/assets/images/result/pyramid/pyramid_complete.png`. The result screen uses this single completed pyramid PNG and reveals it from the bottom up based on preserved gods: gods that were unlocked and whose bombs were not used reveal more of the pyramid, while used-god bombs do not count as preserved. The foreground no longer draws a placeholder step-block pyramid; revived soul/mummy icons are capped and arranged as a small procession near the pyramid base before the stat panel and result text are layered on top.
 - God unlock feedback includes the right-side Current Coffin panel glow plus a centered dark-temple presentation showing `GOD UNLOCKED!`, the god name, tier, and the same god-specific coffin PNG used by the HUD. The presentation fades in, scales the coffin into place, holds briefly, then fades out automatically; board resolution waits for it before spawning the next active piece.
 - Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, result tiers, preserved-god pyramid reveals, and ending/result screen variations.
 
@@ -283,7 +283,7 @@ For mobile result-screen testing, enable debug mode, expand **DEBUG**, use **+Ti
 - **Shift+G**: when debug mode is on, fill the current god's coffin meter and unlock that god.
 - **T**: when debug mode is on, advance by filling the current god's coffin meter.
 - **R**: when debug mode is on during normal play, reset coffin progression and bomb stock. On the game over screen, **R** restarts the game instead.
-- **Shift+R**: when debug mode is on during normal play, add +5 revived souls immediately (for pyramid scaling checks).
+- **Shift+R**: when debug mode is on during normal play, add +5 revived souls immediately (for result foreground procession scaling checks).
 - **Shift+T**: when debug mode is on during normal play, apply high ending test stats (revived souls, pure canopic count, depth max, and full god awaken state) and show `Ending test stats applied`.
 - **Shift+E**: when debug mode is on during normal play, force the TRUE END presentation immediately.
 - **Shift+N**: when debug mode is on during normal play, force the NORMAL END presentation immediately.
