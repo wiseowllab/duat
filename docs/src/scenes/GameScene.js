@@ -434,6 +434,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateBestScore(this.highScoreRecords.highScore);
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
+    this.emitDebugModeState();
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
@@ -1439,7 +1440,8 @@ ${COMMIT_SHA}`, {
     this.safeUpdateBgmForGameState();
   }
 
-  resetGameState() {
+  resetGameState(options = {}) {
+    const preserveDebugMode = Boolean(options.preserveDebugMode);
     this.board.reset();
     this.scoreSystem = new ScoreSystem();
     this.coffinMeter.reset();
@@ -1460,8 +1462,8 @@ ${COMMIT_SHA}`, {
     this.fallTimer = 0;
     this.lockTimer = 0;
     this.isGameOver = false;
-    this.isDebugMode = false;
-    this.isLayoutDebugOverlayVisible = false;
+    this.isDebugMode = preserveDebugMode ? this.isDebugMode : false;
+    this.isLayoutDebugOverlayVisible = preserveDebugMode ? this.isLayoutDebugOverlayVisible : false;
     this.layoutDebugText?.setVisible(false);
     this.isResolvingClears = false;
     this.isTouchSoftDropping = false;
@@ -1516,6 +1518,7 @@ ${COMMIT_SHA}`, {
     this.hud.updateBestScore(this.highScoreRecords.highScore);
     this.hud.updateLevel(this.level);
     this.hud.setDebugMode(this.isDebugMode);
+    this.emitDebugModeState();
     this.hud.updateCoffin(this.coffinMeter.getState());
     this.hud.updateBombStock(this.bombSystem.getStock(), this.selectedBombSlot);
     this.hud.drawNext(this.nextPairTypes);
@@ -1649,6 +1652,7 @@ ${COMMIT_SHA}`, {
         this.touchActionHandler = null;
       }
       window.dispatchEvent(new CustomEvent('duat-touch-state', { detail: { hasBombSelected: false } }));
+      window.dispatchEvent(new CustomEvent('duat-debug-mode', { detail: { isDebugMode: false } }));
     });
   }
 
@@ -1664,6 +1668,12 @@ ${COMMIT_SHA}`, {
     }));
   }
 
+  emitDebugModeState() {
+    window.dispatchEvent(new CustomEvent('duat-debug-mode', {
+      detail: { isDebugMode: Boolean(this.isDebugMode) },
+    }));
+  }
+
   handleTouchAction(detail = {}) {
     this.sfx.resume();
 
@@ -1671,6 +1681,16 @@ ${COMMIT_SHA}`, {
 
     if (action === 'start') {
       this.startGame();
+      return;
+    }
+
+    if (action === 'debug-toggle') {
+      this.toggleDebugMode();
+      return;
+    }
+
+    if (action?.startsWith('debug-')) {
+      this.handleMobileDebugAction(action);
       return;
     }
 
@@ -1719,6 +1739,148 @@ ${COMMIT_SHA}`, {
         this.selectBombSlot(slotIndex);
       }
     }
+  }
+
+
+  handleMobileDebugAction(action) {
+    if (!this.isDebugMode || this.isHowToPlayOpen || this.gameState === GAME_STATES.PAUSED) {
+      return;
+    }
+
+    const actions = {
+      'debug-add-god': () => this.mobileDebugAddGod(),
+      'debug-add-tier': () => this.mobileDebugAddTier(),
+      'debug-preserve': () => this.mobileDebugPreserveGod(),
+      'debug-use-god': () => this.mobileDebugUseGod(),
+      'debug-result-game-over': () => this.mobileDebugShowResult(ENDING_TYPES.STANDARD_GAME_OVER),
+      'debug-result-incomplete': () => this.mobileDebugShowResult(ENDING_TYPES.NORMAL_END),
+      'debug-result-complete': () => this.mobileDebugShowResult(ENDING_TYPES.TRUE_END),
+      'debug-reset-run': () => this.mobileDebugResetRun(),
+    };
+
+    actions[action]?.();
+  }
+
+  mobileDebugAddGod() {
+    if (this.coffinMeter.isComplete()) {
+      this.showDebugFeedback('All gods unlocked');
+      return;
+    }
+
+    this.fillDebugGod();
+    this.refreshDebugResultStateHud();
+  }
+
+  mobileDebugAddTier() {
+    this.maxTierThisRun = this.maxTierThisRun >= 4 ? 1 : this.maxTierThisRun + 1;
+    this.showDebugFeedback(`Result Tier ${this.maxTierThisRun}`);
+    this.refreshDebugResultStateHud();
+  }
+
+  mobileDebugPreserveGod() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    const usedUnlockedGod = unlockedGods.find((god) => god?.id && this.usedGodIdsThisRun.has(god.id));
+
+    if (usedUnlockedGod) {
+      this.usedGodIdsThisRun.delete(usedUnlockedGod.id);
+      this.showDebugFeedback(`Preserved ${this.getPreservedGodCountForResult()}`);
+      this.refreshDebugResultStateHud();
+      return;
+    }
+
+    if (!this.coffinMeter.isComplete()) {
+      this.fillDebugGod();
+      this.showDebugFeedback(`Preserved ${this.getPreservedGodCountForResult()}`);
+      this.refreshDebugResultStateHud();
+      return;
+    }
+
+    this.showDebugFeedback('Preserved max');
+  }
+
+  mobileDebugUseGod() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    const unusedGod = unlockedGods.find((god) => god?.id && !this.usedGodIdsThisRun.has(god.id));
+
+    if (!unusedGod) {
+      this.showDebugFeedback('No preserved gods');
+      return;
+    }
+
+    this.usedGodIdsThisRun.add(unusedGod.id);
+    this.refreshAwakenedGodPresence();
+    this.showDebugFeedback(`Used ${unusedGod.name}`);
+  }
+
+  mobileDebugShowResult(endingType) {
+    if (this.gameState !== GAME_STATES.PLAYING) {
+      return;
+    }
+
+    this.applyMobileDebugResultDefaults(endingType);
+    this.endGame(endingType, { forceEndingType: endingType });
+  }
+
+  applyMobileDebugResultDefaults(endingType) {
+    this.score = Math.max(this.score, endingType === ENDING_TYPES.STANDARD_GAME_OVER ? 12000 : 64000);
+    this.bestChainThisRun = Math.max(this.bestChainThisRun, endingType === ENDING_TYPES.STANDARD_GAME_OVER ? 2 : 6);
+    this.maxTierThisRun = Phaser.Math.Clamp(this.maxTierThisRun || 1, 1, 4);
+    this.revivedSoulsCount = Math.max(this.revivedSoulsCount, endingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0 : 12);
+    this.totalPureCanopicCount = Math.max(this.totalPureCanopicCount, endingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0 : 8);
+    this.currentDepthLevel = Math.max(this.currentDepthLevel, endingType === ENDING_TYPES.STANDARD_GAME_OVER ? 1 : DEPTH_MAX_LEVEL);
+
+    if (endingType !== ENDING_TYPES.STANDARD_GAME_OVER && !this.isAmunRaUnlocked()) {
+      this.unlockToAmunRaForEndingTest();
+    }
+
+    if (endingType === ENDING_TYPES.TRUE_END) {
+      this.usedGodIdsThisRun.clear();
+    }
+
+    if (endingType === ENDING_TYPES.NORMAL_END) {
+      this.ensureDebugIncompletePyramid();
+    }
+
+    this.refreshDebugResultStateHud();
+  }
+
+
+  ensureDebugIncompletePyramid() {
+    const unlockedGods = this.coffinMeter.getUnlockedGods();
+    if (unlockedGods.length === 0 || this.getPreservedGodCountForResult() < unlockedGods.length) {
+      return;
+    }
+
+    const lastUnlockedGod = unlockedGods.at(-1);
+    if (lastUnlockedGod?.id) {
+      this.usedGodIdsThisRun.add(lastUnlockedGod.id);
+    }
+  }
+
+  mobileDebugResetRun() {
+    const wasDebugMode = this.isDebugMode;
+    this.resetGameState({ preserveDebugMode: true });
+    this.isDebugMode = wasDebugMode;
+    this.hud.setDebugMode(this.isDebugMode);
+    this.emitDebugModeState();
+    this.gameState = GAME_STATES.PLAYING;
+    this.titleOverlay?.setVisible(false);
+    this.closeHowToPlay();
+    this.pauseOverlay?.setVisible(false);
+    this.setTouchControlsVisible(true);
+    this.safeUpdateBgmForGameState();
+    this.spawnPiece();
+    this.showDebugFeedback('Debug run reset');
+  }
+
+  refreshDebugResultStateHud() {
+    this.updateRunProgressionRecords();
+    this.hud.updateScore(this.score);
+    this.hud.updateCoffin(this.coffinMeter.getState());
+    this.hud.updateRevivedSouls(this.revivedSoulsCount);
+    this.updateUnderworldDepthProgressHud();
+    this.refreshAwakenedGodPresence();
+    this.safeUpdateBgmForGameState();
   }
 
   handleTouchDropButton() {
@@ -2766,6 +2928,7 @@ ${COMMIT_SHA}`, {
       this.isLayoutDebugOverlayVisible = false;
     }
     this.hud.setDebugMode(this.isDebugMode);
+    this.emitDebugModeState();
     this.showDebugFeedback(this.isDebugMode ? 'DEBUG ON' : 'DEBUG OFF');
     this.updateLayoutDebugOverlay();
   }
@@ -3828,8 +3991,8 @@ ${COMMIT_SHA}`, {
     return ENDING_TYPES.STANDARD_GAME_OVER;
   }
 
-  endGame(requestedEndingType = ENDING_TYPES.STANDARD_GAME_OVER) {
-    this.currentEndingType = this.getEndingTypeForGameOver(requestedEndingType);
+  endGame(requestedEndingType = ENDING_TYPES.STANDARD_GAME_OVER, options = {}) {
+    this.currentEndingType = options.forceEndingType ?? this.getEndingTypeForGameOver(requestedEndingType);
     this.bgm.duck(900, 0.3);
     this.sfx.playGameOver();
     this.bgm.stop();

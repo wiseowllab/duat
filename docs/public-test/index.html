@@ -158,6 +158,80 @@
         font-size: 1.06rem;
       }
 
+      .debug-toggle-button {
+        position: fixed;
+        top: max(0.35rem, env(safe-area-inset-top));
+        right: max(0.35rem, env(safe-area-inset-right));
+        z-index: 20;
+        min-width: 2.35rem;
+        min-height: 1.65rem;
+        border: 1px solid rgba(244, 215, 122, 0.34);
+        border-radius: 999px;
+        background: rgba(16, 11, 6, 0.42);
+        color: rgba(244, 215, 122, 0.56);
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .debug-panel {
+        display: none;
+        width: min(100%, 760px);
+        margin: 0.4rem auto 0;
+        border: 1px solid rgba(244, 215, 122, 0.54);
+        border-radius: 0.65rem;
+        background: rgba(13, 9, 5, 0.94);
+        box-shadow: 0 0.5rem 1.4rem rgba(0, 0, 0, 0.35);
+        overflow: hidden;
+        text-align: left;
+      }
+
+      .debug-panel.is-visible {
+        display: block;
+      }
+
+      .debug-panel__summary {
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid rgba(244, 215, 122, 0.24);
+        background: rgba(58, 31, 0, 0.72);
+        color: #ffdf6e;
+        padding: 0.42rem 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-align: left;
+      }
+
+      .debug-panel__body {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.35rem;
+        padding: 0.45rem;
+      }
+
+      .debug-panel.is-collapsed .debug-panel__body {
+        display: none;
+      }
+
+      .debug-button {
+        min-height: 2.15rem;
+        border: 1px solid rgba(244, 215, 122, 0.58);
+        border-radius: 0.45rem;
+        background: linear-gradient(180deg, rgba(63, 39, 18, 0.98), rgba(24, 16, 9, 0.98));
+        color: #f4d77a;
+        font-size: 0.74rem;
+        font-weight: 800;
+        line-height: 1.05;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .debug-button:active,
+      .debug-toggle-button:active,
+      .debug-panel__summary:active {
+        transform: translateY(1px);
+      }
+
       @media (hover: none), (max-width: 760px) {
         body {
           align-items: start;
@@ -206,6 +280,15 @@
 
         .desktop-control-help {
           display: none;
+        }
+
+        .debug-panel__body {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .debug-button {
+          min-height: 2rem;
+          font-size: clamp(0.68rem, 2.8vw, 0.78rem);
         }
 
         .touch-controls {
@@ -322,9 +405,25 @@
   </head>
   <body>
     <main>
-      <h1>DUAT</h1>
+      <h1 data-duat-title>DUAT</h1>
+
+      <button class="debug-toggle-button" type="button" data-duat-debug-toggle aria-label="Toggle debug mode">DBG</button>
       <p>古代エジプト落ち物パズル：臓器を集め、カノプスセットを完成させ、神々を目覚めさせよう。</p>
       <div id="game"></div>
+
+      <section class="debug-panel is-collapsed" aria-label="DUAT debug controls" data-duat-debug-panel>
+        <button class="debug-panel__summary" type="button" data-duat-debug-collapse>DEBUG ▸</button>
+        <div class="debug-panel__body">
+          <button class="debug-button" type="button" data-duat-action="debug-add-god">+God</button>
+          <button class="debug-button" type="button" data-duat-action="debug-add-tier">+Tier</button>
+          <button class="debug-button" type="button" data-duat-action="debug-preserve">+Preserve</button>
+          <button class="debug-button" type="button" data-duat-action="debug-use-god">Use God</button>
+          <button class="debug-button" type="button" data-duat-action="debug-result-game-over">Result:<br>Game Over</button>
+          <button class="debug-button" type="button" data-duat-action="debug-result-incomplete">Result:<br>Incomplete</button>
+          <button class="debug-button" type="button" data-duat-action="debug-result-complete">Result:<br>Complete</button>
+          <button class="debug-button" type="button" data-duat-action="debug-reset-run">Reset Run</button>
+        </div>
+      </section>
       <p class="desktop-control-help">キーボード:<br>←/→: 移動<br>↓: ソフトドロップ<br>↑/Z: 回転<br>Space: ハードドロップ<br>Enter: ポーズ<br>1〜4: ボム<br>Esc: 取消<br>M: ミュート</p>
       <section class="touch-controls" aria-label="DUAT タッチ操作">
         <div class="touch-controls__top">
@@ -363,6 +462,45 @@
       };
 
       const touchControlsRoot = document.querySelector('.touch-controls');
+
+      const debugPanel = document.querySelector('[data-duat-debug-panel]');
+      const debugCollapseButton = document.querySelector('[data-duat-debug-collapse]');
+      const debugToggleButton = document.querySelector('[data-duat-debug-toggle]');
+      const titleElement = document.querySelector('[data-duat-title]');
+
+      const setDebugPanelVisible = (isVisible) => {
+        debugPanel?.classList.toggle('is-visible', Boolean(isVisible));
+      };
+
+      const toggleDebugPanelCollapsed = () => {
+        if (!debugPanel || !debugCollapseButton) {
+          return;
+        }
+        const isCollapsed = debugPanel.classList.toggle('is-collapsed');
+        debugCollapseButton.textContent = isCollapsed ? 'DEBUG ▸' : 'DEBUG ▾';
+      };
+
+      debugCollapseButton?.addEventListener('click', toggleDebugPanelCollapsed);
+      debugToggleButton?.addEventListener('click', () => dispatchDuatTouchAction('debug-toggle'));
+
+      let titleLongPressTimer = null;
+      const clearTitleLongPressTimer = () => {
+        if (titleLongPressTimer) {
+          window.clearTimeout(titleLongPressTimer);
+          titleLongPressTimer = null;
+        }
+      };
+      titleElement?.addEventListener('pointerdown', () => {
+        clearTitleLongPressTimer();
+        titleLongPressTimer = window.setTimeout(() => dispatchDuatTouchAction('debug-toggle'), 2000);
+      });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach((eventName) => {
+        titleElement?.addEventListener(eventName, clearTitleLongPressTimer);
+      });
+
+      window.addEventListener('duat-debug-mode', (event) => {
+        setDebugPanelVisible(Boolean(event?.detail?.isDebugMode));
+      });
 
       window.addEventListener('duat-touch-state', (event) => {
         const hasBombSelected = Boolean(event?.detail?.hasBombSelected);

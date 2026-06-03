@@ -21,8 +21,6 @@ A local server is recommended because the prototype uses JavaScript modules.
 
 To test on a phone or tablet, run the same server on your development machine, make sure the phone is on the same network, then open `http://<your-computer-LAN-IP>:8000/docs/` in the mobile browser. You can also use browser devtools device emulation or a narrow desktop viewport for a quick layout check.
 
-
-
 ## Public Test Build
 
 A lightweight public-test entrypoint is available at `docs/public-test/` so GitHub Pages can serve `/duat/public-test/` without duplicating large binary assets.
@@ -158,7 +156,7 @@ DUAT is currently a single-scene falling puzzle prototype with a basic title, pa
 - Result temple overlays are loaded from `docs/assets/images/result/temple/` and reflect the current run's unlocked god count: 0-2 gods shows ruins, 3-5 shows a small temple, 6-8 shows a medium temple, 9-12 shows a great temple, and 13-14 shows the complete temple.
 - Result pyramid art is loaded from `docs/assets/images/result/pyramid/pyramid_complete.png`. The result screen uses this single completed pyramid PNG and reveals it from the bottom up based on preserved gods: gods that were unlocked and whose bombs were not used reveal more of the pyramid, while used-god bombs do not count as preserved.
 - God unlock feedback includes the right-side Current Coffin panel glow plus a centered dark-temple presentation showing `GOD UNLOCKED!`, the god name, tier, and the same god-specific coffin PNG used by the HUD. The presentation fades in, scales the coffin into place, holds briefly, then fades out automatically; board resolution waits for it before spawning the next active piece.
-- Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, and reset behavior.
+- Debug mode for testing meter progress, god unlocks, god coffin mapping, coffin tier fallbacks, bomb stock, result tiers, preserved-god pyramid reveals, and ending/result screen variations.
 
 
 ## Balance Tuning
@@ -254,6 +252,28 @@ The touch controls appear on touch devices and narrow viewports below the game c
 - **ポーズ**: pause active gameplay or resume from pause.
 
 The page uses responsive CSS, canvas scaling, compact touch-control rows, and `touch-action: none` on the game/touch-control areas to reduce accidental browser scrolling during play. This is a prototype mobile layout, so button placement and sizing are functional placeholders rather than final mobile UI art.
+
+### Mobile Debug Controls
+
+Debug controls are for development/testing only and are hidden from normal play until debug mode is enabled.
+
+Enable debug mode on mobile/touch devices in either of these ways:
+
+- Long-press the page **DUAT** title for 2 seconds.
+- Tap the compact **DBG** pill at the top-right of the page.
+
+When debug mode is enabled, a compact **DEBUG** panel appears between the game canvas and the normal control help/touch controls. Tap the panel header to expand or collapse it. Available mobile debug buttons:
+
+- **+God**: unlock the next god / advance god progression.
+- **+Tier**: cycle the result-screen reached Tier through Tier 1-4 for sky background testing.
+- **+Preserve**: increase the preserved unused god count by un-using one used god or unlocking one more god when possible.
+- **Use God**: mark one unlocked preserved god as used, reducing the pyramid reveal count.
+- **Result: Game Over**: immediately show the normal Game Over result variant.
+- **Result: Incomplete**: immediately show the `UNDERWORLD CLAIMED YOU` incomplete-pyramid result variant.
+- **Result: Complete**: immediately show the `CONGRATULATIONS` completed result variant.
+- **Reset Run**: reset the current run while keeping debug mode enabled so another mobile result-screen test can begin quickly.
+
+For mobile result-screen testing, enable debug mode, expand **DEBUG**, use **+Tier**, **+God**, **+Preserve**, and **Use God** to set the desired sky/temple/pyramid state, then tap one of the three **Result:** buttons. **Enter**, **Space**, and tapping the result prompt/panel continue to use the normal restart/return behavior.
 
 ### Debug Controls
 
