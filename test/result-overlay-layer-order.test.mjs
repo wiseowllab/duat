@@ -94,3 +94,62 @@ test('result god coffin icons render as grounded statues without circular halos'
     'result god statues should not draw circular glow or ring layers behind the coffin art',
   );
 });
+
+
+test('result soul procession caps icons and keeps rescued souls in side rows', () => {
+  assert.match(
+    gameSceneSource,
+    /RESULT_SOUL_PROCESSION_MAX_ICONS = 16/,
+    'result soul procession should cap large revival totals at 16 visible mummies',
+  );
+  assert.match(
+    gameSceneSource,
+    /if \(count <= 0\) return 0;/,
+    'zero revived souls should render no mummy icons',
+  );
+  assert.match(
+    gameSceneSource,
+    /if \(count <= 5\) return count;/,
+    'small revival totals should show one icon per rescued soul',
+  );
+  assert.match(
+    gameSceneSource,
+    /if \(count <= 15\) return Math\.min\(10, count\);/,
+    'medium revival totals should form capped loose side rows',
+  );
+  assert.match(
+    gameSceneSource,
+    /if \(count <= 30\) return Math\.min\(14, count\);/,
+    'large revival totals should widen without filling the whole result art',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO/,
+    'mummy procession should reserve a readable center path',
+  );
+  assert.match(
+    gameSceneSource,
+    /getResultSoulProcessionSidePositions\('left'/,
+    'mummy procession should include a left path-side row',
+  );
+  assert.match(
+    gameSceneSource,
+    /getResultSoulProcessionSidePositions\('right'/,
+    'mummy procession should include a right path-side row',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SOUL_PROCESSION_TEMPLE_SCALE,\n        RESULT_SOUL_PROCESSION_FOREGROUND_SCALE/s,
+    'mummies closer to the temple should be smaller than foreground mummies',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SOUL_PROCESSION_OPACITY_MIN,\n        RESULT_SOUL_PROCESSION_OPACITY_MAX/s,
+    'mummies should use subdued perspective opacity values',
+  );
+  assert.doesNotMatch(
+    gameSceneSource,
+    /createResultMummyIcon[\s\S]*setStrokeStyle\(.*RESULT_SOUL_PROCESSION/s,
+    'result mummies should not add circular rings or halos',
+  );
+});
