@@ -246,7 +246,11 @@ const RESULT_SOUL_PROCESSION_MAX_ICONS = 16;
 const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
 const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
-const RESULT_GOD_ICON_GLOW_COLOR = 0xf4d77a;
+const RESULT_GOD_ICON_SHADOW_ALPHA = 0.28;
+const RESULT_GOD_ICON_SHADOW_WIDTH_RATIO = 0.8;
+const RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO = 0.24;
+const RESULT_GOD_ICON_SHADOW_OFFSET_X_RATIO = 0.08;
+const RESULT_GOD_ICON_SHADOW_OFFSET_Y = 1.5;
 const RESULT_GOD_ICON_PANEL_MARGIN_X = 28;
 const RESULT_GOD_ICON_DOORWAY_CLEAR_WIDTH_RATIO = 0.15;
 const RESULT_GOD_ICON_SIDE_GROUP_OUTER_PADDING_RATIO = 0.36;
@@ -4407,17 +4411,15 @@ ${COMMIT_SHA}`, {
       image.setTint(style.tint);
     }
 
-    const footShadow = this.add.ellipse(0, 1.5, image.displayWidth * 0.72, Math.max(3, image.displayHeight * 0.12), 0x050302, 0.28);
+    const footShadow = this.add.ellipse(
+      image.displayWidth * RESULT_GOD_ICON_SHADOW_OFFSET_X_RATIO,
+      RESULT_GOD_ICON_SHADOW_OFFSET_Y,
+      image.displayWidth * RESULT_GOD_ICON_SHADOW_WIDTH_RATIO,
+      Math.max(3, image.displayHeight * RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO),
+      0x050302,
+      RESULT_GOD_ICON_SHADOW_ALPHA,
+    );
     container.add(footShadow);
-
-    if (style.glowAlpha > 0) {
-      const glowWidth = Math.max(12, image.displayWidth + 5);
-      const glowHeight = Math.max(16, image.displayHeight + 4);
-      const glow = this.add.ellipse(0, -image.displayHeight * 0.5, glowWidth, glowHeight, RESULT_GOD_ICON_GLOW_COLOR, style.glowAlpha)
-        .setStrokeStyle(1, RESULT_GOD_ICON_GLOW_COLOR, style.glowStrokeAlpha);
-      container.add(glow);
-    }
-
     container.add(image);
     return container;
   }
@@ -4427,24 +4429,22 @@ ${COMMIT_SHA}`, {
       return {
         alpha: this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER ? 0.36 : 0.46,
         tint: 0x777777,
-        glowAlpha: 0,
-        glowStrokeAlpha: 0,
       };
     }
 
     if (this.currentEndingType === ENDING_TYPES.TRUE_END) {
-      return { alpha: 1, tint: null, glowAlpha: 0.08, glowStrokeAlpha: 0.28 };
+      return { alpha: 1, tint: null };
     }
 
     if (isCompleteTemple) {
-      return { alpha: 0.94, tint: null, glowAlpha: 0.06, glowStrokeAlpha: 0.22 };
+      return { alpha: 0.94, tint: null };
     }
 
     if (this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER) {
-      return { alpha: 0.72, tint: null, glowAlpha: 0.025, glowStrokeAlpha: 0.14 };
+      return { alpha: 0.72, tint: null };
     }
 
-    return { alpha: 0.88, tint: null, glowAlpha: 0.04, glowStrokeAlpha: 0.18 };
+    return { alpha: 0.88, tint: null };
   }
 
   createResultTempleLayer(panelWidth, panelHeight, layout = this.getResultTempleLayout(panelWidth, panelHeight)) {
