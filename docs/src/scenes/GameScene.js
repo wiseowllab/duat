@@ -38,8 +38,8 @@ import {
 } from '../data/resultPyramids.js';
 
 const RESULT_TEMPLE_SCALE_MULTIPLIER = 0.4992;
-// Keep the temple base and its guardian coffins above the separate foreground pyramid.
-const RESULT_TEMPLE_Y_OFFSET = -112;
+// Keep the temple base and its guardian coffins grounded near the horizon while remaining behind the foreground pyramid.
+const RESULT_TEMPLE_Y_OFFSET = -52;
 const RESULT_TEMPLE_ALPHA = 0.68;
 const RESULT_TEMPLE_TINT = 0xbaa06f;
 const RESULT_PYRAMID_SCALE_MULTIPLIER = 0.84;
