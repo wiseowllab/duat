@@ -61,3 +61,26 @@ test('result god coffin icon positions anchor to the temple entrance sides', () 
     'result coffin icons should not be centered in front of the temple doorway',
   );
 });
+
+test('result god coffin icons render as grounded statues without circular halos', () => {
+  assert.match(
+    gameSceneSource,
+    /RESULT_GOD_ICON_SHADOW_ALPHA = 0\.28/,
+    'result god statues should use a subtle ground shadow opacity',
+  );
+  assert.match(
+    gameSceneSource,
+    /image\.displayWidth \* RESULT_GOD_ICON_SHADOW_WIDTH_RATIO/,
+    'result god statue shadow width should scale from the coffin image width',
+  );
+  assert.match(
+    gameSceneSource,
+    /image\.displayHeight \* RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO/,
+    'result god statue shadow height should scale from the coffin image height',
+  );
+  assert.doesNotMatch(
+    gameSceneSource,
+    /RESULT_GOD_ICON_GLOW_COLOR|style\.glowAlpha|glowStrokeAlpha|setStrokeStyle\(1, RESULT_GOD_ICON/,
+    'result god statues should not draw circular glow or ring layers behind the coffin art',
+  );
+});
