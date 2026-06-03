@@ -96,6 +96,40 @@ test('result god coffin icons render as grounded statues without circular halos'
 });
 
 
+
+test('result soul procession preserves pre-procession result landmark layout constants', () => {
+  assert.match(
+    gameSceneSource,
+    /RESULT_PYRAMID_SCALE_MULTIPLIER = 0\.84/,
+    'pyramid scale should remain at the pre-procession result layout value',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_PYRAMID_MAX_HEIGHT_RATIO = 0\.98/,
+    'pyramid max height should remain at the pre-procession result layout value',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_PYRAMID_BOTTOM_INSET_RATIO = 0\.14/,
+    'pyramid bottom inset should remain at the pre-procession result layout value',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_PYRAMID_Y_OFFSET = 20/,
+    'pyramid y offset should remain at the pre-procession result layout value',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_STATS_PANEL_TOP_RATIO = \{ standard: 0\.24, compact: 0\.2 \}/,
+    'stats panel top ratio should remain at the pre-procession result layout value',
+  );
+  assert.match(
+    gameSceneSource,
+    /const statsPanelHeight = isRitualEnding\n      \? \(isCompactPanel \? 108 : 116\)\n      : \(isCompactPanel \? 94 : 108\);/,
+    'stats panel height should remain at the pre-procession result layout value',
+  );
+});
+
 test('result soul procession caps icons and keeps rescued souls in side rows', () => {
   assert.match(
     gameSceneSource,
@@ -139,11 +173,6 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_PYRAMID_GAP/,
-    'mummy procession should be pushed below the pyramid reveal layer',
-  );
-  assert.match(
-    gameSceneSource,
     /RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP/,
     'mummy procession should keep clear of the score panel below it',
   );
@@ -157,15 +186,10 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
     /getResultSoulProcessionSidePositions\('right'/,
     'mummy procession should include a right path-side row',
   );
-  assert.match(
+  assert.doesNotMatch(
     gameSceneSource,
-    /pyramidLayout,\n      statsZoneTop/,
-    'mummy procession should receive pyramid and score-panel bounds for non-overlap placement',
-  );
-  assert.match(
-    gameSceneSource,
-    /pyramidBottomY \+ RESULT_SOUL_PROCESSION_PYRAMID_GAP/,
-    'mummy procession rear row should begin below the pyramid bottom',
+    /pyramidLayout|pyramidBottomY|RESULT_SOUL_PROCESSION_PYRAMID_GAP/,
+    'mummy procession should be positioned independently and must not read or change pyramid layout',
   );
   assert.match(
     gameSceneSource,
