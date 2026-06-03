@@ -37,3 +37,11 @@ test('result temple unlocked god count clamps to 0-14', () => {
   assert.equal(normalizeUnlockedGodCount(99), 14);
   assert.equal(getResultTempleAsset(99).fileName, 'temple_4_complete.png');
 });
+
+test('result temple assets expose visible bounds for guardian coffin anchoring', () => {
+  RESULT_TEMPLE_ASSETS.forEach((asset) => {
+    assert.ok(asset.visibleBounds, `${asset.fileName} should define visible bounds`);
+    assert.ok(asset.visibleBounds.bottom > asset.visibleBounds.top, `${asset.fileName} visible bounds should have height`);
+    assert.ok(asset.visibleBounds.right > asset.visibleBounds.left, `${asset.fileName} visible bounds should have width`);
+  });
+});
