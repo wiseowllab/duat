@@ -142,13 +142,28 @@ test('result god coffin icon positions anchor to the temple entrance sides', () 
   );
   assert.match(
     gameSceneSource,
-    /const rearY = Math\.min\(templeBottomY - basePadding, maxIconY\)/,
-    'rear guardian rows should stand on the temple base and only clamp for stats overlap',
+    /RESULT_GOD_ICON_SCALE_MULTIPLIER = 1\.25/,
+    'result coffin icons should render 25% larger than the previous base size',
   );
   assert.match(
     gameSceneSource,
-    /const frontY = Math\.min\(rearY \+ \(iconMaxHeight \* RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO\), maxIconY\)/,
-    'front guardian rows should stand slightly forward while remaining grounded',
+    /const iconMaxHeight = baseIconMaxHeight \* RESULT_GOD_ICON_SCALE_MULTIPLIER/,
+    'result coffin icon sizing should apply the shared statue scale multiplier',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_GOD_ICON_ROW_Y_OFFSET = 8/,
+    'result coffin icon rows should share a small downward row offset',
+  );
+  assert.match(
+    gameSceneSource,
+    /const rearY = Math\.min\(rearBaseY \+ RESULT_GOD_ICON_ROW_Y_OFFSET, maxIconY\)/,
+    'rear guardian rows should sit slightly lower while still clamping for stats overlap',
+  );
+  assert.match(
+    gameSceneSource,
+    /const frontY = Math\.min\(frontBaseY \+ RESULT_GOD_ICON_ROW_Y_OFFSET, maxIconY\)/,
+    'front guardian rows should sit slightly lower while remaining grounded ahead of the rear row',
   );
   assert.match(
     gameSceneSource,

@@ -277,6 +277,8 @@ const RESULT_SPHINX_SHADOW_ALPHA = 0.16;
 const RESULT_WHITE_MATTE_MIN_CHANNEL = 232;
 const RESULT_WHITE_MATTE_MAX_CHANNEL_SPREAD = 28;
 const RESULT_WHITE_MATTE_BRIGHTNESS = 246;
+const RESULT_GOD_ICON_SCALE_MULTIPLIER = 1.25;
+const RESULT_GOD_ICON_ROW_Y_OFFSET = 8;
 const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
 const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
@@ -4338,9 +4340,10 @@ ${COMMIT_SHA}`, {
       ? this.usedGodIdsThisRun
       : new Set(this.usedGodIdsThisRun ?? []);
     const isCompactPanel = Boolean(options.isCompactPanel);
-    const iconMaxHeight = isCompactPanel
+    const baseIconMaxHeight = isCompactPanel
       ? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT
       : Math.min(RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT, Math.max(RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT, panelWidth * 0.072));
+    const iconMaxHeight = baseIconMaxHeight * RESULT_GOD_ICON_SCALE_MULTIPLIER;
     const iconPositions = this.getResultGodIconPositions(unlockedGods.length, panelWidth, panelHeight, {
       ...options,
       iconMaxHeight,
@@ -4371,8 +4374,10 @@ ${COMMIT_SHA}`, {
     const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
     const templeBottomY = Number(options.templeBottomY) || 0;
     const basePadding = iconMaxHeight * RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO;
-    const rearY = Math.min(templeBottomY - basePadding, maxIconY);
-    const frontY = Math.min(rearY + (iconMaxHeight * RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO), maxIconY);
+    const rearBaseY = templeBottomY - basePadding;
+    const frontBaseY = rearBaseY + (iconMaxHeight * RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO);
+    const rearY = Math.min(rearBaseY + RESULT_GOD_ICON_ROW_Y_OFFSET, maxIconY);
+    const frontY = Math.min(frontBaseY + RESULT_GOD_ICON_ROW_Y_OFFSET, maxIconY);
     const sideCounts = this.getResultGodIconSideCounts(count);
 
     return [
