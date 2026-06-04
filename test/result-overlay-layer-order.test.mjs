@@ -104,13 +104,13 @@ test('result souls breathe in place without vertical floating', () => {
 test('true-end sphinx guardians sit at the temple horizon with subtle attached shadows', () => {
   assert.match(
     gameSceneSource,
-    /RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 62/,
-    'desktop sphinx guardians should be smaller distant temple guardians',
+    /RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 78/,
+    'desktop sphinx guardians should be restored closer to their larger complete-clear size',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 44/,
-    'compact sphinx guardians should fit the mobile distant-guardian size range',
+    /RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 56/,
+    'compact sphinx guardians should scale up proportionally while fitting mobile complete-clear layouts',
   );
   assert.match(
     gameSceneSource,
