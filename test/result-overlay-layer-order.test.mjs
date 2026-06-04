@@ -323,8 +323,8 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   );
   assert.match(
     gameSceneSource,
-    /startIndex: 0,\n      \}\),\n      \.\.\.this\.getResultSoulProcessionSidePositions\('right'[\s\S]*startIndex: 0,/,
-    'left and right mummy lanes should use mirrored jitter rather than offset icon rows',
+    /groupAnchorX, groupAnchorY, isCompactPanel,[\s\S]*getResultSoulProcessionSidePositions\('right'[\s\S]*groupAnchorX, groupAnchorY, isCompactPanel,/,
+    'left and right mummy lanes should share the same group anchors so only mirrored relative offsets separate them',
   );
   assert.match(
     gameSceneSource,
@@ -340,5 +340,33 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
     gameSceneSource,
     /createResultMummyIcon[\s\S]*setStrokeStyle\(.*RESULT_SOUL_PROCESSION/s,
     'result mummies should not add circular rings or halos',
+  );
+});
+
+test('result soul procession preserves per-mummy perspective offsets below the pyramid side area', () => {
+  assert.match(
+    gameSceneSource,
+    /const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = 24/,
+    'mummy procession should use one shared group-level downward offset',
+  );
+  assert.match(
+    gameSceneSource,
+    /\{ x: -12, y: 0, scale: 1\.00 \},\n  \{ x: 0, y: -12, scale: 0\.92 \},\n  \{ x: 12, y: 6, scale: 1\.06 \}/,
+    'the first three mummies in each side group should keep the restored staggered perspective offsets',
+  );
+  assert.match(
+    gameSceneSource,
+    /const y = options\.groupAnchorY \+ RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET \+ relativePosition\.y/,
+    'each mummy should add its relative Y offset after the shared group-level Y offset',
+  );
+  assert.doesNotMatch(
+    gameSceneSource,
+    /const y = options\.groupAnchorY \+ RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET;/,
+    'mummies should not be flattened onto one shared Y value',
+  );
+  assert.match(
+    gameSceneSource,
+    /return \{ x, y, scale, alpha, side, rowIndex, flipX: side === 'right' \}/,
+    'right-side mummy group should remain mirrored with flipX',
   );
 });
