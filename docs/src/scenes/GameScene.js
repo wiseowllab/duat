@@ -30,6 +30,12 @@ import { GODS, TOTAL_GOD_COUNT } from '../data/gods.js';
 import { COFFIN_METER, DANGER_BGM, UNDERWORLD_DEPTH } from '../data/balance.js';
 import { GAME_VERSION, BUILD_LABEL, COMMIT_SHA } from '../data/buildInfo.js';
 import { getResultSkyAsset, preloadResultSkyAssets } from '../data/resultSkies.js';
+import {
+  preloadResultCharacterAssets,
+  RESULT_GOLDEN_REVIVED_SOUL_ASSET,
+  RESULT_REVIVED_SOUL_ASSET,
+  RESULT_SPHINX_GUARDIAN_ASSET,
+} from '../data/resultCharacters.js';
 import { getResultTempleAsset, preloadResultTempleAssets } from '../data/resultTemples.js';
 import {
   getResultPyramidRevealRatio,
@@ -253,6 +259,21 @@ const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.47;
 const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.18;
 const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.29;
 const RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP = 26;
+const RESULT_SOUL_ICON_DISPLAY_HEIGHT = 56;
+const RESULT_SOUL_ICON_SHADOW_WIDTH = 34;
+const RESULT_SOUL_ICON_SHADOW_HEIGHT = 10;
+const RESULT_SOUL_ICON_GROUND_Y = 24;
+const RESULT_CUTOUT_TEXTURE_SUFFIX = '-cutout';
+const RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 86;
+const RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 66;
+const RESULT_SPHINX_GROUND_GAP = 14;
+const RESULT_SPHINX_SIDE_X_RATIO = 0.28;
+const RESULT_SPHINX_CENTER_CLEAR_MIN_X = 92;
+const RESULT_SPHINX_SHADOW_WIDTH_RATIO = 0.78;
+const RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0.14;
+const RESULT_WHITE_MATTE_MIN_CHANNEL = 232;
+const RESULT_WHITE_MATTE_MAX_CHANNEL_SPREAD = 28;
+const RESULT_WHITE_MATTE_BRIGHTNESS = 246;
 const RESULT_GOD_ICON_MOBILE_MAX_HEIGHT = 23;
 const RESULT_GOD_ICON_DESKTOP_MAX_HEIGHT = 29;
 const RESULT_GOD_ICON_DESKTOP_MIN_HEIGHT = 24;
@@ -362,6 +383,7 @@ export class GameScene extends Phaser.Scene {
     preloadResultSkyAssets(this);
     preloadResultTempleAssets(this);
     preloadResultPyramidAssets(this);
+    preloadResultCharacterAssets(this);
   }
 
   create() {
@@ -376,6 +398,7 @@ export class GameScene extends Phaser.Scene {
     this.highScoreRecords = this.highScoreManager.getRecords();
     this.sfx = new SoundManager();
     this.bgm = new BgmManager(this);
+    this.prepareResultCharacterCutoutTextures();
     this.score = INITIAL_SCORE;
     this.chainCount = 0;
     this.bestChainThisRun = 0;
@@ -4185,10 +4208,14 @@ ${COMMIT_SHA}`, {
       statsZoneTop,
       templeBottomY: templeLayout.visibleBottomY,
     });
+    const sphinxGuardians = this.createResultSphinxGuardiansLayer(panelWidth, panelHeight, {
+      isCompactPanel,
+      statsZoneTop,
+    });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount, {
       statsZoneTop,
     });
-    const nodes = [sky, temple, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, resultGodIcons, skyReadabilityShade, pyramid, sphinxGuardians, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4527,7 +4554,7 @@ ${COMMIT_SHA}`, {
     const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options);
 
     iconPositions.forEach((position, index) => {
-      const soul = this.createResultMummyIcon(index)
+      const soul = this.createResultSoulIcon(index)
         .setPosition(position.x, position.y)
         .setScale(position.scale)
         .setAlpha(position.alpha);
@@ -4631,25 +4658,192 @@ ${COMMIT_SHA}`, {
     });
   }
 
-  createResultMummyIcon(index) {
-    const mummy = this.add.container(0, 0);
-    const wrapColor = index % 3 === 0 ? 0xf7ecd0 : 0xe8dcc2;
-    const outlineColor = 0x2d2119;
-    const bandColor = 0x9f9177;
-    const shadow = this.add.ellipse(0, 24, 28, 9, 0x030201, 0.5);
-    const shoulderWrap = this.add.ellipse(0, -3, 20, 11, wrapColor, 0.98).setStrokeStyle(1.4, outlineColor, 0.95);
-    const body = this.add.rectangle(0, 7, 15, 28, wrapColor, 0.98).setStrokeStyle(1.4, outlineColor, 0.95);
-    const head = this.add.circle(0, -16, 8, 0xf8efcf, 1).setStrokeStyle(1.4, outlineColor, 0.96);
-    const brow = this.add.rectangle(0, -17, 13, 2, 0x6f604b, 0.72).setRotation(-0.08);
-    const eyeGlow = this.add.circle(2.5, -17, 1.6, 0xaef2ff, 0.98);
-    const bandA = this.add.rectangle(-1, -5, 18, 1.7, bandColor, 0.9).setRotation(-0.2);
-    const bandB = this.add.rectangle(1, 4, 16, 1.7, bandColor, 0.9).setRotation(0.16);
-    const bandC = this.add.rectangle(0, 13, 14, 1.6, bandColor, 0.84).setRotation(-0.1);
-    const armLeft = this.add.line(0, 0, -8, -2, -13, 9, wrapColor, 0.9).setLineWidth(3.2, 2.4);
-    const armRight = this.add.line(0, 0, 8, -2, 13, 9, wrapColor, 0.78).setLineWidth(2.6, 2);
+  prepareResultCharacterCutoutTextures() {
+    [
+      RESULT_REVIVED_SOUL_ASSET.key,
+      RESULT_GOLDEN_REVIVED_SOUL_ASSET.key,
+      RESULT_SPHINX_GUARDIAN_ASSET.key,
+    ].forEach((textureKey) => this.createWhiteMatteCutoutTexture(textureKey));
+  }
 
-    mummy.add([shadow, armLeft, armRight, shoulderWrap, body, head, brow, eyeGlow, bandA, bandB, bandC]);
-    return mummy;
+  createWhiteMatteCutoutTexture(textureKey) {
+    const cutoutKey = this.getResultCutoutTextureKey(textureKey);
+
+    if (!this.textures.exists(textureKey) || this.textures.exists(cutoutKey)) {
+      return;
+    }
+
+    const sourceImage = this.textures.get(textureKey)?.getSourceImage?.();
+    if (!sourceImage?.width || !sourceImage?.height || !this.textures.createCanvas) {
+      return;
+    }
+
+    const canvasTexture = this.textures.createCanvas(cutoutKey, sourceImage.width, sourceImage.height);
+    const context = canvasTexture?.getContext?.();
+    if (!context) {
+      return;
+    }
+
+    try {
+      context.drawImage(sourceImage, 0, 0);
+      const imageData = context.getImageData(0, 0, sourceImage.width, sourceImage.height);
+      this.removeConnectedWhiteMatte(imageData, sourceImage.width, sourceImage.height);
+      context.putImageData(imageData, 0, 0);
+      canvasTexture.refresh();
+    } catch (error) {
+      this.textures.remove(cutoutKey);
+      console.warn(`Result cutout texture failed for ${textureKey}; using original asset.`, error);
+    }
+  }
+
+  removeConnectedWhiteMatte(imageData, width, height) {
+    const { data } = imageData;
+    const pixelCount = width * height;
+    const visited = new Uint8Array(pixelCount);
+    const queue = new Int32Array(pixelCount);
+    let head = 0;
+    let tail = 0;
+
+    const enqueue = (x, y) => {
+      if (x < 0 || x >= width || y < 0 || y >= height) {
+        return;
+      }
+
+      const index = y * width + x;
+      if (visited[index]) {
+        return;
+      }
+
+      visited[index] = 1;
+      if (!this.isResultWhiteMattePixel(data, index * 4)) {
+        return;
+      }
+
+      queue[tail] = index;
+      tail += 1;
+    };
+
+    for (let x = 0; x < width; x += 1) {
+      enqueue(x, 0);
+      enqueue(x, height - 1);
+    }
+    for (let y = 1; y < height - 1; y += 1) {
+      enqueue(0, y);
+      enqueue(width - 1, y);
+    }
+
+    while (head < tail) {
+      const index = queue[head];
+      head += 1;
+      data[(index * 4) + 3] = 0;
+
+      const x = index % width;
+      const y = Math.floor(index / width);
+      enqueue(x + 1, y);
+      enqueue(x - 1, y);
+      enqueue(x, y + 1);
+      enqueue(x, y - 1);
+    }
+  }
+
+  isResultWhiteMattePixel(data, offset) {
+    const red = data[offset];
+    const green = data[offset + 1];
+    const blue = data[offset + 2];
+    const minChannel = Math.min(red, green, blue);
+    const maxChannel = Math.max(red, green, blue);
+    const brightness = (red + green + blue) / 3;
+
+    return (
+      (minChannel >= RESULT_WHITE_MATTE_MIN_CHANNEL
+        && maxChannel - minChannel <= RESULT_WHITE_MATTE_MAX_CHANNEL_SPREAD)
+      || (brightness >= RESULT_WHITE_MATTE_BRIGHTNESS && minChannel >= 220)
+    );
+  }
+
+  getResultCutoutTextureKey(textureKey) {
+    return `${textureKey}${RESULT_CUTOUT_TEXTURE_SUFFIX}`;
+  }
+
+  getResultDisplayTextureKey(textureKey) {
+    const cutoutKey = this.getResultCutoutTextureKey(textureKey);
+    return this.textures.exists(cutoutKey) ? cutoutKey : textureKey;
+  }
+
+  createResultSphinxGuardiansLayer(panelWidth, panelHeight, options = {}) {
+    const container = this.add.container(0, 0).setName('resultSphinxGuardians');
+
+    if (this.currentEndingType !== ENDING_TYPES.TRUE_END || !this.textures.exists(RESULT_SPHINX_GUARDIAN_ASSET.key)) {
+      return container;
+    }
+
+    const displayHeight = options.isCompactPanel
+      ? RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT
+      : RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT;
+    const groundY = Math.min(
+      (Number(options.statsZoneTop) || panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard) - RESULT_SPHINX_GROUND_GAP,
+      (panelHeight / 2) - 92,
+    );
+    const xOffset = Math.max(
+      RESULT_SPHINX_CENTER_CLEAR_MIN_X,
+      Math.min(panelWidth * RESULT_SPHINX_SIDE_X_RATIO, (panelWidth / 2) - 70),
+    );
+
+    [
+      { x: -xOffset, flipX: false },
+      { x: xOffset, flipX: true },
+    ].forEach((config) => {
+      container.add(this.createResultSphinxGuardian(config.x, groundY, displayHeight, config.flipX));
+    });
+
+    return container;
+  }
+
+  createResultSphinxGuardian(x, groundY, displayHeight, flipX) {
+    const container = this.add.container(x, groundY);
+    const shadow = this.add.ellipse(
+      0,
+      0,
+      displayHeight * RESULT_SPHINX_SHADOW_WIDTH_RATIO,
+      displayHeight * RESULT_SPHINX_SHADOW_HEIGHT_RATIO,
+      0x030201,
+      0.46,
+    );
+    const guardian = this.add.image(0, 0, this.getResultDisplayTextureKey(RESULT_SPHINX_GUARDIAN_ASSET.key))
+      .setOrigin(0.5, 1)
+      .setDisplaySize(displayHeight, displayHeight)
+      .setFlipX(flipX);
+
+    container.add([shadow, guardian]);
+    return container;
+  }
+
+  createResultSoulIcon(index) {
+    const textureKey = this.currentEndingType === ENDING_TYPES.TRUE_END
+      ? RESULT_GOLDEN_REVIVED_SOUL_ASSET.key
+      : RESULT_REVIVED_SOUL_ASSET.key;
+    const fallbackTextureKey = RESULT_REVIVED_SOUL_ASSET.key;
+    const resolvedTextureKey = this.textures.exists(textureKey) ? textureKey : fallbackTextureKey;
+    const displayTextureKey = this.getResultDisplayTextureKey(resolvedTextureKey);
+    const soul = this.add.container(0, 0);
+    const shadow = this.add.ellipse(
+      0,
+      RESULT_SOUL_ICON_GROUND_Y,
+      RESULT_SOUL_ICON_SHADOW_WIDTH,
+      RESULT_SOUL_ICON_SHADOW_HEIGHT,
+      0x030201,
+      0.52,
+    );
+    const image = this.add.image(0, RESULT_SOUL_ICON_GROUND_Y, displayTextureKey)
+      .setOrigin(0.5, 1)
+      .setDisplaySize(RESULT_SOUL_ICON_DISPLAY_HEIGHT, RESULT_SOUL_ICON_DISPLAY_HEIGHT);
+
+    if (index % 2 === 1) {
+      image.setFlipX(true);
+    }
+
+    soul.add([shadow, image]);
+    return soul;
   }
 
 

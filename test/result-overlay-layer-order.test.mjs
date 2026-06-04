@@ -12,7 +12,7 @@ test('result overlay keeps god coffin icons with temple layer and pyramid foregr
   assert.ok(nodesLine, 'result overlay nodes array should be present');
   assert.match(
     nodesLine,
-    /sky, temple, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText/,
+    /sky, temple, resultGodIcons, skyReadabilityShade, pyramid, sphinxGuardians, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText/,
   );
   assert.ok(
     nodesLine.indexOf('temple') < nodesLine.indexOf('resultGodIcons'),
@@ -21,6 +21,64 @@ test('result overlay keeps god coffin icons with temple layer and pyramid foregr
   assert.ok(
     nodesLine.indexOf('resultGodIcons') < nodesLine.indexOf('pyramid'),
     'coffin icons must be kept with the temple layer before the separate foreground pyramid',
+  );
+  assert.ok(
+    nodesLine.indexOf('pyramid') < nodesLine.indexOf('sphinxGuardians'),
+    'complete-clear sphinx guardians should stand in front of the pyramid',
+  );
+  assert.ok(
+    nodesLine.indexOf('sphinxGuardians') < nodesLine.indexOf('soulProcession'),
+    'revived souls should remain in front of complete-clear sphinx guardians',
+  );
+});
+
+
+test('result soul and sphinx assets preload with stable texture keys', () => {
+  assert.match(
+    gameSceneSource,
+    /preloadResultCharacterAssets\(this\)/,
+    'result character art should be preloaded by the game scene',
+  );
+
+  const characterAssetSource = readFileSync(new URL('../docs/src/data/resultCharacters.js', import.meta.url), 'utf8');
+  assert.match(characterAssetSource, /key: 'result-revived-soul'/);
+  assert.match(characterAssetSource, /images\/result\/souls\/revived_soul\.png/);
+  assert.match(characterAssetSource, /key: 'result-golden-revived-soul'/);
+  assert.match(characterAssetSource, /images\/result\/souls\/golden_revived_soul\.png/);
+  assert.match(characterAssetSource, /key: 'result-sphinx-guardian'/);
+  assert.match(characterAssetSource, /images\/result\/guardians\/sphinx_guardian\.png/);
+});
+
+test('complete clear upgrades result souls and adds mirrored sphinx guardians only for true end', () => {
+  assert.match(
+    gameSceneSource,
+    /this\.currentEndingType === ENDING_TYPES\.TRUE_END\n      \? RESULT_GOLDEN_REVIVED_SOUL_ASSET\.key\n      : RESULT_REVIVED_SOUL_ASSET\.key/,
+    'true end should use golden revived soul art while other endings use normal revived soul art',
+  );
+  assert.match(
+    gameSceneSource,
+    /this\.currentEndingType !== ENDING_TYPES\.TRUE_END \|\| !this\.textures\.exists\(RESULT_SPHINX_GUARDIAN_ASSET\.key\)/,
+    'sphinx guardian layer should render only for true end when the asset is loaded',
+  );
+  assert.match(
+    gameSceneSource,
+    /\{ x: xOffset, flipX: true \}/,
+    'right-side sphinx should be mirrored with flipX instead of requiring a second image file',
+  );
+  assert.match(
+    gameSceneSource,
+    /setFlipX\(flipX\)/,
+    'sphinx guardian placement should apply flipX at render time',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SOUL_ICON_GROUND_Y/,
+    'soul icons should keep a grounded shadow under each image',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SPHINX_SHADOW_WIDTH_RATIO/,
+    'sphinx guardians should have ground shadows',
   );
 });
 
