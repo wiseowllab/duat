@@ -12,23 +12,23 @@ test('result overlay keeps god coffin icons with temple layer and pyramid foregr
   assert.ok(nodesLine, 'result overlay nodes array should be present');
   assert.match(
     nodesLine,
-    /sky, temple, resultGodIcons, skyReadabilityShade, pyramid, sphinxGuardians, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText/,
+    /sky, temple, sphinxGuardians, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText/,
   );
   assert.ok(
-    nodesLine.indexOf('temple') < nodesLine.indexOf('resultGodIcons'),
-    'temple must be added before coffin icons so the icons read as temple guardians',
+    nodesLine.indexOf('temple') < nodesLine.indexOf('sphinxGuardians'),
+    'temple must be added before sphinx guardians so they read as horizon temple guardians',
+  );
+  assert.ok(
+    nodesLine.indexOf('sphinxGuardians') < nodesLine.indexOf('resultGodIcons'),
+    'complete-clear sphinx guardians must sit behind the god coffin icon rows',
   );
   assert.ok(
     nodesLine.indexOf('resultGodIcons') < nodesLine.indexOf('pyramid'),
-    'coffin icons must be kept with the temple layer before the separate foreground pyramid',
+    'god coffin icons must remain behind the separate foreground pyramid',
   );
   assert.ok(
-    nodesLine.indexOf('pyramid') < nodesLine.indexOf('sphinxGuardians'),
-    'complete-clear sphinx guardians should stand in front of the pyramid',
-  );
-  assert.ok(
-    nodesLine.indexOf('sphinxGuardians') < nodesLine.indexOf('soulProcession'),
-    'revived souls should remain in front of complete-clear sphinx guardians',
+    nodesLine.indexOf('pyramid') < nodesLine.indexOf('soulProcession'),
+    'revived souls should remain in front of the pyramid foreground',
   );
 });
 
@@ -101,26 +101,36 @@ test('result souls breathe in place without vertical floating', () => {
   );
 });
 
-test('true-end sphinx guardians sit lower with longer forward shadows', () => {
+test('true-end sphinx guardians sit at the temple horizon with subtle attached shadows', () => {
   assert.match(
     gameSceneSource,
-    /RESULT_SPHINX_GROUND_GAP = 6/,
-    'sphinx guardians should sit closer to the ground plane',
+    /RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 62/,
+    'desktop sphinx guardians should be smaller distant temple guardians',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SPHINX_SHADOW_WIDTH_RATIO = 1\.18/,
-    'sphinx guardian shadows should be wider for heavier grounding',
+    /RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 44/,
+    'compact sphinx guardians should fit the mobile distant-guardian size range',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0\.34/,
-    'sphinx guardian shadows should extend farther toward the viewer',
+    /templeBottomY \+ RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET/,
+    'sphinx guardians should anchor near the temple base line',
   );
   assert.match(
     gameSceneSource,
-    /displayHeight \* RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO/,
-    'sphinx guardian shadows should be offset forward from the feet',
+    /RESULT_SPHINX_SIDE_X_RATIO = 0\.39/,
+    'sphinx guardians should be pushed to the left and right sides outside the central pyramid path',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SPHINX_SHADOW_ALPHA = 0\.16/,
+    'sphinx guardian shadows should be subtle',
+  );
+  assert.match(
+    gameSceneSource,
+    /displayHeight \* RESULT_SPHINX_SHADOW_BASE_OFFSET_RATIO/,
+    'sphinx guardian shadows should stay attached to the feet instead of projecting forward',
   );
 });
 

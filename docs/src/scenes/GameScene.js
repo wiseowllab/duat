@@ -264,14 +264,16 @@ const RESULT_SOUL_ICON_SHADOW_WIDTH = 34;
 const RESULT_SOUL_ICON_SHADOW_HEIGHT = 10;
 const RESULT_SOUL_ICON_GROUND_Y = 24;
 const RESULT_CUTOUT_TEXTURE_SUFFIX = '-cutout';
-const RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 86;
-const RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 66;
-const RESULT_SPHINX_GROUND_GAP = 6;
-const RESULT_SPHINX_SIDE_X_RATIO = 0.28;
-const RESULT_SPHINX_CENTER_CLEAR_MIN_X = 92;
-const RESULT_SPHINX_SHADOW_WIDTH_RATIO = 1.18;
-const RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0.34;
-const RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO = 0.18;
+const RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 62;
+const RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 44;
+const RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET = 4;
+const RESULT_SPHINX_SIDE_X_RATIO = 0.39;
+const RESULT_SPHINX_CENTER_CLEAR_MIN_X = 112;
+const RESULT_SPHINX_EDGE_PADDING_RATIO = 0.84;
+const RESULT_SPHINX_SHADOW_WIDTH_RATIO = 0.78;
+const RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0.11;
+const RESULT_SPHINX_SHADOW_BASE_OFFSET_RATIO = -0.02;
+const RESULT_SPHINX_SHADOW_ALPHA = 0.16;
 const RESULT_WHITE_MATTE_MIN_CHANNEL = 232;
 const RESULT_WHITE_MATTE_MAX_CHANNEL_SPREAD = 28;
 const RESULT_WHITE_MATTE_BRIGHTNESS = 246;
@@ -4212,11 +4214,12 @@ ${COMMIT_SHA}`, {
     const sphinxGuardians = this.createResultSphinxGuardiansLayer(panelWidth, panelHeight, {
       isCompactPanel,
       statsZoneTop,
+      templeBottomY: templeLayout.visibleBottomY,
     });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount, {
       statsZoneTop,
     });
-    const nodes = [sky, temple, resultGodIcons, skyReadabilityShade, pyramid, sphinxGuardians, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, sphinxGuardians, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4782,13 +4785,18 @@ ${COMMIT_SHA}`, {
     const displayHeight = options.isCompactPanel
       ? RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT
       : RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT;
+    const templeBottomY = Number(options.templeBottomY) || 0;
+    const statsZoneTop = Number(options.statsZoneTop) || panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard;
     const groundY = Math.min(
-      (Number(options.statsZoneTop) || panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard) - RESULT_SPHINX_GROUND_GAP,
-      (panelHeight / 2) - 82,
+      templeBottomY + RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET,
+      statsZoneTop - (displayHeight * 1.25),
     );
     const xOffset = Math.max(
       RESULT_SPHINX_CENTER_CLEAR_MIN_X,
-      Math.min(panelWidth * RESULT_SPHINX_SIDE_X_RATIO, (panelWidth / 2) - 70),
+      Math.min(
+        panelWidth * RESULT_SPHINX_SIDE_X_RATIO,
+        (panelWidth / 2) - (displayHeight * RESULT_SPHINX_EDGE_PADDING_RATIO),
+      ),
     );
 
     [
@@ -4805,11 +4813,11 @@ ${COMMIT_SHA}`, {
     const container = this.add.container(x, groundY);
     const shadow = this.add.ellipse(
       0,
-      displayHeight * RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO,
+      displayHeight * RESULT_SPHINX_SHADOW_BASE_OFFSET_RATIO,
       displayHeight * RESULT_SPHINX_SHADOW_WIDTH_RATIO,
       displayHeight * RESULT_SPHINX_SHADOW_HEIGHT_RATIO,
       0x030201,
-      0.42,
+      RESULT_SPHINX_SHADOW_ALPHA,
     );
     const guardian = this.add.image(0, 0, this.getResultDisplayTextureKey(RESULT_SPHINX_GUARDIAN_ASSET.key))
       .setOrigin(0.5, 1)
