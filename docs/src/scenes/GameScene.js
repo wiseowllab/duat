@@ -259,6 +259,14 @@ const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.38;
 const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.205;
 const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.32;
 const RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP = 26;
+const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = 24;
+const RESULT_SOUL_PROCESSION_RELATIVE_POSITIONS = [
+  { x: -12, y: 0, scale: 1.00 },
+  { x: 0, y: -12, scale: 0.92 },
+  { x: 12, y: 6, scale: 1.06 },
+  { x: -24, y: -7, scale: 0.88 },
+  { x: 24, y: -3, scale: 0.9 },
+];
 const RESULT_SOUL_ICON_DISPLAY_HEIGHT = 56;
 const RESULT_SOUL_ICON_SHADOW_WIDTH = 34;
 const RESULT_SOUL_ICON_SHADOW_HEIGHT = 10;
@@ -4563,7 +4571,7 @@ ${COMMIT_SHA}`, {
     const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options);
 
     iconPositions.forEach((position, index) => {
-      const soul = this.createResultSoulIcon(index)
+      const soul = this.createResultSoulIcon(index, position.flipX)
         .setPosition(position.x, position.y)
         .setScale(position.scale)
         .setAlpha(position.alpha);
@@ -4599,22 +4607,24 @@ ${COMMIT_SHA}`, {
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
     const fallbackRearY = panelHeight * RESULT_SOUL_PROCESSION_REAR_Y_RATIO;
     const scorePanelTopY = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
-    const rearY = fallbackRearY;
     const foregroundLimitY = scorePanelTopY - RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP;
-    const preferredForegroundY = panelHeight * (isCompactPanel ? 0.27 : RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO);
-    const minimumForegroundY = rearY + (isCompactPanel ? 34 : 42);
-    const foregroundY = Math.max(rearY, Math.min(Math.max(preferredForegroundY, minimumForegroundY), foregroundLimitY));
     const centerClearHalfWidth = Math.max(panelWidth * RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO, isCompactPanel ? 88 : 108);
     const sideMinX = Math.max(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO, centerClearHalfWidth + (isCompactPanel ? 20 : 26));
     const sideMaxX = Math.min(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO, (panelWidth / 2) - (isCompactPanel ? 22 : 28));
-    const rowCounts = this.getResultSoulProcessionSideCounts(displayCount);
+    const groupAnchorX = Phaser.Math.Linear(sideMinX, sideMaxX, 0.48);
+    const sideCounts = this.getResultSoulProcessionSideCounts(displayCount);
+    const largestSideCount = Math.max(sideCounts.left, sideCounts.right);
+    const relativePositions = this.getResultSoulProcessionRelativePositions(largestSideCount, isCompactPanel);
+    const maxRelativeY = relativePositions.reduce((maxY, position) => Math.max(maxY, position.y), 0);
+    const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET - maxRelativeY;
+    const groupAnchorY = Math.min(fallbackRearY, safeBaseAnchorY);
 
     return this.interleaveResultSoulProcessionSides([
-      ...this.getResultSoulProcessionSidePositions('left', rowCounts.left, {
-        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: 0,
+      ...this.getResultSoulProcessionSidePositions('left', sideCounts.left, {
+        groupAnchorX, groupAnchorY, isCompactPanel,
       }),
-      ...this.getResultSoulProcessionSidePositions('right', rowCounts.right, {
-        panelWidth, rearY, foregroundY, sideMinX, sideMaxX, isCompactPanel, startIndex: 0,
+      ...this.getResultSoulProcessionSidePositions('right', sideCounts.right, {
+        groupAnchorX, groupAnchorY, isCompactPanel,
       }),
     ]).slice(0, displayCount);
   }
@@ -4632,30 +4642,34 @@ ${COMMIT_SHA}`, {
     }
 
     const sign = side === 'left' ? -1 : 1;
-    const denominator = Math.max(1, count - 1);
+    const relativePositions = this.getResultSoulProcessionRelativePositions(count, options.isCompactPanel);
 
-    return Array.from({ length: count }, (_, rowIndex) => {
-      const depthRatio = count <= 1 ? 0.82 : rowIndex / denominator;
-      const spacingRatio = Math.pow(depthRatio, 1.18);
-      const yJitter = Math.sin((rowIndex + options.startIndex) * 1.73) * (options.isCompactPanel ? 2.5 : 4);
-      const xJitter = Math.sin((rowIndex + options.startIndex) * 2.17) * (options.isCompactPanel ? 4 : 6);
-      const ceremonialOffset = rowIndex % 2 === 0 ? 0 : (options.isCompactPanel ? 7 : 10);
-      const xBase = Phaser.Math.Linear(options.sideMinX, options.sideMaxX, Math.pow(depthRatio, 0.72));
-      const x = sign * (xBase + ceremonialOffset + xJitter);
-      const y = Phaser.Math.Linear(options.rearY, options.foregroundY, spacingRatio) + yJitter;
-      const scale = Phaser.Math.Linear(
+    return relativePositions.map((relativePosition, rowIndex) => {
+      const depthRatio = count <= 1 ? 0.82 : rowIndex / Math.max(1, count - 1);
+      const x = (sign * options.groupAnchorX) + (sign * relativePosition.x);
+      const y = options.groupAnchorY + RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET + relativePosition.y;
+      const scale = Phaser.Math.Clamp(
+        relativePosition.scale * (options.isCompactPanel ? 0.94 : 1),
         RESULT_SOUL_PROCESSION_TEMPLE_SCALE,
         RESULT_SOUL_PROCESSION_FOREGROUND_SCALE,
-        depthRatio,
-      ) * (options.isCompactPanel ? 0.94 : 1);
+      );
       const alpha = Phaser.Math.Linear(
         RESULT_SOUL_PROCESSION_OPACITY_MIN,
         RESULT_SOUL_PROCESSION_OPACITY_MAX,
         depthRatio,
       );
 
-      return { x, y, scale, alpha, side, rowIndex };
+      return { x, y, scale, alpha, side, rowIndex, flipX: side === 'right' };
     });
+  }
+
+  getResultSoulProcessionRelativePositions(count, isCompactPanel) {
+    const compactScale = isCompactPanel ? 0.78 : 1;
+    return RESULT_SOUL_PROCESSION_RELATIVE_POSITIONS.slice(0, count).map((position) => ({
+      x: position.x * compactScale,
+      y: position.y * compactScale,
+      scale: position.scale,
+    }));
   }
 
   interleaveResultSoulProcessionSides(positions) {
@@ -4833,7 +4847,7 @@ ${COMMIT_SHA}`, {
     return container;
   }
 
-  createResultSoulIcon(index) {
+  createResultSoulIcon(index, flipX = false) {
     const textureKey = this.currentEndingType === ENDING_TYPES.TRUE_END
       ? RESULT_GOLDEN_REVIVED_SOUL_ASSET.key
       : RESULT_REVIVED_SOUL_ASSET.key;
@@ -4853,9 +4867,7 @@ ${COMMIT_SHA}`, {
       .setOrigin(0.5, 1)
       .setDisplaySize(RESULT_SOUL_ICON_DISPLAY_HEIGHT, RESULT_SOUL_ICON_DISPLAY_HEIGHT);
 
-    if (index % 2 === 1) {
-      image.setFlipX(true);
-    }
+    image.setFlipX(flipX || index % 2 === 1);
 
     soul.add([shadow, image]);
     return soul;
