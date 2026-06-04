@@ -346,8 +346,13 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
 test('result soul procession preserves per-mummy perspective offsets below the pyramid side area', () => {
   assert.match(
     gameSceneSource,
-    /const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = 24/,
-    'mummy procession should use one shared group-level downward offset',
+    /const RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET = 24;\nconst RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET = 24;\nconst RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET \+ RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET/,
+    'mummy procession should preserve the prior base offset and add one shared +24px downward offset',
+  );
+  assert.match(
+    gameSceneSource,
+    /const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET - maxRelativeY/,
+    'score-panel safety should preserve the previous anchor calculation so the new offset remains a vertical slide',
   );
   assert.match(
     gameSceneSource,

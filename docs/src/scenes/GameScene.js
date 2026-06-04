@@ -259,7 +259,9 @@ const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.47;
 const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.205;
 const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.32;
 const RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP = 26;
-const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = 24;
+const RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET = 24;
+const RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET = 24;
+const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET + RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET;
 const RESULT_SOUL_PROCESSION_RELATIVE_POSITIONS = [
   { x: -12, y: 0, scale: 1.00 },
   { x: 0, y: -12, scale: 0.92 },
@@ -4616,7 +4618,7 @@ ${COMMIT_SHA}`, {
     const largestSideCount = Math.max(sideCounts.left, sideCounts.right);
     const relativePositions = this.getResultSoulProcessionRelativePositions(largestSideCount, isCompactPanel);
     const maxRelativeY = relativePositions.reduce((maxY, position) => Math.max(maxY, position.y), 0);
-    const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET - maxRelativeY;
+    const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET - maxRelativeY;
     const groupAnchorY = Math.min(fallbackRearY, safeBaseAnchorY);
 
     return this.interleaveResultSoulProcessionSides([
