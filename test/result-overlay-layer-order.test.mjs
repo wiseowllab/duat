@@ -72,7 +72,7 @@ test('complete clear upgrades result souls and adds mirrored sphinx guardians on
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_ICON_GROUND_Y/,
+    /RESULT_SOUL_ICON_SHADOW_WIDTH_RATIO/,
     'soul icons should keep a grounded shadow under each image',
   );
   assert.match(
@@ -91,12 +91,12 @@ test('result souls breathe in place without vertical floating', () => {
   assert.ok(soulLayerSource, 'result soul procession layer source should be present');
   assert.match(
     soulLayerSource,
-    /scaleX: position\.scale \* 1\.03,\n        scaleY: position\.scale \* 1\.03,/,
-    'rescued souls should use a subtle scale-breathing pulse',
+    /scaleX: 1\.03,\n        scaleY: 1\.03,/,
+    'rescued souls should use a subtle scale-breathing pulse without flattening slot display heights',
   );
   assert.doesNotMatch(
     soulLayerSource,
-    /\n\s*y: position\.y -/,
+    /\n\s*y: placement\.y -|\n\s*y: position\.y -/,
     'rescued souls should not float upward or downward on the result screen',
   );
 });
@@ -255,86 +255,51 @@ test('result soul procession preserves pre-procession result landmark layout con
   );
 });
 
-test('result soul procession caps icons and keeps rescued souls in side rows', () => {
+test('result soul procession uses fixed foreground side slots', () => {
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_MAX_ICONS = 10/,
-    'result soul procession should cap large revival totals at 10 readable mummies',
+    /RESULT_SOUL_PROCESSION_MAX_ICONS = 6/,
+    'result soul procession should cap at three fixed mummy slots per side',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 0\) return 0;/,
-    'zero revived souls should render no mummy icons',
+    /return Math\.min\(Math\.max\(0, revivedSoulsCount\), RESULT_SOUL_PROCESSION_MAX_ICONS\);/,
+    'zero revived souls should render no mummies while larger counts use only fixed slots',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 4\) return count;/,
-    'small revival totals should show one readable icon per rescued soul',
+    /RESULT_SOUL_PROCESSION_GROUP_X_RATIO = 0\.38/,
+    'mummy groups should use explicit mirrored foreground anchors',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 12\) return Math\.min\(6, count\);/,
-    'medium revival totals should reduce to readable side rows',
+    /const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;/,
+    'front mummy baselines should be anchored just above the score panel top',
   );
   assert.match(
     gameSceneSource,
-    /if \(count <= 30\) return Math\.min\(8, count\);/,
-    'large revival totals should prioritize fewer readable figures over quantity',
+    /const leftGroupX = -panelWidth \* RESULT_SOUL_PROCESSION_GROUP_X_RATIO;/,
+    'left group should use a fixed lower-left foreground anchor',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0\.26/,
-    'mummy procession should reserve a broad central ceremonial path instead of forming UI rows',
+    /const rightGroupX = panelWidth \* RESULT_SOUL_PROCESSION_GROUP_X_RATIO;/,
+    'right group should mirror the fixed lower-right foreground anchor',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0\.39/,
-    'mummy procession should preserve the previous outer left/right group anchor spacing',
+    /getResultSoulProcessionSideFixedPlacements\('left', leftCount, leftGroupX, groupBaseY\)/,
+    'mummy procession should include a left fixed-slot group',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0\.47/,
-    'mummy procession should preserve the previous mirrored horizontal spread outside the pyramid sides',
-  );
-  assert.match(
-    gameSceneSource,
-    /RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP/,
-    'mummy procession should keep clear of the score panel below it',
-  );
-  assert.match(
-    gameSceneSource,
-    /getResultSoulProcessionSidePositions\('left'/,
-    'mummy procession should include a left path-side row',
-  );
-  assert.match(
-    gameSceneSource,
-    /getResultSoulProcessionSidePositions\('right'/,
-    'mummy procession should include a right path-side row',
+    /getResultSoulProcessionSideFixedPlacements\('right', rightCount, rightGroupX, groupBaseY\)/,
+    'mummy procession should include a right fixed-slot group',
   );
   assert.doesNotMatch(
     gameSceneSource,
-    /pyramidLayout|pyramidBottomY|RESULT_SOUL_PROCESSION_PYRAMID_GAP/,
-    'mummy procession should be positioned independently and must not read or change pyramid layout',
-  );
-  assert.match(
-    gameSceneSource,
-    /scorePanelTopY - RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP/,
-    'mummy procession foreground row should stop before the score panel',
-  );
-  assert.match(
-    gameSceneSource,
-    /groupAnchorX, groupAnchorY, isCompactPanel,[\s\S]*getResultSoulProcessionSidePositions\('right'[\s\S]*groupAnchorX, groupAnchorY, isCompactPanel,/,
-    'left and right mummy lanes should share the same group anchors so only mirrored relative offsets separate them',
-  );
-  assert.match(
-    gameSceneSource,
-    /RESULT_SOUL_PROCESSION_TEMPLE_SCALE,\n        RESULT_SOUL_PROCESSION_FOREGROUND_SCALE/s,
-    'mummies closer to the temple should be smaller than foreground mummies',
-  );
-  assert.match(
-    gameSceneSource,
-    /RESULT_SOUL_PROCESSION_OPACITY_MIN,\n        RESULT_SOUL_PROCESSION_OPACITY_MAX/s,
-    'mummies should keep strong enough opacity for ground contrast',
+    /pyramidLayout|pyramidBottomY|RESULT_SOUL_PROCESSION_PYRAMID_GAP|getResultSoulProcessionRelativePositions|getResultSoulProcessionPositions\(/,
+    'mummy procession should not read pyramid dimensions or use automatic relative row distribution',
   );
   assert.doesNotMatch(
     gameSceneSource,
@@ -343,35 +308,35 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   );
 });
 
-test('result soul procession preserves per-mummy perspective offsets below the pyramid side area', () => {
+test('result soul procession fixed slots preserve per-mummy perspective', () => {
   assert.match(
     gameSceneSource,
-    /const RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET = 24;\nconst RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET = 24;\nconst RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET \+ RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET/,
-    'mummy procession should preserve the prior base offset and add one shared +24px downward offset',
+    /const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;/,
+    'front mummy baseline should sit 28px above the score panel top',
   );
   assert.match(
     gameSceneSource,
-    /const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET - maxRelativeY/,
-    'score-panel safety should preserve the previous anchor calculation so the new offset remains a vertical slide',
+    /\{ dx: -10, dy: -28, displayHeight: 34, alpha: 0\.86 \},\n  \{ dx: 10, dy: -14, displayHeight: 39, alpha: 0\.93 \},\n  \{ dx: -2, dy: 0, displayHeight: 45, alpha: 1 \}/,
+    'each side should use fixed back, middle, and front slots with increasing Y and displayHeight',
   );
   assert.match(
     gameSceneSource,
-    /\{ x: -12, y: 0, scale: 1\.00 \},\n  \{ x: 0, y: -12, scale: 0\.92 \},\n  \{ x: 12, y: 6, scale: 1\.06 \}/,
-    'the first three mummies in each side group should keep the restored staggered perspective offsets',
-  );
-  assert.match(
-    gameSceneSource,
-    /const y = options\.groupAnchorY \+ RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET \+ relativePosition\.y/,
-    'each mummy should add its relative Y offset after the shared group-level Y offset',
+    /x: groupX \+ \(sideMultiplier \* slot\.dx\),\n      y: groupBaseY \+ slot\.dy,\n      displayHeight: slot\.displayHeight,/,
+    'each mummy should apply the slot X, baseline Y, and its own displayHeight explicitly',
   );
   assert.doesNotMatch(
     gameSceneSource,
-    /const y = options\.groupAnchorY \+ RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET;/,
-    'mummies should not be flattened onto one shared Y value',
+    /const y = .*relativePosition|setScale\(position\.scale\)|RESULT_SOUL_ICON_DISPLAY_HEIGHT/,
+    'mummies should not use relative row Y calculations, shared scales, or one shared display height',
   );
   assert.match(
     gameSceneSource,
-    /return \{ x, y, scale, alpha, side, rowIndex, flipX: side === 'right' \}/,
+    /flipX: side === 'right'/,
     'right-side mummy group should remain mirrored with flipX',
+  );
+  assert.match(
+    gameSceneSource,
+    /\.setOrigin\(0\.5, 1\)\n      \.setDisplaySize\(displayHeight, displayHeight\)/,
+    'every mummy sprite should use bottom-center origin and its fixed slot displayHeight',
   );
 });

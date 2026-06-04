@@ -248,31 +248,17 @@ const ENDING_TYPES = {
   NORMAL_END: 'normal_end',
   TRUE_END: 'true_end',
 };
-const RESULT_SOUL_PROCESSION_MAX_ICONS = 10;
-const RESULT_SOUL_PROCESSION_OPACITY_MIN = 0.78;
-const RESULT_SOUL_PROCESSION_OPACITY_MAX = 0.96;
-const RESULT_SOUL_PROCESSION_TEMPLE_SCALE = 0.58;
-const RESULT_SOUL_PROCESSION_FOREGROUND_SCALE = 1.06;
-const RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO = 0.26;
-const RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0.39;
-const RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0.47;
-const RESULT_SOUL_PROCESSION_REAR_Y_RATIO = 0.205;
-const RESULT_SOUL_PROCESSION_FOREGROUND_Y_RATIO = 0.32;
-const RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP = 26;
-const RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET = 24;
-const RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET = 24;
-const RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET = RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET + RESULT_SOUL_PROCESSION_ADDITIONAL_GROUP_Y_OFFSET;
-const RESULT_SOUL_PROCESSION_RELATIVE_POSITIONS = [
-  { x: -12, y: 0, scale: 1.00 },
-  { x: 0, y: -12, scale: 0.92 },
-  { x: 12, y: 6, scale: 1.06 },
-  { x: -24, y: -7, scale: 0.88 },
-  { x: 24, y: -3, scale: 0.9 },
+const RESULT_SOUL_PROCESSION_MAX_ICONS = 6;
+const RESULT_SOUL_PROCESSION_OPACITY_MAX = 1;
+const RESULT_SOUL_PROCESSION_GROUP_X_RATIO = 0.38;
+const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;
+const RESULT_SOUL_PROCESSION_FIXED_SLOTS = [
+  { dx: -10, dy: -28, displayHeight: 34, alpha: 0.86 },
+  { dx: 10, dy: -14, displayHeight: 39, alpha: 0.93 },
+  { dx: -2, dy: 0, displayHeight: 45, alpha: 1 },
 ];
-const RESULT_SOUL_ICON_DISPLAY_HEIGHT = 56;
-const RESULT_SOUL_ICON_SHADOW_WIDTH = 34;
-const RESULT_SOUL_ICON_SHADOW_HEIGHT = 10;
-const RESULT_SOUL_ICON_GROUND_Y = 24;
+const RESULT_SOUL_ICON_SHADOW_WIDTH_RATIO = 0.76;
+const RESULT_SOUL_ICON_SHADOW_HEIGHT_RATIO = 0.22;
 const RESULT_CUTOUT_TEXTURE_SUFFIX = '-cutout';
 const RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 78;
 const RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 56;
@@ -4570,23 +4556,22 @@ ${COMMIT_SHA}`, {
       return procession;
     }
 
-    const iconPositions = this.getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options);
+    const placements = this.getResultSoulProcessionFixedPlacements(displayCount, panelWidth, panelHeight, options);
 
-    iconPositions.forEach((position, index) => {
-      const soul = this.createResultSoulIcon(index, position.flipX)
-        .setPosition(position.x, position.y)
-        .setScale(position.scale)
-        .setAlpha(position.alpha);
+    placements.forEach((placement, index) => {
+      const soul = this.createResultSoulIcon(index, placement.flipX, placement.displayHeight)
+        .setPosition(placement.x, placement.y)
+        .setAlpha(placement.alpha);
       procession.add(soul);
 
       this.tweens.add({
         targets: soul,
-        scaleX: position.scale * 1.03,
-        scaleY: position.scale * 1.03,
-        alpha: Math.min(RESULT_SOUL_PROCESSION_OPACITY_MAX, position.alpha + 0.06),
+        scaleX: 1.03,
+        scaleY: 1.03,
+        alpha: Math.min(RESULT_SOUL_PROCESSION_OPACITY_MAX, placement.alpha + 0.04),
         yoyo: true,
         repeat: -1,
-        duration: 1800 + (index % 5) * 130,
+        duration: 1800 + (index % RESULT_SOUL_PROCESSION_FIXED_SLOTS.length) * 130,
         delay: index * 75,
         ease: 'Sine.easeInOut',
       });
@@ -4596,92 +4581,45 @@ ${COMMIT_SHA}`, {
   }
 
   getResultSoulProcessionIconCount(revivedSoulsCount) {
-    const count = Math.max(0, revivedSoulsCount);
-
-    if (count <= 0) return 0;
-    if (count <= 4) return count;
-    if (count <= 12) return Math.min(6, count);
-    if (count <= 30) return Math.min(8, count);
-    return RESULT_SOUL_PROCESSION_MAX_ICONS;
+    return Math.min(Math.max(0, revivedSoulsCount), RESULT_SOUL_PROCESSION_MAX_ICONS);
   }
 
-  getResultSoulProcessionPositions(displayCount, panelWidth, panelHeight, options = {}) {
-    const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
-    const fallbackRearY = panelHeight * RESULT_SOUL_PROCESSION_REAR_Y_RATIO;
-    const scorePanelTopY = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
-    const foregroundLimitY = scorePanelTopY - RESULT_SOUL_PROCESSION_SCORE_PANEL_GAP;
-    const centerClearHalfWidth = Math.max(panelWidth * RESULT_SOUL_PROCESSION_CENTER_CLEAR_RATIO, isCompactPanel ? 88 : 108);
-    const sideMinX = Math.max(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO, centerClearHalfWidth + (isCompactPanel ? 20 : 26));
-    const sideMaxX = Math.min(panelWidth * RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO, (panelWidth / 2) - (isCompactPanel ? 22 : 28));
-    const groupAnchorX = Phaser.Math.Linear(sideMinX, sideMaxX, 0.48);
-    const sideCounts = this.getResultSoulProcessionSideCounts(displayCount);
-    const largestSideCount = Math.max(sideCounts.left, sideCounts.right);
-    const relativePositions = this.getResultSoulProcessionRelativePositions(largestSideCount, isCompactPanel);
-    const maxRelativeY = relativePositions.reduce((maxY, position) => Math.max(maxY, position.y), 0);
-    const safeBaseAnchorY = foregroundLimitY - RESULT_SOUL_PROCESSION_BASE_GROUP_Y_OFFSET - maxRelativeY;
-    const groupAnchorY = Math.min(fallbackRearY, safeBaseAnchorY);
+  getResultSoulProcessionFixedPlacements(displayCount, panelWidth, panelHeight, options = {}) {
+    const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
+    const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;
+    const leftGroupX = -panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
+    const rightGroupX = panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
+    const leftCount = Math.ceil(displayCount / 2);
+    const rightCount = Math.floor(displayCount / 2);
 
-    return this.interleaveResultSoulProcessionSides([
-      ...this.getResultSoulProcessionSidePositions('left', sideCounts.left, {
-        groupAnchorX, groupAnchorY, isCompactPanel,
-      }),
-      ...this.getResultSoulProcessionSidePositions('right', sideCounts.right, {
-        groupAnchorX, groupAnchorY, isCompactPanel,
-      }),
-    ]).slice(0, displayCount);
-  }
-
-  getResultSoulProcessionSideCounts(displayCount) {
-    return {
-      left: Math.ceil(displayCount / 2),
-      right: Math.floor(displayCount / 2),
-    };
-  }
-
-  getResultSoulProcessionSidePositions(side, count, options) {
-    if (count <= 0) {
-      return [];
-    }
-
-    const sign = side === 'left' ? -1 : 1;
-    const relativePositions = this.getResultSoulProcessionRelativePositions(count, options.isCompactPanel);
-
-    return relativePositions.map((relativePosition, rowIndex) => {
-      const depthRatio = count <= 1 ? 0.82 : rowIndex / Math.max(1, count - 1);
-      const x = (sign * options.groupAnchorX) + (sign * relativePosition.x);
-      const y = options.groupAnchorY + RESULT_SOUL_PROCESSION_GROUP_Y_OFFSET + relativePosition.y;
-      const scale = Phaser.Math.Clamp(
-        relativePosition.scale * (options.isCompactPanel ? 0.94 : 1),
-        RESULT_SOUL_PROCESSION_TEMPLE_SCALE,
-        RESULT_SOUL_PROCESSION_FOREGROUND_SCALE,
-      );
-      const alpha = Phaser.Math.Linear(
-        RESULT_SOUL_PROCESSION_OPACITY_MIN,
-        RESULT_SOUL_PROCESSION_OPACITY_MAX,
-        depthRatio,
-      );
-
-      return { x, y, scale, alpha, side, rowIndex, flipX: side === 'right' };
-    });
-  }
-
-  getResultSoulProcessionRelativePositions(count, isCompactPanel) {
-    const compactScale = isCompactPanel ? 0.78 : 1;
-    return RESULT_SOUL_PROCESSION_RELATIVE_POSITIONS.slice(0, count).map((position) => ({
-      x: position.x * compactScale,
-      y: position.y * compactScale,
-      scale: position.scale,
-    }));
-  }
-
-  interleaveResultSoulProcessionSides(positions) {
-    return positions.sort((a, b) => {
-      if (a.rowIndex !== b.rowIndex) {
-        return a.rowIndex - b.rowIndex;
+    return [
+      ...this.getResultSoulProcessionSideFixedPlacements('left', leftCount, leftGroupX, groupBaseY),
+      ...this.getResultSoulProcessionSideFixedPlacements('right', rightCount, rightGroupX, groupBaseY),
+    ].sort((a, b) => {
+      if (a.slotIndex !== b.slotIndex) {
+        return a.slotIndex - b.slotIndex;
       }
 
       return a.side === 'left' ? -1 : 1;
     });
+  }
+
+  getResultSoulProcessionSideFixedPlacements(side, count, groupX, groupBaseY) {
+    if (count <= 0) {
+      return [];
+    }
+
+    const sideMultiplier = side === 'left' ? 1 : -1;
+
+    return RESULT_SOUL_PROCESSION_FIXED_SLOTS.slice(0, count).map((slot, slotIndex) => ({
+      x: groupX + (sideMultiplier * slot.dx),
+      y: groupBaseY + slot.dy,
+      displayHeight: slot.displayHeight,
+      alpha: slot.alpha,
+      side,
+      slotIndex,
+      flipX: side === 'right',
+    }));
   }
 
   prepareResultCharacterCutoutTextures() {
@@ -4849,7 +4787,7 @@ ${COMMIT_SHA}`, {
     return container;
   }
 
-  createResultSoulIcon(index, flipX = false) {
+  createResultSoulIcon(index, flipX = false, displayHeight = RESULT_SOUL_PROCESSION_FIXED_SLOTS.at(-1).displayHeight) {
     const textureKey = this.currentEndingType === ENDING_TYPES.TRUE_END
       ? RESULT_GOLDEN_REVIVED_SOUL_ASSET.key
       : RESULT_REVIVED_SOUL_ASSET.key;
@@ -4859,15 +4797,15 @@ ${COMMIT_SHA}`, {
     const soul = this.add.container(0, 0);
     const shadow = this.add.ellipse(
       0,
-      RESULT_SOUL_ICON_GROUND_Y,
-      RESULT_SOUL_ICON_SHADOW_WIDTH,
-      RESULT_SOUL_ICON_SHADOW_HEIGHT,
+      0,
+      displayHeight * RESULT_SOUL_ICON_SHADOW_WIDTH_RATIO,
+      displayHeight * RESULT_SOUL_ICON_SHADOW_HEIGHT_RATIO,
       0x030201,
       0.52,
     );
-    const image = this.add.image(0, RESULT_SOUL_ICON_GROUND_Y, displayTextureKey)
+    const image = this.add.image(0, 0, displayTextureKey)
       .setOrigin(0.5, 1)
-      .setDisplaySize(RESULT_SOUL_ICON_DISPLAY_HEIGHT, RESULT_SOUL_ICON_DISPLAY_HEIGHT);
+      .setDisplaySize(displayHeight, displayHeight);
 
     image.setFlipX(flipX || index % 2 === 1);
 
