@@ -288,13 +288,13 @@ test('result soul procession caps icons and keeps rescued souls in side rows', (
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0\.39/,
-    'mummy procession should stay in side foreground lanes away from the central pyramid body',
+    /RESULT_SOUL_PROCESSION_SIDE_MIN_RATIO = 0\.31/,
+    'mummy procession should move inward to lower foreground lanes instead of outer pyramid-side positions',
   );
   assert.match(
     gameSceneSource,
-    /RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0\.47/,
-    'mummy procession should use the outer panel edges for mirrored left-right placement',
+    /RESULT_SOUL_PROCESSION_SIDE_MAX_RATIO = 0\.38/,
+    'mummy procession should use tightened mirrored side spacing for lower foreground placement',
   );
   assert.match(
     gameSceneSource,
