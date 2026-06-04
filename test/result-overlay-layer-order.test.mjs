@@ -82,6 +82,48 @@ test('complete clear upgrades result souls and adds mirrored sphinx guardians on
   );
 });
 
+
+test('result souls breathe in place without vertical floating', () => {
+  const soulLayerSource = gameSceneSource.match(
+    /createResultSoulProcessionLayer[\s\S]*?\n  getResultSoulProcessionIconCount/,
+  )?.[0];
+
+  assert.ok(soulLayerSource, 'result soul procession layer source should be present');
+  assert.match(
+    soulLayerSource,
+    /scaleX: position\.scale \* 1\.03,\n        scaleY: position\.scale \* 1\.03,/,
+    'rescued souls should use a subtle scale-breathing pulse',
+  );
+  assert.doesNotMatch(
+    soulLayerSource,
+    /\n\s*y: position\.y -/,
+    'rescued souls should not float upward or downward on the result screen',
+  );
+});
+
+test('true-end sphinx guardians sit lower with longer forward shadows', () => {
+  assert.match(
+    gameSceneSource,
+    /RESULT_SPHINX_GROUND_GAP = 6/,
+    'sphinx guardians should sit closer to the ground plane',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SPHINX_SHADOW_WIDTH_RATIO = 1\.18/,
+    'sphinx guardian shadows should be wider for heavier grounding',
+  );
+  assert.match(
+    gameSceneSource,
+    /RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0\.34/,
+    'sphinx guardian shadows should extend farther toward the viewer',
+  );
+  assert.match(
+    gameSceneSource,
+    /displayHeight \* RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO/,
+    'sphinx guardian shadows should be offset forward from the feet',
+  );
+});
+
 test('result god coffin icon positions anchor to the temple entrance sides', () => {
   assert.match(
     gameSceneSource,

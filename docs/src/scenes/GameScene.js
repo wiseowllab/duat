@@ -266,11 +266,12 @@ const RESULT_SOUL_ICON_GROUND_Y = 24;
 const RESULT_CUTOUT_TEXTURE_SUFFIX = '-cutout';
 const RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT = 86;
 const RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT = 66;
-const RESULT_SPHINX_GROUND_GAP = 14;
+const RESULT_SPHINX_GROUND_GAP = 6;
 const RESULT_SPHINX_SIDE_X_RATIO = 0.28;
 const RESULT_SPHINX_CENTER_CLEAR_MIN_X = 92;
-const RESULT_SPHINX_SHADOW_WIDTH_RATIO = 0.78;
-const RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0.14;
+const RESULT_SPHINX_SHADOW_WIDTH_RATIO = 1.18;
+const RESULT_SPHINX_SHADOW_HEIGHT_RATIO = 0.34;
+const RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO = 0.18;
 const RESULT_WHITE_MATTE_MIN_CHANNEL = 232;
 const RESULT_WHITE_MATTE_MAX_CHANNEL_SPREAD = 28;
 const RESULT_WHITE_MATTE_BRIGHTNESS = 246;
@@ -4562,7 +4563,8 @@ ${COMMIT_SHA}`, {
 
       this.tweens.add({
         targets: soul,
-        y: position.y - (index % 2 === 0 ? 2 : 3),
+        scaleX: position.scale * 1.03,
+        scaleY: position.scale * 1.03,
         alpha: Math.min(RESULT_SOUL_PROCESSION_OPACITY_MAX, position.alpha + 0.06),
         yoyo: true,
         repeat: -1,
@@ -4782,7 +4784,7 @@ ${COMMIT_SHA}`, {
       : RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT;
     const groundY = Math.min(
       (Number(options.statsZoneTop) || panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard) - RESULT_SPHINX_GROUND_GAP,
-      (panelHeight / 2) - 92,
+      (panelHeight / 2) - 82,
     );
     const xOffset = Math.max(
       RESULT_SPHINX_CENTER_CLEAR_MIN_X,
@@ -4803,11 +4805,11 @@ ${COMMIT_SHA}`, {
     const container = this.add.container(x, groundY);
     const shadow = this.add.ellipse(
       0,
-      0,
+      displayHeight * RESULT_SPHINX_SHADOW_FORWARD_OFFSET_RATIO,
       displayHeight * RESULT_SPHINX_SHADOW_WIDTH_RATIO,
       displayHeight * RESULT_SPHINX_SHADOW_HEIGHT_RATIO,
       0x030201,
-      0.46,
+      0.42,
     );
     const guardian = this.add.image(0, 0, this.getResultDisplayTextureKey(RESULT_SPHINX_GUARDIAN_ASSET.key))
       .setOrigin(0.5, 1)
