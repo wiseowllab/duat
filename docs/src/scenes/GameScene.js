@@ -252,6 +252,7 @@ const RESULT_SOUL_PROCESSION_MAX_ICONS = 6;
 const RESULT_SOUL_PROCESSION_OPACITY_MAX = 1;
 const RESULT_SOUL_PROCESSION_GROUP_X_RATIO = 0.38;
 const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;
+const RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET = 32;
 const RESULT_SOUL_PROCESSION_FIXED_SLOTS = [
   { dx: -10, dy: -28, displayHeight: 34, alpha: 0.86 },
   { dx: 10, dy: -14, displayHeight: 39, alpha: 0.93 },
@@ -4587,14 +4588,16 @@ ${COMMIT_SHA}`, {
   getResultSoulProcessionFixedPlacements(displayCount, panelWidth, panelHeight, options = {}) {
     const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
     const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;
+    const mummyVisualYOffset = RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET;
+    const mummyGroupBaseY = groupBaseY + mummyVisualYOffset;
     const leftGroupX = -panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
     const rightGroupX = panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
     const leftCount = Math.ceil(displayCount / 2);
     const rightCount = Math.floor(displayCount / 2);
 
     return [
-      ...this.getResultSoulProcessionSideFixedPlacements('left', leftCount, leftGroupX, groupBaseY),
-      ...this.getResultSoulProcessionSideFixedPlacements('right', rightCount, rightGroupX, groupBaseY),
+      ...this.getResultSoulProcessionSideFixedPlacements('left', leftCount, leftGroupX, mummyGroupBaseY),
+      ...this.getResultSoulProcessionSideFixedPlacements('right', rightCount, rightGroupX, mummyGroupBaseY),
     ].sort((a, b) => {
       if (a.slotIndex !== b.slotIndex) {
         return a.slotIndex - b.slotIndex;
