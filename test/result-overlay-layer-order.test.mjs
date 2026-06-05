@@ -255,8 +255,21 @@ test('result soul procession preserves pre-procession result landmark layout con
   );
   assert.match(
     gameSceneSource,
-    /const statsPanelHeight = isRitualEnding\n      \? \(isCompactPanel \? 108 : 116\)\n      : \(isCompactPanel \? 94 : 108\);/,
-    'stats panel height should remain at the pre-procession result layout value',
+    /const statsPanelHeight = isRitualEnding\n      \? \(isCompactPanel \? 126 : 136\)\n      : \(isCompactPanel \? 112 : 126\);/,
+    'stats panel height should keep result performance stats readable with procession landmarks',
+  );
+});
+
+test('result stats include run performance labels', () => {
+  assert.match(
+    gameSceneSource,
+    /`Time: \$\{formatRunTime\(this\.runElapsedMs\)\}`/,
+    'result stats should include the final formatted run time',
+  );
+  assert.match(
+    gameSceneSource,
+    /`Drops: \$\{this\.placedPieceCount\}`/,
+    'result stats should include the final placed piece count',
   );
 });
 

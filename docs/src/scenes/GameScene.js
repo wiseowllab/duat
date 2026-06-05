@@ -248,6 +248,13 @@ const ENDING_TYPES = {
   NORMAL_END: 'normal_end',
   TRUE_END: 'true_end',
 };
+
+function formatRunTime(ms) {
+  const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
 const RESULT_SOUL_PROCESSION_MAX_ICONS = 6;
 const RESULT_SOUL_PROCESSION_OPACITY_MAX = 1;
 const RESULT_SOUL_PROCESSION_GROUP_X_RATIO = 0.38;
@@ -480,6 +487,12 @@ export class GameScene extends Phaser.Scene {
     this.endingSequenceTimers = [];
     this.isTouchSoftDropping = false;
     this.touchActionHandler = null;
+    this.runStartTime = null;
+    this.runElapsedMs = 0;
+    this.pausedDurationMs = 0;
+    this.pauseStartedAt = null;
+    this.isRunTimerFrozen = false;
+    this.placedPieceCount = 0;
 
     this.layout = this.computeLayout();
     this.createBackground();
@@ -497,6 +510,7 @@ export class GameScene extends Phaser.Scene {
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
+    this.updateRunPerformanceHud();
     this.refreshAwakenedGodPresence();
     this.createTitleOverlay();
     this.createLayoutDebugOverlay();
@@ -504,6 +518,9 @@ export class GameScene extends Phaser.Scene {
 
   update(_, delta) {
     this.updateLayoutDebugOverlay();
+    if (this.gameState === GAME_STATES.PLAYING) {
+      this.updateRunTimer();
+    }
     if (this.gameState !== GAME_STATES.PLAYING || this.isResolvingClears || !this.activePiece) {
       return;
     }
@@ -1464,6 +1481,7 @@ ${COMMIT_SHA}`, {
     this.sfx.resume();
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
+    this.startRunTimer();
     this.titleOverlay?.setVisible(false);
     this.closeHowToPlay();
     this.pauseOverlay?.setVisible(false);
@@ -1480,6 +1498,7 @@ ${COMMIT_SHA}`, {
     this.sfx.resume();
     this.resetGameState();
     this.gameState = GAME_STATES.PLAYING;
+    this.startRunTimer();
     this.setTouchControlsVisible(true);
     this.safeUpdateBgmForGameState();
     this.spawnPiece();
@@ -1513,6 +1532,7 @@ ${COMMIT_SHA}`, {
     this.usedGodIdsThisRun = new Set();
     this.totalPureCanopicCount = 0;
     this.currentDepthLevel = 1;
+    this.resetRunPerformanceStats();
     this.activePiece = null;
     this.nextPairTypes = createRandomPairTypes();
     this.fallTimer = 0;
@@ -1583,7 +1603,45 @@ ${COMMIT_SHA}`, {
     this.hud.updateSoundStatus(!this.sfx.isMuted);
     this.hud.updateRevivedSouls(this.revivedSoulsCount);
     this.hud.updateUnderworldDepth(this.currentDepthLevel, this.totalPureCanopicCount, DEPTH_PURE_CANOPIC_THRESHOLDS);
+    this.updateRunPerformanceHud();
     this.refreshAwakenedGodPresence();
+  }
+
+  resetRunPerformanceStats() {
+    this.runStartTime = null;
+    this.runElapsedMs = 0;
+    this.pausedDurationMs = 0;
+    this.pauseStartedAt = null;
+    this.isRunTimerFrozen = false;
+    this.placedPieceCount = 0;
+  }
+
+  startRunTimer() {
+    this.runStartTime = this.time.now;
+    this.runElapsedMs = 0;
+    this.pausedDurationMs = 0;
+    this.pauseStartedAt = null;
+    this.isRunTimerFrozen = false;
+    this.updateRunPerformanceHud();
+  }
+
+  updateRunTimer(now = this.time.now) {
+    if (this.isRunTimerFrozen || this.runStartTime === null) {
+      return;
+    }
+
+    this.runElapsedMs = Math.max(0, now - this.runStartTime - this.pausedDurationMs);
+    this.updateRunPerformanceHud();
+  }
+
+  freezeRunTimer() {
+    this.updateRunTimer();
+    this.isRunTimerFrozen = true;
+    this.updateRunPerformanceHud();
+  }
+
+  updateRunPerformanceHud() {
+    this.hud?.updateRunPerformance(formatRunTime(this.runElapsedMs), this.placedPieceCount);
   }
 
   pauseGame() {
@@ -1591,6 +1649,8 @@ ${COMMIT_SHA}`, {
       return;
     }
 
+    this.updateRunTimer();
+    this.pauseStartedAt = this.time.now;
     this.gameState = GAME_STATES.PAUSED;
     this.sfx.playPause();
     this.cancelBombSelection();
@@ -1603,7 +1663,13 @@ ${COMMIT_SHA}`, {
       return;
     }
 
+    if (this.pauseStartedAt !== null) {
+      this.pausedDurationMs += Math.max(0, this.time.now - this.pauseStartedAt);
+      this.pauseStartedAt = null;
+    }
+
     this.gameState = GAME_STATES.PLAYING;
+    this.updateRunTimer();
     this.sfx.playPause();
     this.sfx.resume();
     this.pauseOverlay?.setVisible(false);
@@ -1920,6 +1986,7 @@ ${COMMIT_SHA}`, {
     this.hud.setDebugMode(this.isDebugMode);
     this.emitDebugModeState();
     this.gameState = GAME_STATES.PLAYING;
+    this.startRunTimer();
     this.titleOverlay?.setVisible(false);
     this.closeHowToPlay();
     this.pauseOverlay?.setVisible(false);
@@ -2212,6 +2279,8 @@ ${COMMIT_SHA}`, {
       return;
     }
 
+    this.placedPieceCount += 1;
+    this.updateRunPerformanceHud();
     this.sfx.playLock();
 
     try {
@@ -4049,6 +4118,7 @@ ${COMMIT_SHA}`, {
 
   endGame(requestedEndingType = ENDING_TYPES.STANDARD_GAME_OVER, options = {}) {
     this.currentEndingType = options.forceEndingType ?? this.getEndingTypeForGameOver(requestedEndingType);
+    this.freezeRunTimer();
     this.bgm.duck(900, 0.3);
     this.sfx.playGameOver();
     this.bgm.stop();
@@ -4155,8 +4225,8 @@ ${COMMIT_SHA}`, {
     const zoneBottom = panelHeight / 2;
     const returnPromptZoneHeight = isCompactPanel ? 62 : 68;
     const statsPanelHeight = isRitualEnding
-      ? (isCompactPanel ? 108 : 116)
-      : (isCompactPanel ? 94 : 108);
+      ? (isCompactPanel ? 126 : 136)
+      : (isCompactPanel ? 112 : 126);
     const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
     const preferredStatsZoneTop = panelHeight * (isCompactPanel ? RESULT_STATS_PANEL_TOP_RATIO.compact : RESULT_STATS_PANEL_TOP_RATIO.standard);
     const statsZoneTop = Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
@@ -4183,6 +4253,8 @@ ${COMMIT_SHA}`, {
       `最大連鎖: ${this.bestChainThisRun}`,
       `到達Tier: ${this.maxTierThisRun}`,
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+      `Time: ${formatRunTime(this.runElapsedMs)}`,
+      `Drops: ${this.placedPieceCount}`,
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
@@ -4196,6 +4268,7 @@ ${COMMIT_SHA}`, {
       const compactStatsRows = [
         `最終スコア  ${this.score}    最大連鎖  ${this.bestChainThisRun}`,
         `到達Tier  ${this.maxTierThisRun}    解放した神  ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+        `Time  ${formatRunTime(this.runElapsedMs)}    Drops  ${this.placedPieceCount}`,
         `Revived Souls  ${this.revivedSoulsCount}    Deepest Depth  ${this.currentDepthLevel}`,
         `PURE CANOPIC  ${this.totalPureCanopicCount}    ベスト  ${highScoreResult.records.highScore}`,
         highScoreResult.isNewHighScore ? '新記録!' : '',
