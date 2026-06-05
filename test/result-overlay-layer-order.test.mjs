@@ -215,8 +215,8 @@ test('result god coffin icons render as grounded statues without circular halos'
   );
   assert.match(
     gameSceneSource,
-    /RESULT_GOD_ICON_SHADOW_OFFSET_Y = -8\.5/,
-    'result god statue shadow should move 10px upward from the previous baseline',
+    /RESULT_GOD_ICON_SHADOW_OFFSET_Y = -3\.5/,
+    'result god statue shadow should be shifted 5px lower while preserving its size and opacity',
   );
   assert.doesNotMatch(
     gameSceneSource,
