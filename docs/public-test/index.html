@@ -153,6 +153,76 @@
         border-color: rgba(244, 215, 122, 0.62);
       }
 
+      .touch-button--bomb {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(1.4rem, auto) 1fr;
+        align-items: center;
+        justify-items: center;
+        gap: 0.22rem;
+        overflow: hidden;
+        padding: 0.18rem 0.42rem;
+      }
+
+      .touch-bomb-label {
+        position: relative;
+        z-index: 1;
+        justify-self: start;
+        color: #f4d77a;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      }
+
+      .touch-bomb-icon-slot {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        width: 1.48rem;
+        height: 1.48rem;
+        border: 1px solid rgba(244, 215, 122, 0.24);
+        border-radius: 0.28rem;
+        background: rgba(5, 4, 2, 0.48);
+        opacity: 0.55;
+      }
+
+      .touch-bomb-icon-slot::after {
+        content: '—';
+        color: rgba(234, 223, 202, 0.58);
+        font-size: 0.82rem;
+        line-height: 1;
+      }
+
+      .touch-bomb-icon {
+        display: none;
+        max-width: 1.34rem;
+        max-height: 1.34rem;
+        object-fit: contain;
+        filter: drop-shadow(0 0 0.18rem rgba(244, 215, 122, 0.28));
+      }
+
+      .touch-button--bomb.is-assigned {
+        color: #f4d77a;
+        border-color: rgba(244, 215, 122, 0.84);
+      }
+
+      .touch-button--bomb.is-assigned .touch-bomb-icon-slot {
+        border-color: rgba(244, 215, 122, 0.78);
+        background: rgba(36, 24, 13, 0.74);
+        opacity: 1;
+      }
+
+      .touch-button--bomb.is-assigned .touch-bomb-icon-slot::after {
+        content: '';
+      }
+
+      .touch-button--bomb.is-assigned .touch-bomb-icon {
+        display: block;
+      }
+
+      .touch-button--bomb.is-selected {
+        box-shadow: inset 0 0 0 1px rgba(244, 215, 122, 0.42), 0 0 0.65rem rgba(244, 215, 122, 0.42);
+      }
+
       .touch-button--drop {
         min-height: 3rem;
         font-size: 1.06rem;
@@ -455,10 +525,10 @@
           </div>
         </div>
         <div class="touch-bombs" aria-label="ボム操作">
-          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-0">B1</button>
-          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-1">B2</button>
-          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-2">B3</button>
-          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-3">B4</button>
+          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-0"><span class="touch-bomb-label">B1</span><span class="touch-bomb-icon-slot"><img class="touch-bomb-icon" alt="" aria-hidden="true"></span></button>
+          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-1"><span class="touch-bomb-label">B2</span><span class="touch-bomb-icon-slot"><img class="touch-bomb-icon" alt="" aria-hidden="true"></span></button>
+          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-2"><span class="touch-bomb-label">B3</span><span class="touch-bomb-icon-slot"><img class="touch-bomb-icon" alt="" aria-hidden="true"></span></button>
+          <button class="touch-button touch-button--bomb" type="button" data-duat-action="bomb-3"><span class="touch-bomb-label">B4</span><span class="touch-bomb-icon-slot"><img class="touch-bomb-icon" alt="" aria-hidden="true"></span></button>
         </div>
       </section>
     </main>
@@ -516,6 +586,29 @@
       window.addEventListener('duat-touch-state', (event) => {
         const hasBombSelected = Boolean(event?.detail?.hasBombSelected);
         touchControlsRoot?.classList.toggle('touch-controls--bomb-selected', hasBombSelected);
+      });
+
+      window.addEventListener('duat-bomb-buttons-state', (event) => {
+        const slots = Array.isArray(event?.detail?.slots) ? event.detail.slots : [];
+        slots.forEach((slot) => {
+          const button = document.querySelector(`[data-duat-action="bomb-${slot.index}"]`);
+          const icon = button?.querySelector('.touch-bomb-icon');
+          if (!button || !icon) {
+            return;
+          }
+
+          button.classList.toggle('is-assigned', Boolean(slot.isAssigned));
+          button.classList.toggle('is-selected', Boolean(slot.isSelected));
+          button.setAttribute('aria-label', slot.isAssigned ? `${slot.label}: ${slot.godName ?? 'God'} bomb` : `${slot.label}: empty`);
+
+          if (slot.isAssigned && slot.assetPath) {
+            icon.src = slot.assetPath;
+            icon.dataset.assetKey = slot.assetKey ?? '';
+          } else {
+            icon.removeAttribute('src');
+            delete icon.dataset.assetKey;
+          }
+        });
       });
 
       window.addEventListener('duat-touch-visibility', (event) => {
