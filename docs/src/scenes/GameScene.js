@@ -254,8 +254,8 @@ const RESULT_SOUL_PROCESSION_GROUP_X_RATIO = 0.38;
 const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;
 const RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET = 96;
 const RESULT_SOUL_PROCESSION_FIXED_SLOTS = [
-  { dx: -10, dy: -8, displayHeight: 51, alpha: 0.86 },
-  { dx: 10, dy: 16, displayHeight: 78, alpha: 0.93 },
+  { dx: 38, dy: -8, displayHeight: 51, alpha: 0.86 },
+  { dx: 34, dy: 16, displayHeight: 78, alpha: 0.93 },
   { dx: -2, dy: 45, displayHeight: 112.5, alpha: 1 },
 ];
 const RESULT_SOUL_ICON_SHADOW_WIDTH_RATIO = 0.76;

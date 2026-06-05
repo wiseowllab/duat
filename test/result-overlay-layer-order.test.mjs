@@ -336,8 +336,8 @@ test('result soul procession fixed slots preserve per-mummy perspective', () => 
   );
   assert.match(
     gameSceneSource,
-    /\{ dx: -10, dy: -8, displayHeight: 51, alpha: 0\.86 \},\n  \{ dx: 10, dy: 16, displayHeight: 78, alpha: 0\.93 \},\n  \{ dx: -2, dy: 45, displayHeight: 112\.5, alpha: 1 \}/,
-    'each side should use fixed back, middle, and front slots with amplified perspective Y offsets and displayHeight',
+    /\{ dx: 38, dy: -8, displayHeight: 51, alpha: 0\.86 \},\n  \{ dx: 34, dy: 16, displayHeight: 78, alpha: 0\.93 \},\n  \{ dx: -2, dy: 45, displayHeight: 112\.5, alpha: 1 \}/,
+    'each side should use fixed back, middle, and front slots with inward X perspective offsets while preserving Y offsets and displayHeight',
   );
   assert.match(
     gameSceneSource,
