@@ -32,7 +32,7 @@ const REVIVED_ICON_SPACING_X = 18;
 const REVIVED_ICON_SPACING_Y = 11;
 const REVIVED_ICON_BASE_FONT_SIZE = 11;
 const NEXT_ICON_SIZE = 31;
-const HUD_TOP_HEIGHT = 82;
+const HUD_TOP_HEIGHT = 112;
 const HUD_NEXT_HEIGHT = 96;
 const HUD_COFFIN_HEIGHT = COFFIN_PANEL_HEIGHT;
 const HUD_UNDERWORLD_HEIGHT = 64;
@@ -157,6 +157,8 @@ export class Hud {
     this.chainText = this.createLabel(SECTION_X, scoreSectionY + 39 - this.y, 'Chain: 0', 11, 1);
     this.bestScoreText = this.createLabel(SECTION_X, scoreSectionY + 55 - this.y, 'Best: 0', 11, 1);
     this.levelText = this.createLabel(SECTION_X, scoreSectionY + 70 - this.y, 'Lv: 1', 11, 1);
+    this.runTimeText = this.createLabel(SECTION_X, scoreSectionY + 85 - this.y, 'Time: 00:00', 11, 1);
+    this.dropsText = this.createLabel(SECTION_X, scoreSectionY + 100 - this.y, 'Drops: 0', 11, 1);
     this.soundText = null;
 
     this.scene.add.text(this.x + SECTION_X, nextSectionY + SECTION_HEADER_Y, 'NEXT', this.headingStyle(12)).setDepth(HUD_LAYER_TEXT);
@@ -528,6 +530,11 @@ export class Hud {
 
   updateLevel(level) {
     this.levelText.setText(`Lv: ${level}`);
+  }
+
+  updateRunPerformance(runTimeText, placedPieceCount) {
+    this.runTimeText.setText(`Time: ${runTimeText}`);
+    this.dropsText.setText(`Drops: ${placedPieceCount}`);
   }
 
   updateUnderworldDepth(currentDepthLevel, totalPureCanopicCount, depthThresholds) {
