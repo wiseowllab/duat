@@ -274,7 +274,17 @@ test('result soul procession uses fixed foreground side slots', () => {
   assert.match(
     gameSceneSource,
     /const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;/,
-    'front mummy baselines should be anchored just above the score panel top',
+    'front mummy baselines should be anchored just above the score panel top before visual tuning',
+  );
+  assert.match(
+    gameSceneSource,
+    /const mummyVisualYOffset = RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET;/,
+    'mummy groups should use one fixed visual Y offset for foreground tuning',
+  );
+  assert.match(
+    gameSceneSource,
+    /const mummyGroupBaseY = groupBaseY \+ mummyVisualYOffset;/,
+    'mummy group baselines should move downward by the shared visual offset',
   );
   assert.match(
     gameSceneSource,
@@ -288,12 +298,12 @@ test('result soul procession uses fixed foreground side slots', () => {
   );
   assert.match(
     gameSceneSource,
-    /getResultSoulProcessionSideFixedPlacements\('left', leftCount, leftGroupX, groupBaseY\)/,
+    /getResultSoulProcessionSideFixedPlacements\('left', leftCount, leftGroupX, mummyGroupBaseY\)/,
     'mummy procession should include a left fixed-slot group',
   );
   assert.match(
     gameSceneSource,
-    /getResultSoulProcessionSideFixedPlacements\('right', rightCount, rightGroupX, groupBaseY\)/,
+    /getResultSoulProcessionSideFixedPlacements\('right', rightCount, rightGroupX, mummyGroupBaseY\)/,
     'mummy procession should include a right fixed-slot group',
   );
   assert.doesNotMatch(
@@ -312,7 +322,12 @@ test('result soul procession fixed slots preserve per-mummy perspective', () => 
   assert.match(
     gameSceneSource,
     /const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;/,
-    'front mummy baseline should sit 28px above the score panel top',
+    'front mummy baseline should sit 28px above the score panel top before visual tuning',
+  );
+  assert.match(
+    gameSceneSource,
+    /const RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET = 32;/,
+    'mummy groups should be visually shifted 32px downward after baseline anchoring',
   );
   assert.match(
     gameSceneSource,
