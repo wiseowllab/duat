@@ -326,8 +326,8 @@ test('result soul procession fixed slots preserve per-mummy perspective', () => 
   );
   assert.match(
     gameSceneSource,
-    /const RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET = 32;/,
-    'mummy groups should be visually shifted 32px downward after baseline anchoring',
+    /const RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET = 96;/,
+    'mummy groups should be visually shifted 96px downward after baseline anchoring',
   );
   assert.match(
     gameSceneSource,
