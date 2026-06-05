@@ -195,8 +195,8 @@ test('result god coffin icons render as grounded statues without circular halos'
   );
   assert.match(
     gameSceneSource,
-    /RESULT_GOD_ICON_SHADOW_WIDTH_RATIO = 0\.96/,
-    'result god statue shadow should be almost as wide as the coffin image',
+    /RESULT_GOD_ICON_SHADOW_WIDTH_RATIO = 0\.72/,
+    'result god statue shadow should be tightened to about three-quarters of the coffin image width',
   );
   assert.match(
     gameSceneSource,
@@ -205,8 +205,8 @@ test('result god coffin icons render as grounded statues without circular halos'
   );
   assert.match(
     gameSceneSource,
-    /RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO = 0\.3/,
-    'result god statue shadow should remain a grounded oval relative to the coffin image height',
+    /RESULT_GOD_ICON_SHADOW_HEIGHT_RATIO = 0\.225/,
+    'result god statue shadow should be tightened while remaining a grounded oval relative to the coffin image height',
   );
   assert.match(
     gameSceneSource,
