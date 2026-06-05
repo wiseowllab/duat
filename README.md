@@ -236,11 +236,11 @@ Bombs target the current active pair position. The preview shows the bomb's affe
 
 The touch controls appear on touch devices and narrow viewports below the game canvas. On narrow screens they are arranged for portrait two-thumb play with clear primary/secondary separation:
 
-- **Top secondary row**: small **ESC** and **ポーズ** at the top-right side of the touch area.
-- **Bomb row**: **B1-B4** above the main controls (secondary-sized buttons).
+- **Top secondary/bomb row**: compact, equal-width **B1 / B2 / B3 / B4 / ESC / ポーズ** buttons in a single row.
 - **Main thumb zone**:
   - Left thumb cluster: **← / →** with **↓** below them.
-  - Right thumb cluster: **回転** above **落下**, with **落下** larger for intentional taps.
+  - Right thumb cluster: compact **回転** above compact **落下**, offset to the right so accidental taps from the movement cluster are less likely.
+- The top secondary/bomb row has extra vertical spacing before the movement/action rows to reduce bomb-versus-movement mistaps.
 
 **ESC** is visually secondary and only becomes visible when a bomb is selected. They use the same game actions as the keyboard controls:
 
