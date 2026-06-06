@@ -260,6 +260,33 @@ test('result soul procession preserves pre-procession result landmark layout con
   );
 });
 
+test('ritual result stats move down without moving standard game-over stats or the return prompt', () => {
+  assert.match(gameSceneSource, /RESULT_RITUAL_STATS_Y_OFFSET = 72/);
+  assert.match(gameSceneSource, /const statsBlockYOffset = isRitualEnding \? RESULT_RITUAL_STATS_Y_OFFSET : 0;/);
+  assert.match(gameSceneSource, /const statsBottomTrim = isRitualEnding \? RESULT_RITUAL_STATS_BOTTOM_TRIM : 0;/);
+  assert.match(
+    gameSceneSource,
+    /const statsZoneTop = isRitualEnding\n      \? baseStatsZoneBottom - statsPanelHeight \+ statsBlockYOffset\n      : Math\.max\(preferredStatsZoneTop, baseStatsZoneBottom - statsPanelHeight\);/,
+    'ritual stats should receive the offset while standard game-over keeps its original top calculation',
+  );
+  assert.match(
+    gameSceneSource,
+    /const promptY = panelHeight \/ 2 - promptBottomInset;/,
+    'the return prompt should remain independent from the ritual stats offset',
+  );
+
+  const ritualStatsOffset = 72;
+  const ritualStatsBottomTrim = 58;
+  [
+    { promptBottomInset: 18, promptPanelHeight: 44, returnPromptZoneHeight: 62, statsBottomInset: 12 },
+    { promptBottomInset: 22, promptPanelHeight: 48, returnPromptZoneHeight: 68, statsBottomInset: 16 },
+  ].forEach(({ promptBottomInset, promptPanelHeight, returnPromptZoneHeight, statsBottomInset }) => {
+    const promptPanelTop = -promptBottomInset - (promptPanelHeight / 2) + 4;
+    const ritualStatsBottom = -returnPromptZoneHeight - statsBottomInset + ritualStatsOffset - ritualStatsBottomTrim;
+    assert.ok(ritualStatsBottom < promptPanelTop, 'shifted ritual stats panel should not overlap the fixed return prompt');
+  });
+});
+
 test('result scene art layout is independent from the stats display zone', () => {
   const artLayoutSource = gameSceneSource.match(
     /\n  getResultSceneArtLayout\([\s\S]*?\n  createResultGodIconsLayer/,
