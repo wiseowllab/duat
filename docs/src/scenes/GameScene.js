@@ -250,6 +250,10 @@ const ENDING_TYPES = {
 };
 
 function formatRunTime(ms) {
+  if (ms === null || ms === undefined) {
+    return '--:--';
+  }
+
   const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -4129,10 +4133,13 @@ ${COMMIT_SHA}`, {
     this.pauseOverlay?.setVisible(false);
     this.setTouchControlsVisible(this.currentEndingType === ENDING_TYPES.STANDARD_GAME_OVER);
     const highScoreResult = this.recordHighScoreForCurrentRun();
+    const completeClearResult = this.currentEndingType === ENDING_TYPES.TRUE_END
+      ? this.recordCompleteClearForCurrentRun()
+      : null;
     this.hud.updateBestScore(highScoreResult.records.highScore);
     this.hud.showGameOver();
     this.playGameOverAtmosphere();
-    this.showGameOverOverlay(highScoreResult);
+    this.showGameOverOverlay(highScoreResult, completeClearResult);
   }
 
   playGameOverAtmosphere() {
@@ -4181,7 +4188,17 @@ ${COMMIT_SHA}`, {
     return result;
   }
 
-  showGameOverOverlay(highScoreResult) {
+  recordCompleteClearForCurrentRun() {
+    const result = this.highScoreManager.recordCompleteClear({
+      runTimeMs: this.runElapsedMs,
+      drops: this.placedPieceCount,
+    });
+
+    this.highScoreRecords = result.records;
+    return result;
+  }
+
+  showGameOverOverlay(highScoreResult, completeClearResult = null) {
     if (this.gameOverOverlay) {
       this.gameOverOverlay.destroy(true);
     }
@@ -4246,6 +4263,22 @@ ${COMMIT_SHA}`, {
       RESULT_STATS_PANEL_FILL_ALPHA,
     ).setStrokeStyle(1, 0xd4af37, RESULT_STATS_PANEL_STROKE_ALPHA).setName('endingStatsPanel');
 
+    const completeClearRecords = completeClearResult?.records ?? this.highScoreRecords;
+    const completeClearRecordMessage = completeClearResult?.isNewBestClearTime && completeClearResult?.isNewFewestClearDrops
+      ? 'NEW RECORD!'
+      : completeClearResult?.isNewBestClearTime
+        ? 'NEW BEST TIME!'
+        : completeClearResult?.isNewFewestClearDrops
+          ? 'NEW FEWEST DROPS!'
+          : '';
+    const completeClearStats = this.currentEndingType === ENDING_TYPES.TRUE_END
+      ? [
+        `Best Time: ${formatRunTime(completeClearRecords?.bestClearTimeMs)}`,
+        `Fewest: ${completeClearRecords?.fewestClearDrops ?? '--'}`,
+        completeClearRecordMessage,
+      ]
+      : [];
+
     const recordText = this.add.text(0, statsY, [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
@@ -4255,6 +4288,7 @@ ${COMMIT_SHA}`, {
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
       `Time: ${formatRunTime(this.runElapsedMs)}`,
       `Drops: ${this.placedPieceCount}`,
+      ...completeClearStats,
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
       this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
@@ -4269,6 +4303,10 @@ ${COMMIT_SHA}`, {
         `最終スコア  ${this.score}    最大連鎖  ${this.bestChainThisRun}`,
         `到達Tier  ${this.maxTierThisRun}    解放した神  ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
         `Time  ${formatRunTime(this.runElapsedMs)}    Drops  ${this.placedPieceCount}`,
+        this.currentEndingType === ENDING_TYPES.TRUE_END
+          ? `Best Time  ${formatRunTime(completeClearRecords?.bestClearTimeMs)}    Fewest  ${completeClearRecords?.fewestClearDrops ?? '--'}`
+          : '',
+        completeClearRecordMessage,
         `Revived Souls  ${this.revivedSoulsCount}    Deepest Depth  ${this.currentDepthLevel}`,
         `PURE CANOPIC  ${this.totalPureCanopicCount}    ベスト  ${highScoreResult.records.highScore}`,
         highScoreResult.isNewHighScore ? '新記録!' : '',
