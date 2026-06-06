@@ -287,12 +287,12 @@ test('result scene art layout is independent from the stats display zone', () =>
 test('result stats include run performance labels', () => {
   assert.match(
     gameSceneSource,
-    /`Time: \$\{formatRunTime\(this\.runElapsedMs\)\}`/,
+    /`Time: \$\{formatRunTime\(this\.runElapsedMs\)\} \/ Drops: \$\{this\.placedPieceCount\}`/,
     'result stats should include the final formatted run time',
   );
   assert.match(
     gameSceneSource,
-    /`Drops: \$\{this\.placedPieceCount\}`/,
+    /`Time: \$\{formatRunTime\(this\.runElapsedMs\)\} \/ Drops: \$\{this\.placedPieceCount\}`/,
     'result stats should include the final placed piece count',
   );
 });
