@@ -4593,7 +4593,7 @@ ${COMMIT_SHA}`, {
     }
 
     const container = this.add.container(config.x, config.y).setName(`resultGodIcon-${god.id}`);
-    const image = this.createSmoothResultImage(0, 0, textureKey).setOrigin(0.5, 1);
+    const image = this.add.image(0, 0, textureKey).setOrigin(0.5, 1);
     const sourceImage = this.textures.get(textureKey)?.getSourceImage?.();
     const sourceHeight = sourceImage?.height || asset.fallbackHeight || 116;
     const scale = config.maxHeight / sourceHeight;
