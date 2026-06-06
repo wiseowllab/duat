@@ -4261,7 +4261,7 @@ ${COMMIT_SHA}`, {
     const statsFontSize = isRitualEnding
       ? (isCompactPanel ? '9px' : '11px')
       : (isCompactPanel ? '10px' : '12px');
-    const statsLineSpacing = isRitualEnding ? (isCompactPanel ? 3 : 4) : (isCompactPanel ? -1 : 0);
+    const statsLineSpacing = 4;
     const statsPanelCenterY = statsZoneTop + (statsZoneHeight / 2);
     const statsReadabilityPanel = this.add.rectangle(
       0,
@@ -4281,39 +4281,23 @@ ${COMMIT_SHA}`, {
           ? 'NEW FEWEST DROPS!'
           : '';
     const statLines = [
-      `最終スコア: ${this.score}`,
-      `ベストスコア: ${highScoreResult.records.highScore}`,
+      `Score: ${this.score} / Best: ${highScoreResult.records.highScore}`,
+      `Chain: ${this.bestChainThisRun} / Tier: ${this.maxTierThisRun} / Gods: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
+      `Time: ${formatRunTime(this.runElapsedMs)} / Drops: ${this.placedPieceCount}`,
     ];
 
     if (highScoreResult.isNewHighScore) {
-      statLines.push('新記録!');
+      statLines.push('NEW RECORD!');
     }
-
-    statLines.push(
-      `最大連鎖: ${this.bestChainThisRun}`,
-      `到達Tier: ${this.maxTierThisRun}`,
-      `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
-      `Time: ${formatRunTime(this.runElapsedMs)}`,
-      `Drops: ${this.placedPieceCount}`,
-    );
 
     if (this.currentEndingType === ENDING_TYPES.TRUE_END) {
       if (completeClearRecordMessage) {
         statLines.push(completeClearRecordMessage);
       }
-      statLines.push(
-        `Best Time: ${formatRunTime(completeClearRecords?.bestClearTimeMs)}`,
-        `Fewest Drops: ${completeClearRecords?.fewestClearDrops ?? '--'}`,
-      );
+      statLines.push(`Best Time: ${formatRunTime(completeClearRecords?.bestClearTimeMs)} / Fewest: ${completeClearRecords?.fewestClearDrops ?? '--'}`);
     }
 
-    if (isRitualEnding) {
-      statLines.push(
-        `Revived Souls: ${this.revivedSoulsCount}`,
-        `Deepest Depth: ${this.currentDepthLevel}`,
-        `PURE CANOPIC: ${this.totalPureCanopicCount}`,
-      );
-    }
+    statLines.push(`Souls: ${this.revivedSoulsCount} / Depth: ${this.currentDepthLevel} / Canopic: ${this.totalPureCanopicCount}`);
 
     const recordText = this.add.text(0, statsY, statLines.join('\n'), {
       fontFamily: 'Arial, sans-serif',
@@ -4328,7 +4312,7 @@ ${COMMIT_SHA}`, {
       recordText.setFontSize(isRitualEnding
         ? (isCompactPanel ? '8px' : '10px')
         : (isCompactPanel ? '9px' : '11px'));
-      recordText.setLineSpacing(isRitualEnding ? 3 : -2);
+      recordText.setLineSpacing(3);
     }
 
     const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {

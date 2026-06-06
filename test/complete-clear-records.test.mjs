@@ -89,22 +89,25 @@ test('game scene updates and displays clear records only for the true-end result
     /this\.currentEndingType === ENDING_TYPES\.TRUE_END\n\s+\? this\.recordCompleteClearForCurrentRun\(\)\n\s+: null/,
     'only the complete/congratulations true-end result should record clear performance',
   );
-  assert.match(source, /`Best Time: \$\{formatRunTime\(completeClearRecords\?\.bestClearTimeMs\)\}`/);
-  assert.match(source, /`Fewest Drops: \$\{completeClearRecords\?\.fewestClearDrops \?\? '--'\}`/);
+  assert.match(source, /`Best Time: \$\{formatRunTime\(completeClearRecords\?\.bestClearTimeMs\)\} \/ Fewest: \$\{completeClearRecords\?\.fewestClearDrops \?\? '--'\}`/);
   assert.match(source, /\? 'NEW RECORD!'/);
   assert.match(source, /\? 'NEW BEST TIME!'/);
   assert.match(source, /\? 'NEW FEWEST DROPS!'/);
 });
 
-test('result stats keep ritual-ending records on separate readable lines', () => {
+test('result stats use compact readable rows without changing the result layout', () => {
   const source = readFileSync(new URL('../docs/src/scenes/GameScene.js', import.meta.url), 'utf8');
   const overlaySource = source.match(/showGameOverOverlay\(highScoreResult[\s\S]*?\n  createResultSkyBackground/)?.[0];
 
   assert.ok(overlaySource, 'result overlay source should be present');
   assert.match(overlaySource, /const statLines = \[/, 'result stats should be assembled in one lines array');
+  assert.match(overlaySource, /`Score: \$\{this\.score\} \/ Best: \$\{highScoreResult\.records\.highScore\}`/);
+  assert.match(overlaySource, /`Chain: \$\{this\.bestChainThisRun\} \/ Tier: \$\{this\.maxTierThisRun\} \/ Gods: \$\{this\.maxGodsUnlockedThisRun\}\/\$\{TOTAL_GOD_COUNT\}`/);
+  assert.match(overlaySource, /`Time: \$\{formatRunTime\(this\.runElapsedMs\)\} \/ Drops: \$\{this\.placedPieceCount\}`/);
   assert.match(overlaySource, /statLines\.push\(completeClearRecordMessage\)/, 'record messages should receive their own line');
+  assert.match(overlaySource, /`Best Time: \$\{formatRunTime\(completeClearRecords\?\.bestClearTimeMs\)\} \/ Fewest: \$\{completeClearRecords\?\.fewestClearDrops \?\? '--'\}`/);
+  assert.match(overlaySource, /`Souls: \$\{this\.revivedSoulsCount\} \/ Depth: \$\{this\.currentDepthLevel\} \/ Canopic: \$\{this\.totalPureCanopicCount\}`/);
   assert.match(overlaySource, /statLines\.join\('\\n'\)/, 'result stats should be joined with explicit newlines');
-  assert.match(overlaySource, /const statsLineSpacing = isRitualEnding \? \(isCompactPanel \? 3 : 4\)/, 'ritual results should keep positive line spacing');
-  assert.match(overlaySource, /\? \(isCompactPanel \? 202 : 232\)/, 'ritual results should use a taller stats panel');
-  assert.doesNotMatch(overlaySource, /compactStatsRows/, 'ritual stats should never combine multiple labels into one row');
+  assert.match(overlaySource, /const statsLineSpacing = 4;/, 'all result variants should use readable positive line spacing');
+  assert.match(overlaySource, /recordText\.setLineSpacing\(3\);/, 'overflow fallback should retain positive line spacing');
 });
