@@ -350,6 +350,9 @@ Tier 4 bombs are final-stage full-board effects. They can clear brain pieces.
   - Max coffin tier reached.
   - Max gods unlocked.
   - Best run date metadata.
+  - Best complete-clear time.
+  - Fewest drops in a complete clear.
+- Complete-clear performance records update only on the `CONGRATULATIONS` true-end result. The result panel shows `Best Time` and `Fewest` plus a compact new-record message when either value improves.
 - Records are local to the current browser profile and device; they do not sync between browsers, devices, or private browsing sessions.
 - Clearing browser site data/storage for DUAT resets these records.
 - Restarting after game over and debug progression resets do not erase high score records.

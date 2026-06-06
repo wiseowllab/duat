@@ -6,11 +6,22 @@ const DEFAULT_RECORDS = Object.freeze({
   maxTier: 0,
   maxGodsUnlocked: 0,
   bestRunDate: null,
+  bestClearTimeMs: null,
+  fewestClearDrops: null,
 });
 
 function toSafeNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+}
+
+function toSafeClearRecord(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.floor(number) : null;
 }
 
 export class HighScoreManager {
@@ -61,9 +72,39 @@ export class HighScoreManager {
     };
   }
 
+  recordCompleteClear(clearValues) {
+    const previousRecords = this.getRecords();
+    const nextRecords = { ...previousRecords };
+    const updatedFields = [];
+
+    this.updateLowerRecordField(nextRecords, updatedFields, 'bestClearTimeMs', clearValues.runTimeMs);
+    this.updateLowerRecordField(nextRecords, updatedFields, 'fewestClearDrops', clearValues.drops);
+
+    if (updatedFields.length > 0) {
+      this.saveRecords(nextRecords);
+    }
+
+    return {
+      records: nextRecords,
+      previousRecords,
+      updatedFields,
+      isNewBestClearTime: updatedFields.includes('bestClearTimeMs'),
+      isNewFewestClearDrops: updatedFields.includes('fewestClearDrops'),
+      didUpdateAnyRecord: updatedFields.length > 0,
+    };
+  }
+
   updateRecordField(records, updatedFields, fieldName, value) {
     const safeValue = toSafeNumber(value);
     if (safeValue > records[fieldName]) {
+      records[fieldName] = safeValue;
+      updatedFields.push(fieldName);
+    }
+  }
+
+  updateLowerRecordField(records, updatedFields, fieldName, value) {
+    const safeValue = toSafeClearRecord(value);
+    if (safeValue !== null && (records[fieldName] === null || safeValue < records[fieldName])) {
       records[fieldName] = safeValue;
       updatedFields.push(fieldName);
     }
@@ -90,6 +131,8 @@ export class HighScoreManager {
       maxTier: toSafeNumber(records.maxTier),
       maxGodsUnlocked: toSafeNumber(records.maxGodsUnlocked),
       bestRunDate: typeof records.bestRunDate === 'string' ? records.bestRunDate : null,
+      bestClearTimeMs: toSafeClearRecord(records.bestClearTimeMs),
+      fewestClearDrops: toSafeClearRecord(records.fewestClearDrops),
     };
   }
 

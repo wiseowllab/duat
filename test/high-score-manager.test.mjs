@@ -85,6 +85,8 @@ test('manager safely falls back when localStorage is unavailable', () => {
       maxTier: 0,
       maxGodsUnlocked: 0,
       bestRunDate: null,
+      bestClearTimeMs: null,
+      fewestClearDrops: null,
     });
   } finally {
     console.warn = originalWarn;
