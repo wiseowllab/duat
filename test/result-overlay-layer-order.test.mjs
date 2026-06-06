@@ -255,8 +255,8 @@ test('result soul procession preserves pre-procession result landmark layout con
   );
   assert.match(
     gameSceneSource,
-    /const statsPanelHeight = isRitualEnding\n      \? \(isCompactPanel \? 126 : 136\)\n      : \(isCompactPanel \? 112 : 126\);/,
-    'stats panel height should keep result performance stats readable with procession landmarks',
+    /const statsPanelHeight = isRitualEnding\n      \? \(isCompactPanel \? 202 : 232\)\n      : \(isCompactPanel \? 112 : 126\);/,
+    'ritual stats panel should expand while standard game-over dimensions remain unchanged',
   );
 });
 

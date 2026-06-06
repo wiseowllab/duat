@@ -4242,17 +4242,21 @@ ${COMMIT_SHA}`, {
     const zoneBottom = panelHeight / 2;
     const returnPromptZoneHeight = isCompactPanel ? 62 : 68;
     const statsPanelHeight = isRitualEnding
-      ? (isCompactPanel ? 126 : 136)
+      ? (isCompactPanel ? 202 : 232)
       : (isCompactPanel ? 112 : 126);
     const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
     const preferredStatsZoneTop = panelHeight * (isCompactPanel ? RESULT_STATS_PANEL_TOP_RATIO.compact : RESULT_STATS_PANEL_TOP_RATIO.standard);
-    const statsZoneTop = Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
+    const statsZoneTop = isRitualEnding
+      ? statsZoneBottom - statsPanelHeight
+      : Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
     const statsZoneHeight = Math.max(50, statsZoneBottom - statsZoneTop);
     const statsTextPaddingY = isCompactPanel ? 8 : 10;
     const statsY = statsZoneTop + statsTextPaddingY;
     const statsTextHeight = Math.max(36, statsZoneHeight - (statsTextPaddingY * 2));
-    const statsFontSize = isCompactPanel ? '10px' : '12px';
-    const statsLineSpacing = isCompactPanel ? -1 : 0;
+    const statsFontSize = isRitualEnding
+      ? (isCompactPanel ? '9px' : '11px')
+      : (isCompactPanel ? '10px' : '12px');
+    const statsLineSpacing = isRitualEnding ? (isCompactPanel ? 3 : 4) : (isCompactPanel ? -1 : 0);
     const statsPanelCenterY = statsZoneTop + (statsZoneHeight / 2);
     const statsReadabilityPanel = this.add.rectangle(
       0,
@@ -4271,49 +4275,55 @@ ${COMMIT_SHA}`, {
         : completeClearResult?.isNewFewestClearDrops
           ? 'NEW FEWEST DROPS!'
           : '';
-    const completeClearStats = this.currentEndingType === ENDING_TYPES.TRUE_END
-      ? [
-        `Best Time: ${formatRunTime(completeClearRecords?.bestClearTimeMs)}`,
-        `Fewest: ${completeClearRecords?.fewestClearDrops ?? '--'}`,
-        completeClearRecordMessage,
-      ]
-      : [];
-
-    const recordText = this.add.text(0, statsY, [
+    const statLines = [
       `最終スコア: ${this.score}`,
       `ベストスコア: ${highScoreResult.records.highScore}`,
-      highScoreResult.isNewHighScore ? '新記録!' : '',
+    ];
+
+    if (highScoreResult.isNewHighScore) {
+      statLines.push('新記録!');
+    }
+
+    statLines.push(
       `最大連鎖: ${this.bestChainThisRun}`,
       `到達Tier: ${this.maxTierThisRun}`,
       `解放した神: ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
       `Time: ${formatRunTime(this.runElapsedMs)}`,
       `Drops: ${this.placedPieceCount}`,
-      ...completeClearStats,
-      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Revived Souls: ${this.revivedSoulsCount}` : '',
-      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `Deepest Depth: ${this.currentDepthLevel}` : '',
-      this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER ? `PURE CANOPIC: ${this.totalPureCanopicCount}` : '',
-    ].filter(Boolean).join('\n'), { fontFamily: 'Arial, sans-serif', fontSize: statsFontSize, color: '#eadfca', align: 'center', lineSpacing: statsLineSpacing, wordWrap: { width: panelWidth - 44 } }).setOrigin(0.5, 0).setPosition(0, statsY).setName('endingStats');
+    );
+
+    if (this.currentEndingType === ENDING_TYPES.TRUE_END) {
+      if (completeClearRecordMessage) {
+        statLines.push(completeClearRecordMessage);
+      }
+      statLines.push(
+        `Best Time: ${formatRunTime(completeClearRecords?.bestClearTimeMs)}`,
+        `Fewest Drops: ${completeClearRecords?.fewestClearDrops ?? '--'}`,
+      );
+    }
+
+    if (isRitualEnding) {
+      statLines.push(
+        `Revived Souls: ${this.revivedSoulsCount}`,
+        `Deepest Depth: ${this.currentDepthLevel}`,
+        `PURE CANOPIC: ${this.totalPureCanopicCount}`,
+      );
+    }
+
+    const recordText = this.add.text(0, statsY, statLines.join('\n'), {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: statsFontSize,
+      color: '#eadfca',
+      align: 'center',
+      lineSpacing: statsLineSpacing,
+      wordWrap: { width: panelWidth - 44 },
+    }).setOrigin(0.5, 0).setPosition(0, statsY).setName('endingStats');
     recordText.setWordWrapWidth(panelWidth - 44, true);
     if (recordText.height > statsTextHeight) {
-      recordText.setFontSize(isCompactPanel ? '9px' : '11px');
-      recordText.setLineSpacing(-2);
-    }
-    if (recordText.height > statsTextHeight && isRitualEnding) {
-      const compactStatsRows = [
-        `最終スコア  ${this.score}    最大連鎖  ${this.bestChainThisRun}`,
-        `到達Tier  ${this.maxTierThisRun}    解放した神  ${this.maxGodsUnlockedThisRun}/${TOTAL_GOD_COUNT}`,
-        `Time  ${formatRunTime(this.runElapsedMs)}    Drops  ${this.placedPieceCount}`,
-        this.currentEndingType === ENDING_TYPES.TRUE_END
-          ? `Best Time  ${formatRunTime(completeClearRecords?.bestClearTimeMs)}    Fewest  ${completeClearRecords?.fewestClearDrops ?? '--'}`
-          : '',
-        completeClearRecordMessage,
-        `Revived Souls  ${this.revivedSoulsCount}    Deepest Depth  ${this.currentDepthLevel}`,
-        `PURE CANOPIC  ${this.totalPureCanopicCount}    ベスト  ${highScoreResult.records.highScore}`,
-        highScoreResult.isNewHighScore ? '新記録!' : '',
-      ].filter(Boolean);
-      recordText.setText(compactStatsRows.join('\n'));
-      recordText.setFontSize(isCompactPanel ? '9px' : '10px');
-      recordText.setLineSpacing(-2);
+      recordText.setFontSize(isRitualEnding
+        ? (isCompactPanel ? '8px' : '10px')
+        : (isCompactPanel ? '9px' : '11px'));
+      recordText.setLineSpacing(isRitualEnding ? 3 : -2);
     }
 
     const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {
