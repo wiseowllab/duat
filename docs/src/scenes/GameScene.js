@@ -61,6 +61,9 @@ const RESULT_STATS_PANEL_STROKE_ALPHA = 0.3;
 const RESULT_STATS_RECORD_COLOR = '#ffe08a';
 const RESULT_STATS_RECORD_FONT_SIZE_BONUS = 1;
 const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.24, compact: 0.2 };
+const RESULT_RITUAL_STATS_Y_OFFSET = 72;
+// Reclaim only the ritual panel's lower padding so its fixed +72px shift stays clear of the unmoved prompt.
+const RESULT_RITUAL_STATS_BOTTOM_TRIM = 58;
 const RESULT_SCENE_ART_TOP_RATIO = { standard: 0.24, compact: 0.2 };
 const RESULT_PROMPT_PANEL_FILL_ALPHA = 0.18;
 const RESULT_PROMPT_PANEL_STROKE_ALPHA = 0.3;
@@ -4251,11 +4254,14 @@ ${COMMIT_SHA}`, {
     const statsPanelHeight = isRitualEnding
       ? (isCompactPanel ? 202 : 232)
       : (isCompactPanel ? 112 : 126);
-    const statsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
+    const baseStatsZoneBottom = zoneBottom - returnPromptZoneHeight - (isCompactPanel ? 12 : 16);
+    const statsBlockYOffset = isRitualEnding ? RESULT_RITUAL_STATS_Y_OFFSET : 0;
+    const statsBottomTrim = isRitualEnding ? RESULT_RITUAL_STATS_BOTTOM_TRIM : 0;
+    const statsZoneBottom = baseStatsZoneBottom + statsBlockYOffset - statsBottomTrim;
     const preferredStatsZoneTop = panelHeight * (isCompactPanel ? RESULT_STATS_PANEL_TOP_RATIO.compact : RESULT_STATS_PANEL_TOP_RATIO.standard);
     const statsZoneTop = isRitualEnding
-      ? statsZoneBottom - statsPanelHeight
-      : Math.max(preferredStatsZoneTop, statsZoneBottom - statsPanelHeight);
+      ? baseStatsZoneBottom - statsPanelHeight + statsBlockYOffset
+      : Math.max(preferredStatsZoneTop, baseStatsZoneBottom - statsPanelHeight);
     const statsZoneHeight = Math.max(50, statsZoneBottom - statsZoneTop);
     const statsTextPaddingY = isCompactPanel ? 8 : 10;
     const statsY = statsZoneTop + statsTextPaddingY;
