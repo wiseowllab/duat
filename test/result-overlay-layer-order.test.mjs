@@ -114,7 +114,7 @@ test('true-end sphinx guardians sit at the temple horizon with subtle attached s
   );
   assert.match(
     gameSceneSource,
-    /templeBottomY \+ RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET/,
+    /resultSceneArtLayout\.templeBaseY \+ RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET/,
     'sphinx guardians should anchor near the temple base line',
   );
   assert.match(
@@ -138,7 +138,7 @@ test('result god coffin icon positions anchor to the temple entrance sides', () 
   assert.match(
     gameSceneSource,
     /templeBottomY: templeLayout\.visibleBottomY/,
-    'result coffin icon layer should receive the temple visible bottom edge',
+    'fixed result art layout should receive the temple visible bottom edge',
   );
   assert.match(
     gameSceneSource,
@@ -260,6 +260,30 @@ test('result soul procession preserves pre-procession result landmark layout con
   );
 });
 
+test('result scene art layout is independent from the stats display zone', () => {
+  const artLayoutSource = gameSceneSource.match(
+    /\n  getResultSceneArtLayout\([\s\S]*?\n  createResultGodIconsLayer/,
+  )?.[0];
+  const artPlacementMethods = [
+    ['temple', /\n  getResultTempleLayout\([\s\S]*?\n  createResultSkyBackground/],
+    ['pyramid', /\n  createResultPyramidRevealLayer\([\s\S]*?\n  applyResultPyramidCrop/],
+    ['god statues', /\n  getResultGodIconPositions\([\s\S]*?\n  getResultGodIconSidePositions/],
+    ['mummies', /\n  getResultSoulProcessionFixedPlacements\([\s\S]*?\n  getResultSoulProcessionSideFixedPlacements/],
+    ['sphinxes', /\n  createResultSphinxGuardiansLayer\([\s\S]*?\n  createResultSphinxGuardian/],
+  ].map(([name, pattern]) => [name, gameSceneSource.match(pattern)?.[0]]);
+
+  assert.ok(artLayoutSource, 'fixed result scene art layout helper should be present');
+  assert.match(artLayoutSource, /RESULT_SCENE_ART_TOP_RATIO/);
+  assert.match(artLayoutSource, /godStatueBaseY: artZoneTop/);
+  assert.match(artLayoutSource, /sphinxBaseY: artZoneTop/);
+  assert.match(artLayoutSource, /mummyGroupBaseY: artZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP \+ RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET/);
+  assert.doesNotMatch(artLayoutSource, /statsZone|statsPanel|recordText|statsReadabilityPanel/);
+  artPlacementMethods.forEach(([name, source]) => {
+    assert.ok(source, `${name} placement method should be present`);
+    assert.doesNotMatch(source, /statsZone|statsPanel|recordText|statsReadabilityPanel/, `${name} placement must not depend on stats display sizing`);
+  });
+});
+
 test('result stats include run performance labels', () => {
   assert.match(
     gameSceneSource,
@@ -291,18 +315,8 @@ test('result soul procession uses fixed foreground side slots', () => {
   );
   assert.match(
     gameSceneSource,
-    /const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;/,
-    'front mummy baselines should be anchored just above the score panel top before visual tuning',
-  );
-  assert.match(
-    gameSceneSource,
-    /const mummyVisualYOffset = RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET;/,
-    'mummy groups should use one fixed visual Y offset for foreground tuning',
-  );
-  assert.match(
-    gameSceneSource,
-    /const mummyGroupBaseY = groupBaseY \+ mummyVisualYOffset;/,
-    'mummy group baselines should move downward by the shared visual offset',
+    /const mummyGroupBaseY = resultSceneArtLayout\.mummyGroupBaseY;/,
+    'front mummy baselines should come from the fixed result art layout',
   );
   assert.match(
     gameSceneSource,
