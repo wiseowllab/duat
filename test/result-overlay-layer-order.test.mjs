@@ -378,6 +378,11 @@ test('result soul procession uses fixed foreground side slots', () => {
 });
 
 test('result soul procession fixed slots preserve per-mummy perspective', () => {
+  const soulIconSource = gameSceneSource.match(
+    /\n  createResultSoulIcon\([\s\S]*?\n  }\n\n\n  renderBoard/,
+  )?.[0];
+
+  assert.ok(soulIconSource, 'result soul icon source should be present');
   assert.match(
     gameSceneSource,
     /const RESULT_SOUL_PROCESSION_BASELINE_GAP = 28;/,
@@ -409,9 +414,14 @@ test('result soul procession fixed slots preserve per-mummy perspective', () => 
     'right-side mummy group should remain mirrored with flipX',
   );
   assert.match(
-    gameSceneSource,
-    /\.setOrigin\(0\.5, 1\)\n      \.setDisplaySize\(displayHeight, displayHeight\)/,
-    'every mummy sprite should use bottom-center origin and its fixed slot displayHeight',
+    soulIconSource,
+    /\.setOrigin\(0\.5, 1\);\n\n    image\.setScale\(displayHeight \/ image\.height\);/,
+    'every mummy sprite should use bottom-center origin and scale uniformly from its fixed slot displayHeight',
+  );
+  assert.doesNotMatch(
+    soulIconSource,
+    /\.setDisplaySize\(displayHeight, displayHeight\)/,
+    'mummy sprites should never be forced into square display dimensions',
   );
 });
 

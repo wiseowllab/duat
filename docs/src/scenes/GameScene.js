@@ -4959,9 +4959,9 @@ ${COMMIT_SHA}`, {
       0.52,
     );
     const image = this.createSmoothResultImage(0, 0, displayTextureKey)
-      .setOrigin(0.5, 1)
-      .setDisplaySize(displayHeight, displayHeight);
+      .setOrigin(0.5, 1);
 
+    image.setScale(displayHeight / image.height);
     image.setFlipX(flipX || index % 2 === 1);
 
     soul.add([shadow, image]);
