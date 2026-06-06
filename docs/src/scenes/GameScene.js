@@ -59,6 +59,7 @@ const RESULT_PANEL_FILL_ALPHA = { standard: 0.08, ritual: 0.1 };
 const RESULT_STATS_PANEL_FILL_ALPHA = 0.12;
 const RESULT_STATS_PANEL_STROKE_ALPHA = 0.3;
 const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.24, compact: 0.2 };
+const RESULT_SCENE_ART_TOP_RATIO = { standard: 0.24, compact: 0.2 };
 const RESULT_PROMPT_PANEL_FILL_ALPHA = 0.18;
 const RESULT_PROMPT_PANEL_STROKE_ALPHA = 0.3;
 const BOMB_AREA_FLASH_MS = 400;
@@ -4236,6 +4237,10 @@ ${COMMIT_SHA}`, {
 
     const isCompactPanel = panelHeight <= 700 || panelWidth <= 390;
     const isRitualEnding = this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER;
+    const resultSceneArtLayout = this.getResultSceneArtLayout(panelWidth, panelHeight, {
+      isCompactPanel,
+      templeBottomY: templeLayout.visibleBottomY,
+    });
     const promptBottomInset = isCompactPanel ? 18 : 22;
     const promptY = panelHeight / 2 - promptBottomInset;
     const zoneTop = -panelHeight / 2;
@@ -4328,16 +4333,14 @@ ${COMMIT_SHA}`, {
 
     const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {
       isCompactPanel,
-      statsZoneTop,
-      templeBottomY: templeLayout.visibleBottomY,
+      resultSceneArtLayout,
     });
     const sphinxGuardians = this.createResultSphinxGuardiansLayer(panelWidth, panelHeight, {
       isCompactPanel,
-      statsZoneTop,
-      templeBottomY: templeLayout.visibleBottomY,
+      resultSceneArtLayout,
     });
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount, {
-      statsZoneTop,
+      resultSceneArtLayout,
     });
     const nodes = [sky, temple, sphinxGuardians, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
 
@@ -4446,6 +4449,21 @@ ${COMMIT_SHA}`, {
     return unlockedGods.filter((god) => god?.id && !usedGodIds.has(god.id)).length;
   }
 
+  getResultSceneArtLayout(panelWidth, panelHeight, options = {}) {
+    const isCompactPanel = Boolean(options.isCompactPanel);
+    const artZoneTop = panelHeight * (isCompactPanel
+      ? RESULT_SCENE_ART_TOP_RATIO.compact
+      : RESULT_SCENE_ART_TOP_RATIO.standard);
+    const templeBaseY = Number(options.templeBottomY) || 0;
+
+    return {
+      templeBaseY,
+      godStatueBaseY: artZoneTop,
+      sphinxBaseY: artZoneTop,
+      mummyGroupBaseY: artZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP + RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET,
+    };
+  }
+
   createResultGodIconsLayer(panelWidth, panelHeight, options = {}) {
     const unlockedGods = this.coffinMeter.getUnlockedGods().filter((god) => god?.id);
     const container = this.add.container(0, 0).setName('resultGodIcons');
@@ -4488,9 +4506,10 @@ ${COMMIT_SHA}`, {
 
   getResultGodIconPositions(count, panelWidth, panelHeight, options = {}) {
     const iconMaxHeight = options.iconMaxHeight ?? RESULT_GOD_ICON_MOBILE_MAX_HEIGHT;
-    const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * 0.24);
-    const maxIconY = statsZoneTop - (iconMaxHeight * 0.72);
-    const templeBottomY = Number(options.templeBottomY) || 0;
+    const resultSceneArtLayout = options.resultSceneArtLayout
+      ?? this.getResultSceneArtLayout(panelWidth, panelHeight, options);
+    const maxIconY = resultSceneArtLayout.godStatueBaseY - (iconMaxHeight * 0.72);
+    const templeBottomY = resultSceneArtLayout.templeBaseY;
     const basePadding = iconMaxHeight * RESULT_GOD_ICON_TEMPLE_BASE_PADDING_RATIO;
     const rearBaseY = templeBottomY - basePadding;
     const frontBaseY = rearBaseY + (iconMaxHeight * RESULT_GOD_ICON_FRONT_ROW_FORWARD_RATIO);
@@ -4707,10 +4726,9 @@ ${COMMIT_SHA}`, {
   }
 
   getResultSoulProcessionFixedPlacements(displayCount, panelWidth, panelHeight, options = {}) {
-    const statsZoneTop = Number(options.statsZoneTop) || (panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard);
-    const groupBaseY = statsZoneTop - RESULT_SOUL_PROCESSION_BASELINE_GAP;
-    const mummyVisualYOffset = RESULT_SOUL_PROCESSION_VISUAL_Y_OFFSET;
-    const mummyGroupBaseY = groupBaseY + mummyVisualYOffset;
+    const resultSceneArtLayout = options.resultSceneArtLayout
+      ?? this.getResultSceneArtLayout(panelWidth, panelHeight, options);
+    const mummyGroupBaseY = resultSceneArtLayout.mummyGroupBaseY;
     const leftGroupX = -panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
     const rightGroupX = panelWidth * RESULT_SOUL_PROCESSION_GROUP_X_RATIO;
     const leftCount = Math.ceil(displayCount / 2);
@@ -4868,11 +4886,11 @@ ${COMMIT_SHA}`, {
     const displayHeight = options.isCompactPanel
       ? RESULT_SPHINX_COMPACT_DISPLAY_HEIGHT
       : RESULT_SPHINX_DESKTOP_DISPLAY_HEIGHT;
-    const templeBottomY = Number(options.templeBottomY) || 0;
-    const statsZoneTop = Number(options.statsZoneTop) || panelHeight * RESULT_STATS_PANEL_TOP_RATIO.standard;
+    const resultSceneArtLayout = options.resultSceneArtLayout
+      ?? this.getResultSceneArtLayout(panelWidth, panelHeight, options);
     const groundY = Math.min(
-      templeBottomY + RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET,
-      statsZoneTop - (displayHeight * 1.25),
+      resultSceneArtLayout.templeBaseY + RESULT_SPHINX_TEMPLE_BASE_Y_OFFSET,
+      resultSceneArtLayout.sphinxBaseY - (displayHeight * 1.25),
     );
     const xOffset = Math.max(
       RESULT_SPHINX_CENTER_CLEAR_MIN_X,
