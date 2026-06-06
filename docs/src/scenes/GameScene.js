@@ -4417,7 +4417,7 @@ ${COMMIT_SHA}`, {
     const baseBottomY = (panelHeight / 2) - (panelHeight * RESULT_PYRAMID_BOTTOM_INSET_RATIO);
     const safeBottomY = (panelHeight / 2) - RESULT_PYRAMID_SAFE_BOTTOM_INSET;
     const bottomY = Math.min(baseBottomY + RESULT_PYRAMID_Y_OFFSET, safeBottomY);
-    const pyramid = this.add.image(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
+    const pyramid = this.createSmoothResultImage(0, bottomY, RESULT_PYRAMID_COMPLETE_ASSET.key)
       .setOrigin(0.5, 1)
       .setScale(scale)
       .setAlpha(0.98);
@@ -4593,7 +4593,7 @@ ${COMMIT_SHA}`, {
     }
 
     const container = this.add.container(config.x, config.y).setName(`resultGodIcon-${god.id}`);
-    const image = this.add.image(0, 0, textureKey).setOrigin(0.5, 1);
+    const image = this.createSmoothResultImage(0, 0, textureKey).setOrigin(0.5, 1);
     const sourceImage = this.textures.get(textureKey)?.getSourceImage?.();
     const sourceHeight = sourceImage?.height || asset.fallbackHeight || 116;
     const scale = config.maxHeight / sourceHeight;
@@ -4645,7 +4645,7 @@ ${COMMIT_SHA}`, {
       return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0);
     }
 
-    return this.add.image(0, layout.centerY, layout.asset.key)
+    return this.createSmoothResultImage(0, layout.centerY, layout.asset.key)
       .setDisplaySize(layout.displayWidth, layout.displayHeight)
       .setTint(RESULT_TEMPLE_TINT)
       .setAlpha(RESULT_TEMPLE_ALPHA);
@@ -4676,7 +4676,7 @@ ${COMMIT_SHA}`, {
       return this.add.rectangle(0, 0, panelWidth, panelHeight, 0x130b08, 1);
     }
 
-    return this.add.image(0, 0, skyAsset.key)
+    return this.createSmoothResultImage(0, 0, skyAsset.key)
       .setDisplaySize(panelWidth, panelHeight)
       .setAlpha(0.98);
   }
@@ -4884,6 +4884,11 @@ ${COMMIT_SHA}`, {
     return this.textures.exists(cutoutKey) ? cutoutKey : textureKey;
   }
 
+  createSmoothResultImage(x, y, textureKey) {
+    this.textures.get(textureKey)?.setFilter?.(Phaser.Textures.FilterMode.LINEAR);
+    return this.add.image(x, y, textureKey);
+  }
+
   createResultSphinxGuardiansLayer(panelWidth, panelHeight, options = {}) {
     const container = this.add.container(0, 0).setName('resultSphinxGuardians');
 
@@ -4928,7 +4933,7 @@ ${COMMIT_SHA}`, {
       0x030201,
       RESULT_SPHINX_SHADOW_ALPHA,
     );
-    const guardian = this.add.image(0, 0, this.getResultDisplayTextureKey(RESULT_SPHINX_GUARDIAN_ASSET.key))
+    const guardian = this.createSmoothResultImage(0, 0, this.getResultDisplayTextureKey(RESULT_SPHINX_GUARDIAN_ASSET.key))
       .setOrigin(0.5, 1)
       .setDisplaySize(displayHeight, displayHeight)
       .setFlipX(flipX);
@@ -4953,7 +4958,7 @@ ${COMMIT_SHA}`, {
       0x030201,
       0.52,
     );
-    const image = this.add.image(0, 0, displayTextureKey)
+    const image = this.createSmoothResultImage(0, 0, displayTextureKey)
       .setOrigin(0.5, 1)
       .setDisplaySize(displayHeight, displayHeight);
 
