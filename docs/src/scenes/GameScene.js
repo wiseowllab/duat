@@ -56,8 +56,10 @@ const RESULT_PYRAMID_SAFE_BOTTOM_INSET = 18;
 const RESULT_PYRAMID_REVEAL_MS = 850;
 const RESULT_PANEL_SHADE_ALPHA = { standard: 0.16, ritual: 0.18 };
 const RESULT_PANEL_FILL_ALPHA = { standard: 0.08, ritual: 0.1 };
-const RESULT_STATS_PANEL_FILL_ALPHA = 0.12;
+const RESULT_STATS_PANEL_FILL_ALPHA = 0.28;
 const RESULT_STATS_PANEL_STROKE_ALPHA = 0.3;
+const RESULT_STATS_RECORD_COLOR = '#ffe08a';
+const RESULT_STATS_RECORD_FONT_SIZE_BONUS = 1;
 const RESULT_STATS_PANEL_TOP_RATIO = { standard: 0.24, compact: 0.2 };
 const RESULT_SCENE_ART_TOP_RATIO = { standard: 0.24, compact: 0.2 };
 const RESULT_PROMPT_PANEL_FILL_ALPHA = 0.18;
@@ -4259,7 +4261,7 @@ ${COMMIT_SHA}`, {
     const statsY = statsZoneTop + statsTextPaddingY;
     const statsTextHeight = Math.max(36, statsZoneHeight - (statsTextPaddingY * 2));
     const statsFontSize = isRitualEnding
-      ? (isCompactPanel ? '9px' : '11px')
+      ? (isCompactPanel ? '10px' : '12px')
       : (isCompactPanel ? '10px' : '12px');
     const statsLineSpacing = 4;
     const statsPanelCenterY = statsZoneTop + (statsZoneHeight / 2);
@@ -4310,10 +4312,27 @@ ${COMMIT_SHA}`, {
     recordText.setWordWrapWidth(panelWidth - 44, true);
     if (recordText.height > statsTextHeight) {
       recordText.setFontSize(isRitualEnding
-        ? (isCompactPanel ? '8px' : '10px')
+        ? (isCompactPanel ? '9px' : '11px')
         : (isCompactPanel ? '9px' : '11px'));
       recordText.setLineSpacing(3);
     }
+
+    const recordLineHeight = (recordText.height + recordText.lineSpacing) / statLines.length;
+    const recordFontSize = Number.parseInt(recordText.style.fontSize, 10) + RESULT_STATS_RECORD_FONT_SIZE_BONUS;
+    const recordHighlightTexts = statLines.flatMap((line, lineIndex) => {
+      if (!line.startsWith('NEW ')) {
+        return [];
+      }
+
+      return [this.add.text(0, statsY + (recordLineHeight * lineIndex), line, {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: `${recordFontSize}px`,
+        color: RESULT_STATS_RECORD_COLOR,
+        align: 'center',
+        fontStyle: 'bold',
+        wordWrap: { width: panelWidth - 44 },
+      }).setOrigin(0.5, 0).setName('endingStats')];
+    });
 
     const resultGodIcons = this.createResultGodIconsLayer(panelWidth, panelHeight, {
       isCompactPanel,
@@ -4326,7 +4345,7 @@ ${COMMIT_SHA}`, {
     const soulProcession = this.createResultSoulProcessionLayer(panelWidth, panelHeight, this.revivedSoulsCount, {
       resultSceneArtLayout,
     });
-    const nodes = [sky, temple, sphinxGuardians, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText];
+    const nodes = [sky, temple, sphinxGuardians, resultGodIcons, skyReadabilityShade, pyramid, soulProcession, panel, statsReadabilityPanel, title, subtitle, recordText, ...recordHighlightTexts];
 
     if (this.currentEndingType !== ENDING_TYPES.STANDARD_GAME_OVER) {
       this.playRitualEndingAtmosphere();
@@ -4344,7 +4363,6 @@ ${COMMIT_SHA}`, {
     const prompt = this.add.text(0, promptY, promptText, { fontFamily: 'Arial, sans-serif', fontSize: isCompactPanel ? '18px' : '20px', color: '#f2d783', align: 'center', fontStyle: 'bold', wordWrap: { width: panelWidth - 32 } }).setOrigin(0.5, 1);
     nodes.push(promptReadabilityPanel, prompt);
 
-    if (highScoreResult.isNewHighScore) { recordText.setColor('#f4d77a'); recordText.setFontStyle('bold'); }
 
     this.gameOverOverlay.add(nodes);
     this.tweens.add({ targets: this.gameOverOverlay, alpha: 1, y: centerY - 6, duration: 650, ease: 'Sine.easeOut' });

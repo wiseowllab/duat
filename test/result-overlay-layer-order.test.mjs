@@ -387,3 +387,24 @@ test('result soul procession fixed slots preserve per-mummy perspective', () => 
     'every mummy sprite should use bottom-center origin and its fixed slot displayHeight',
   );
 });
+
+test('result stats improve ritual readability without moving result art', () => {
+  assert.match(
+    gameSceneSource,
+    /RESULT_STATS_PANEL_FILL_ALPHA = 0\.28/,
+    'stats readability panel should be darker without becoming opaque',
+  );
+  assert.match(
+    gameSceneSource,
+    /const statsFontSize = isRitualEnding\n      \? \(isCompactPanel \? '10px' : '12px'\)\n      : \(isCompactPanel \? '10px' : '12px'\);/,
+    'ritual result stats should gain one pixel while standard game-over sizing remains unchanged',
+  );
+  assert.match(gameSceneSource, /RESULT_STATS_RECORD_COLOR = '#ffe08a'/);
+  assert.match(gameSceneSource, /RESULT_STATS_RECORD_FONT_SIZE_BONUS = 1/);
+  assert.match(
+    gameSceneSource,
+    /if \(!line\.startsWith\('NEW '\)\)/,
+    'only NEW RECORD-style rows should receive the emphasized overlay',
+  );
+  assert.match(gameSceneSource, /fontStyle: 'bold'/);
+});
