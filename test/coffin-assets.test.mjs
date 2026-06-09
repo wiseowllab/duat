@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   COFFIN_ASSETS,
@@ -22,6 +23,13 @@ function createTextureScene(loadedKeys = []) {
   };
 }
 
+function readPngDimensions(buffer) {
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
+
 test('coffin asset map reserves one god-specific PNG key for each god', () => {
   assert.equal(COFFIN_ASSETS.length, TOTAL_GOD_COUNT);
   assert.equal(COFFIN_ASSETS.length, 14);
@@ -35,12 +43,22 @@ test('coffin asset map reserves one god-specific PNG key for each god', () => {
     assert.equal(asset.godName, god.name);
     assert.equal(asset.assetKey, expectedKey);
     assert.equal(asset.fileName, `${expectedKey}.png`);
-    assert.equal(asset.path, `assets/images/coffins/gods/${expectedKey}.png`);
+    assert.equal(asset.path, `assets/images/coffin/high/${expectedKey}.png`);
     assert.equal(asset.coffinHighKey, expectedKey);
-    assert.equal(asset.coffinHighPath, `assets/images/coffins/gods/${expectedKey}.png`);
+    assert.equal(asset.coffinHighPath, `assets/images/coffin/high/${expectedKey}.png`);
     assert.equal(asset.coffinIconKey, `${expectedKey}_icon_64`);
-    assert.equal(asset.coffinIconPath, `assets/images/coffins/icons/${expectedKey}_icon_64.png`);
+    assert.equal(asset.coffinIconPath, `assets/images/coffin/icon/${expectedKey}_icon_64.png`);
   });
+});
+
+test('every god has matching high-resolution and 64px icon PNG files', async () => {
+  for (const asset of COFFIN_ASSETS) {
+    const highFile = await readFile(new URL(`../docs/${asset.coffinHighPath}`, import.meta.url));
+    const iconFile = await readFile(new URL(`../docs/${asset.coffinIconPath}`, import.meta.url));
+
+    assert.deepEqual(readPngDimensions(highFile), { width: 1024, height: 1024 }, `${asset.godId} high image dimensions`);
+    assert.deepEqual(readPngDimensions(iconFile), { width: 64, height: 64 }, `${asset.godId} icon image dimensions`);
+  }
 });
 
 test('god coffin assets preserve current tier PNGs as fallback', () => {
@@ -98,7 +116,7 @@ test('icon resolution uses the 64px key when loaded', () => {
 
   assert.equal(iconAsset.key, 'coffin_imsety_icon_64');
   assert.equal(iconAsset.variant, COFFIN_ASSET_VARIANTS.ICON);
-  assert.equal(iconAsset.path, 'assets/images/coffins/icons/coffin_imsety_icon_64.png');
+  assert.equal(iconAsset.path, 'assets/images/coffin/icon/coffin_imsety_icon_64.png');
 });
 
 test('icon resolution falls back to the matching high-resolution god coffin', () => {
