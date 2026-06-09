@@ -13,7 +13,7 @@ import {
   SOFT_DROP_FALL_MS,
 } from '../data/constants.js';
 import { createRandomPairTypes, getPieceAsset, PIECE_COLORS, preloadPieceAssets } from '../data/pieces.js';
-import { getCoffinAssetForGod, preloadCoffinAssets } from '../data/coffins.js';
+import { COFFIN_ASSET_VARIANTS, getCoffinAssetForGod, preloadCoffinAssets } from '../data/coffins.js';
 import { Board } from '../core/Board.js';
 import { Piece } from '../core/Piece.js';
 import { GravitySystem } from '../core/GravitySystem.js';
@@ -4585,7 +4585,10 @@ ${COMMIT_SHA}`, {
   }
 
   createResultGodIcon(god, config) {
-    const asset = getCoffinAssetForGod(god, this, { debug: this.isDebugMode });
+    const asset = getCoffinAssetForGod(god, this, {
+      debug: this.isDebugMode,
+      variant: COFFIN_ASSET_VARIANTS.ICON,
+    });
     const textureKey = asset.key ?? asset.assetKey;
 
     if (!textureKey || !this.textures.exists(textureKey)) {

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   COFFIN_ASSETS,
+  COFFIN_ASSET_VARIANTS,
   GOD_COFFIN_FILE_NAMES,
   GOD_COFFIN_KEY_BY_GOD_ID,
   getCoffinAssetForGod,
@@ -35,6 +36,10 @@ test('coffin asset map reserves one god-specific PNG key for each god', () => {
     assert.equal(asset.assetKey, expectedKey);
     assert.equal(asset.fileName, `${expectedKey}.png`);
     assert.equal(asset.path, `assets/images/coffins/gods/${expectedKey}.png`);
+    assert.equal(asset.coffinHighKey, expectedKey);
+    assert.equal(asset.coffinHighPath, `assets/images/coffins/gods/${expectedKey}.png`);
+    assert.equal(asset.coffinIconKey, `${expectedKey}_icon_64`);
+    assert.equal(asset.coffinIconPath, `assets/images/coffins/icons/${expectedKey}_icon_64.png`);
   });
 });
 
@@ -81,4 +86,30 @@ test('stage resolution still maps Amun-Ra to the Amun-Ra coffin key', () => {
   assert.equal(asset.godId, 'amun_ra');
   assert.equal(asset.key, 'coffin_amun_ra');
   assert.equal(asset.fileName, 'coffin_amun_ra.png');
+});
+
+test('icon resolution uses the 64px key when loaded', () => {
+  const imsety = GODS[0];
+  const iconAsset = getCoffinAssetForGod(
+    imsety,
+    createTextureScene(['coffin_imsety', 'coffin_imsety_icon_64']),
+    { variant: COFFIN_ASSET_VARIANTS.ICON },
+  );
+
+  assert.equal(iconAsset.key, 'coffin_imsety_icon_64');
+  assert.equal(iconAsset.variant, COFFIN_ASSET_VARIANTS.ICON);
+  assert.equal(iconAsset.path, 'assets/images/coffins/icons/coffin_imsety_icon_64.png');
+});
+
+test('icon resolution falls back to the matching high-resolution god coffin', () => {
+  const anubis = GODS.find((god) => god.id === 'anubis');
+  const iconAsset = getCoffinAssetForGod(
+    anubis,
+    createTextureScene(['coffin_anubis']),
+    { variant: COFFIN_ASSET_VARIANTS.ICON },
+  );
+
+  assert.equal(iconAsset.key, 'coffin_anubis');
+  assert.equal(iconAsset.fallbackForAssetKey, 'coffin_anubis_icon_64');
+  assert.equal(iconAsset.requestedVariant, COFFIN_ASSET_VARIANTS.ICON);
 });
