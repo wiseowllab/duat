@@ -50,8 +50,8 @@ export const LEGACY_COFFIN_ASSETS = {
 
 // Keep god coffin art under docs/assets/images/ so the GitHub Pages and
 // public-test builds can share the same asset base.
-const GOD_COFFIN_HIGH_DIRECTORY = 'images/coffins/gods';
-const GOD_COFFIN_ICON_DIRECTORY = 'images/coffins/icons';
+const GOD_COFFIN_HIGH_DIRECTORY = 'images/coffin/high';
+const GOD_COFFIN_ICON_DIRECTORY = 'images/coffin/icon';
 export const COFFIN_ASSET_VARIANTS = Object.freeze({
   HIGH: 'high',
   ICON: 'icon',
