@@ -1,4 +1,4 @@
-import { getCoffinAssetForGod } from '../data/coffins.js';
+import { COFFIN_ASSET_VARIANTS, getCoffinAssetForGod } from '../data/coffins.js';
 import { getPieceAsset, PIECE_COLORS, PIECE_LABELS } from '../data/pieces.js';
 import { COFFIN_METER } from '../data/balance.js';
 import { GODS } from '../data/gods.js';
@@ -111,6 +111,7 @@ export class Hud {
     this.revivedIconTweens = [];
     this.scene.events?.on('coffin-assets-ready', this.refreshCoffinVisual, this);
     this.scene.events?.on('coffin-assets-ready', this.renderShrine, this);
+    this.scene.events?.on('coffin-assets-ready', this.refreshBombButtonAssets, this);
     this.revivedEyeTimers = [];
     this.revivedDepthLevel = 1;
     this.depthAtmosphereTween = null;
@@ -583,7 +584,12 @@ export class Hud {
     const slots = [0, 1, 2, 3].map((index) => {
       const bomb = stock[index] ?? null;
       const god = bomb ? this.getGodForBomb(bomb) : null;
-      const asset = god ? getCoffinAssetForGod(god, this.scene, { debug: this.isDebugMode }) : null;
+      const asset = god
+        ? getCoffinAssetForGod(god, this.scene, {
+          debug: this.isDebugMode,
+          variant: COFFIN_ASSET_VARIANTS.ICON,
+        })
+        : null;
       return {
         index,
         label: `B${index + 1}`,
@@ -598,6 +604,10 @@ export class Hud {
     });
 
     window.dispatchEvent(new CustomEvent('duat-bomb-buttons-state', { detail: { slots } }));
+  }
+
+  refreshBombButtonAssets() {
+    this.emitBombButtonState(this.lastBombStockForShrine ?? [], this.lastSelectedBombSlotForShrine);
   }
 
   getGodForBomb(bomb) {
@@ -719,7 +729,10 @@ export class Hud {
     const backAlpha = isAssigned ? 0.34 : 0.18;
     const back = this.scene.add.rectangle(0, 0, SHRINE_ICON_SIZE + 4, SHRINE_ICON_SIZE + 4, 0x050402, backAlpha)
       .setStrokeStyle(1, isAssigned ? 0xffdf6e : 0xd4af37, isAssigned ? 0.86 : 0.22);
-    const asset = getCoffinAssetForGod(god, this.scene, { debug: this.isDebugMode });
+    const asset = getCoffinAssetForGod(god, this.scene, {
+      debug: this.isDebugMode,
+      variant: COFFIN_ASSET_VARIANTS.ICON,
+    });
     const coffin = this.createShrineCoffinDisplay(asset)
       .setAlpha(isUnused ? 1 : SHRINE_USED_ALPHA);
 
@@ -842,7 +855,10 @@ export class Hud {
     this.currentCoffinTier = currentTier;
     this.currentCoffinGod = currentGod;
     const stage = currentGod?.stage ?? currentTier?.stage ?? 1;
-    const asset = getCoffinAssetForGod(currentGod, this.scene, { debug: this.isDebugMode });
+    const asset = getCoffinAssetForGod(currentGod, this.scene, {
+      debug: this.isDebugMode,
+      variant: COFFIN_ASSET_VARIANTS.HIGH,
+    });
     const nextVisualId = `${currentGod?.id ?? stage}:${asset.key}`;
 
     if (this.coffinContainer && this.currentCoffinVisualId === nextVisualId) {

@@ -50,7 +50,12 @@ export const LEGACY_COFFIN_ASSETS = {
 
 // Keep god coffin art under docs/assets/images/ so the GitHub Pages and
 // public-test builds can share the same asset base.
-const GOD_COFFIN_DIRECTORY = 'images/coffins/gods';
+const GOD_COFFIN_HIGH_DIRECTORY = 'images/coffins/gods';
+const GOD_COFFIN_ICON_DIRECTORY = 'images/coffins/icons';
+export const COFFIN_ASSET_VARIANTS = Object.freeze({
+  HIGH: 'high',
+  ICON: 'icon',
+});
 const OPTIONAL_GOD_COFFIN_KEYS = new Set();
 const warnedFallbackKeys = new Set();
 
@@ -113,20 +118,27 @@ function getGodCoffinKey(god) {
 function createGodCoffinAsset(god, index) {
   const assetKey = getGodCoffinKey(god);
   const fallbackAsset = getCoffinAsset(god.coffinSize);
-  const fileName = assetKey ? `${assetKey}.png` : null;
+  const highKey = assetKey;
+  const iconKey = assetKey ? `${assetKey}_icon_64` : null;
+  const highFileName = highKey ? `${highKey}.png` : null;
+  const iconFileName = iconKey ? `${iconKey}.png` : null;
 
-  if (assetKey) {
-    OPTIONAL_GOD_COFFIN_KEYS.add(assetKey);
-  }
+  [highKey, iconKey].filter(Boolean).forEach((key) => OPTIONAL_GOD_COFFIN_KEYS.add(key));
 
   return {
     stage: index + 1,
     godId: god.id,
     godName: god.name,
-    assetKey,
-    key: assetKey,
-    fileName,
-    path: fileName ? resolveAssetPath(`${GOD_COFFIN_DIRECTORY}/${fileName}`) : null,
+    assetKey: highKey,
+    key: highKey,
+    fileName: highFileName,
+    path: highFileName ? resolveAssetPath(`${GOD_COFFIN_HIGH_DIRECTORY}/${highFileName}`) : null,
+    coffinHighKey: highKey,
+    coffinHighFileName: highFileName,
+    coffinHighPath: highFileName ? resolveAssetPath(`${GOD_COFFIN_HIGH_DIRECTORY}/${highFileName}`) : null,
+    coffinIconKey: iconKey,
+    coffinIconFileName: iconFileName,
+    coffinIconPath: iconFileName ? resolveAssetPath(`${GOD_COFFIN_ICON_DIRECTORY}/${iconFileName}`) : null,
     fallbackKey: fallbackAsset.key,
     fallbackAsset,
     fallbackWidth: fallbackAsset.fallbackWidth,
@@ -158,19 +170,54 @@ export function getCoffinAssetForGod(god, scene = null, options = {}) {
     return LEGACY_COFFIN_ASSETS.small;
   }
 
-  if (godAsset.assetKey && scene?.textures?.exists(godAsset.assetKey)) {
-    return godAsset;
+  const variant = options.variant === COFFIN_ASSET_VARIANTS.ICON
+    ? COFFIN_ASSET_VARIANTS.ICON
+    : COFFIN_ASSET_VARIANTS.HIGH;
+  const requestedAsset = getGodCoffinVariantAsset(godAsset, variant);
+
+  if (requestedAsset.key && scene?.textures?.exists(requestedAsset.key)) {
+    return requestedAsset;
   }
 
-  maybeWarnAboutFallback(godAsset, options.debug);
+  if (variant === COFFIN_ASSET_VARIANTS.ICON
+    && godAsset.coffinHighKey
+    && scene?.textures?.exists(godAsset.coffinHighKey)) {
+    maybeWarnAboutFallback(requestedAsset, options.debug, godAsset.coffinHighFileName);
+    return {
+      ...getGodCoffinVariantAsset(godAsset, COFFIN_ASSET_VARIANTS.HIGH),
+      requestedVariant: variant,
+      fallbackForAssetKey: requestedAsset.key,
+      fallbackForFileName: requestedAsset.fileName,
+    };
+  }
+
+  maybeWarnAboutFallback(requestedAsset, options.debug, godAsset.fallbackAsset.fileName);
   return {
     ...godAsset.fallbackAsset,
     stage: godAsset.stage,
     godId: godAsset.godId,
     godName: godAsset.godName,
     assetKey: godAsset.fallbackAsset.key,
-    fallbackForAssetKey: godAsset.assetKey,
-    fallbackForFileName: godAsset.fileName,
+    variant,
+    requestedVariant: variant,
+    fallbackForAssetKey: requestedAsset.key,
+    fallbackForFileName: requestedAsset.fileName,
+  };
+}
+
+function getGodCoffinVariantAsset(godAsset, variant) {
+  const isIcon = variant === COFFIN_ASSET_VARIANTS.ICON;
+  const key = isIcon ? godAsset.coffinIconKey : godAsset.coffinHighKey;
+  const fileName = isIcon ? godAsset.coffinIconFileName : godAsset.coffinHighFileName;
+  const path = isIcon ? godAsset.coffinIconPath : godAsset.coffinHighPath;
+
+  return {
+    ...godAsset,
+    assetKey: key,
+    key,
+    fileName,
+    path,
+    variant,
   };
 }
 
@@ -190,15 +237,21 @@ export async function loadAvailableGodCoffinAssets(scene) {
   }
 
   const availableAssets = [];
-  for (const asset of GOD_COFFIN_ASSETS) {
-    if (!asset.assetKey || !asset.path || scene.textures.exists(asset.assetKey)) {
-      continue;
-    }
+  for (const godAsset of GOD_COFFIN_ASSETS) {
+    for (const variant of Object.values(COFFIN_ASSET_VARIANTS)) {
+      const asset = getGodCoffinVariantAsset(godAsset, variant);
+      if (!asset.assetKey || !asset.path || scene.textures.exists(asset.assetKey)) {
+        continue;
+      }
 
-    if (await canLoadGodCoffinAsset(asset)) {
-      availableAssets.push(asset);
-    } else {
-      maybeWarnAboutFallback(asset, scene?.isDebugMode);
+      if (await canLoadGodCoffinAsset(asset)) {
+        availableAssets.push(asset);
+      } else {
+        const fallbackFileName = variant === COFFIN_ASSET_VARIANTS.ICON
+          ? godAsset.coffinHighFileName
+          : godAsset.fallbackAsset.fileName;
+        maybeWarnAboutFallback(asset, scene?.isDebugMode, fallbackFileName);
+      }
     }
   }
 
@@ -212,8 +265,19 @@ export async function loadAvailableGodCoffinAssets(scene) {
       return;
     }
 
-    const godAsset = GOD_COFFIN_ASSETS.find((asset) => asset.assetKey === file.key);
-    maybeWarnAboutFallback(godAsset, scene?.isDebugMode);
+    const godAsset = GOD_COFFIN_ASSETS.find((asset) => [asset.coffinHighKey, asset.coffinIconKey].includes(file.key));
+    if (!godAsset) {
+      return;
+    }
+
+    const failedVariant = godAsset.coffinIconKey === file.key
+      ? COFFIN_ASSET_VARIANTS.ICON
+      : COFFIN_ASSET_VARIANTS.HIGH;
+    const failedAsset = getGodCoffinVariantAsset(godAsset, failedVariant);
+    const fallbackFileName = failedVariant === COFFIN_ASSET_VARIANTS.ICON
+      ? godAsset.coffinHighFileName
+      : godAsset.fallbackAsset.fileName;
+    maybeWarnAboutFallback(failedAsset, scene?.isDebugMode, fallbackFileName);
   });
 
   availableAssets.forEach((asset) => {
@@ -239,7 +303,7 @@ async function canLoadGodCoffinAsset(asset) {
   }
 }
 
-function maybeWarnAboutFallback(godAsset, isDebugMode = false) {
+function maybeWarnAboutFallback(godAsset, isDebugMode = false, fallbackFileName = null) {
   if (!isDebugMode || !godAsset || warnedFallbackKeys.has(godAsset.assetKey)) {
     return;
   }
@@ -247,6 +311,6 @@ function maybeWarnAboutFallback(godAsset, isDebugMode = false) {
   warnedFallbackKeys.add(godAsset.assetKey);
   console.warn(
     `[DUAT] Optional god coffin asset ${godAsset.fileName} for ${godAsset.godName} is not loaded; `
-      + `using ${godAsset.fallbackAsset.fileName} fallback.`,
+      + `using ${fallbackFileName ?? godAsset.fallbackAsset?.fileName ?? 'placeholder art'} fallback.`,
   );
 }
